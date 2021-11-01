@@ -1,0 +1,11 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "state"
+      type: binary_sensor
+      payload:
+        name: "Online state"
+        device_class: "connectivity"
+        payload_off: "Offline" # Must match the fixed value in consts
+        payload_on: "Online" # Must match the fixed value in consts

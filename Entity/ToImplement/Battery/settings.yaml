@@ -1,0 +1,21 @@
+requirements:
+  sensors:
+    - Os:
+        dont_send: True
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "battery/battery_level_percentage"
+      payload:
+        name: "Battery level"
+        unit_of_measurement: "%"
+        device_class: battery
+
+    - topic: "battery/battery_charging"
+      type: binary_sensor
+      payload:
+        name: "Charging status"
+        device_class: battery_charging
+        payload_off: "False"
+        payload_on: "True"
+

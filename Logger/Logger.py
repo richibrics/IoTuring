@@ -130,6 +130,7 @@ class Logger():
 
         return self.log_file_descriptor
 
+    # Singleton method
     @staticmethod
     def getInstance():
         """ Static access method. """

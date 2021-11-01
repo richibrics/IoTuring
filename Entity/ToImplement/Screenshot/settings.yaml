@@ -1,0 +1,10 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      type: camera
+      payload:
+        name: "Screen"
+
+

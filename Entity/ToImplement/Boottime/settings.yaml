@@ -1,0 +1,8 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      payload:
+        name: "Boot Time"
+        icon: "mdi:clock"

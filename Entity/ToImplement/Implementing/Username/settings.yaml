@@ -1,0 +1,9 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      payload:
+        name: "Username"
+        unit_of_measurement: ""
+        icon: "mdi:account"

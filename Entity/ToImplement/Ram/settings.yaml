@@ -1,0 +1,64 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: ram/physical_memory/percentage
+      payload:
+        name: "Ram usage"
+        unit_of_measurement: "%"
+        icon: "mdi:memory"
+
+    - topic: ram/swap_memory/percentage
+      payload:
+        name: "Swap used"
+        unit_of_measurement: "%"
+        icon: "mdi:memory"
+
+    - topic: ram/physical_memory/total
+      advanced_topic: True
+      payload:
+        name: "Ram total memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/physical_memory/available
+      advanced_topic: True
+      payload:
+        name: "Ram available memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/physical_memory/free
+      advanced_topic: True
+      payload:
+        name: "Ram free memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/physical_memory/used
+      advanced_topic: True
+      payload:
+        name: "Ram used memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/swap_memory/total
+      advanced_topic: True
+      payload:
+        name: "Swap total memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/swap_memory/used
+      advanced_topic: True
+      payload:
+        name: "Swap used memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"
+    
+    - topic: ram/swap_memory/free
+      advanced_topic: True
+      payload:
+        name: "Swap free memory"
+        unit_of_measurement: "GB"
+        icon: "mdi:memory"

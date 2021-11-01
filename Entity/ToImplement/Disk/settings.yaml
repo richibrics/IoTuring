@@ -1,0 +1,9 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      payload:
+        name: "Disk used"
+        unit_of_measurement: "%"
+        icon: "mdi:harddisk"

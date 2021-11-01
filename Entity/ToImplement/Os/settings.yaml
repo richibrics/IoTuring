@@ -1,0 +1,12 @@
+requirements:
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      payload:
+        name: "Operating system"
+        unit_of_measurement: ""
+        icon:  # Will be managed by the Os class
+          Linux: "mdi:penguin" # OS name must respect FIXED values in consts
+          Windows: "mdi:microsoft" # OS name must respect FIXED values in consts
+          macOS: "mdi:apple" # OS name must respect FIXED values in consts

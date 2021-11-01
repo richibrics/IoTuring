@@ -1,0 +1,11 @@
+requirements:
+  sensors:
+    - Os:
+        dont_send: True
+
+discovery:
+  homeassistant: # Must match discovery preset name
+    - topic: "*"
+      payload:
+        name: "Sleep"
+        icon: "mdi:power-sleep"
