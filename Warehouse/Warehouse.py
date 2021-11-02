@@ -5,3 +5,4 @@ class Warehouse():
 
     def AddEntity(self, entityInstance) -> None:
         self.entities.append(entityInstance)
+

@@ -1,4 +1,7 @@
+from typing import List
+from Exceptions.Exceptions import UnknownKeyException
 from Logger.Logger import Logger
+f
 
 class Entity:
     __instance = None
@@ -54,7 +57,21 @@ class Entity:
             self.Log(Logger.LOG_DEBUG,"Set " + key + " to " + value)
             self.values[key]=value
         else:
-            self.Log(Logger.LOG_ERROR,"Want to set " + key + " but unknown key")
+            raise UnknownKeyException()
+
+    def GetValue(self,key) -> str:
+        if key in self.values:
+            return self.values[key]
+        else:
+            raise UnknownKeyException()
+
+    def KeyList(self) -> List:
+        """ Return list of registered keys """
+        return self.values.keys()
+
+    def ShouldUpdate() -> bool:
+        """ Return True if it's time to update """
+        return True # TODO Implement this
 
     def Log(self, messageType, message):
         Logger.getInstance().Log(messageType, self.name + " Entity", message)
