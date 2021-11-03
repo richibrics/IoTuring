@@ -95,7 +95,7 @@ class Entity:
 
     def GetGlobalKey(self, key) -> str:
         """ From a value key, return entityname.key to identify the value everywhere """
-        return self.name + "." + key
+        return self.GetName() + "." + key
 
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set a timeout between 2 updates """
@@ -112,8 +112,11 @@ class Entity:
             if self.ShouldUpdate():
                 self.CallUpdate()
 
-    def Log(self, messageType, message):
-        Logger.getInstance().Log(messageType, self.name + " Entity", message)
+    def GetName(self) -> str:
+        return self.name
+
+    def Log(self, messageType, message) -> None:
+        Logger.getInstance().Log(messageType, self.GetName() + " Entity", message)
         
     
     # Singleton method

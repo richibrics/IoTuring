@@ -1,9 +1,12 @@
+from Logger.Logger import Logger
+
 from threading import Thread
 import time
 
 DEFAULT_LOOP_TIMEOUT = 3
 
 class Warehouse():
+    name = "Unnamed"
     
     def __init__(self) -> None:
         self.entities = []
@@ -32,6 +35,16 @@ class Warehouse():
             if self.ShouldCallLoop():
                 self.Loop()
 
+    def GetEntities(self) -> list:
+        return self.entities
+
     def Loop(self) -> None:
         """ Must be implemented in subclasses """
         pass
+
+    def GetName(self) -> str:
+        return self.name
+
+    def Log(self, messageType, message) -> None:
+        Logger.getInstance().Log(messageType, self.GetName() + " Warehouse", message)
+        
