@@ -8,9 +8,10 @@ class Username(Entity):
 
     def Initialize(self):
         self.AddKey(KEY_USERNAME)
+        self.SetValue(KEY_USERNAME, str(self.GetUsername())) # Fixed value
 
     def Update(self):
-        self.SetValue(KEY_USERNAME, str(self.GetUsername()))
+        pass
 
     def GetUsername(self):
         # Gives user's home directory

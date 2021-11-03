@@ -1,5 +1,7 @@
 from Entity.Entity import Entity
-from Entity.Deployments.Username import Username
+from Entity.Deployments.Username.Username import Username
+
+from threading import Thread
 
 class EntityManager():
 
@@ -8,7 +10,7 @@ class EntityManager():
         self.entities = []
 
     @staticmethod
-    def EntityNameToClass(name) -> Entity: # TODO: Implement
+    def EntityNameToClass(name) -> Entity: # TODO Implement
         """ Get entity name and return its class """
         return Username
 
@@ -31,6 +33,8 @@ class EntityManager():
         for entity in self.entities:
             entity.CallPostInitialize()
 
-    def ManageUpdates(self): # TODO: Implement
-        """ Periodically update all the entities (async) """
-        pass
+    def ManageUpdates(self): # TODO Implement
+        """ Start a thread for each entity in which it will update periodically """
+        for entity in self.entities:
+            Thread(target=entity.LoopThread).start()
+        
