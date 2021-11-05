@@ -1,0 +1,1 @@
+ENTITIES_PATH = "../Entity/Deployments/"

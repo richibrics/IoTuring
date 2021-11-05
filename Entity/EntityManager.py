@@ -17,7 +17,8 @@ class EntityManager():
     def NewEntity(self, entityClass) -> Entity: 
         """ Get an entity class, return an instantited entity (already added to my entites to update list) ready to be given to warehouses """
         entity = entityClass()
-        self.entities.append(entity)
+        if entity not in self.entities:
+            self.entities.append(entity)
         return entity
 
     def Start(self):
