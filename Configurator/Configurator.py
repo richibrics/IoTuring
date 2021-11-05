@@ -2,7 +2,7 @@ import inspect  # To get this folder path and reach the configurations file
 import os  # Configurations file path manipulation
 import json
 
-from ClassManager.ClassManager import ClassManager
+from ClassManager.EntityClassManager import EntityClassManager
 
 BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
 
@@ -44,10 +44,10 @@ class Configurator:
                     choice = False
 
     def SelectEntities(self) -> None:
-        cm = ClassManager()
+        cm = EntityClassManager()
         while(True):
             print("\nSelect your entities (X for enabled):")
-            availableEntities = cm.ListAvailableEntities()
+            availableEntities = cm.ListAvailableClassesNames()
             for index, entityName in enumerate(availableEntities):
                 if not self.IsEntityActive(entityName):
                     print("[ ] " + str(index+1) + " - " + entityName)
