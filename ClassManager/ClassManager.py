@@ -23,7 +23,7 @@ from ClassManager import consts
 
 class ClassManager(): 
     def __init__(self):
-        self.logger=Logger()
+        self.logger=Logger.getInstance()
         self.modulesFilename=[]
         self.mainPath = path.dirname(path.abspath(
             sys.modules[self.__class__.__module__].__file__))

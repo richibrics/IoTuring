@@ -1,4 +1,4 @@
 from Warehouse.Warehouse import Warehouse
 
-class MQTT_Warehouse(Warehouse):
+class MQTTWarehouse(Warehouse):
     pass

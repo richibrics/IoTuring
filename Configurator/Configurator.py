@@ -3,6 +3,7 @@ import os  # Configurations file path manipulation
 import json
 
 from ClassManager.EntityClassManager import EntityClassManager
+from ClassManager.WarehouseClassManager import WarehouseClassManager
 
 BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
 
@@ -44,10 +45,10 @@ class Configurator:
                     choice = False
 
     def SelectEntities(self) -> None:
-        cm = EntityClassManager()
+        ecm = EntityClassManager()
         while(True):
             print("\nSelect your entities (X for enabled):")
-            availableEntities = cm.ListAvailableClassesNames()
+            availableEntities = ecm.ListAvailableClassesNames()
             for index, entityName in enumerate(availableEntities):
                 if not self.IsEntityActive(entityName):
                     print("[ ] " + str(index+1) + " - " + entityName)
@@ -78,8 +79,41 @@ class Configurator:
 
 
     def ManageWarehouses(self) -> None:
-        # TODO Implement
-        pass
+        wcm = WarehouseClassManager()
+        
+        while(True):
+            print("\nSelect your entities (X for enabled):")
+            availableWarehouses = wcm.ListAvailableClassesNames()
+            for index, whName in enumerate(availableWarehouses):
+                if not False: # TODO change this self.IsEntityActive(entityName):
+                    print("[ ] " + str(index+1) + " - " + whName.replace("Warehouse",""))
+                else:
+                    print("[X] " + str(index+1) + " - " + whName.replace("Warehouse",""))
+            print("    Q - Come back\n")
+            choice = False
+            while not choice:
+                choice = input("Which one do you want to manage ? ")
+                if choice == "q" or choice == "Q":
+                    return
+                else: 
+                    try:
+                        choice = int(choice) -1
+                        if choice >= 0 and choice < len(availableWarehouses):
+                            pass
+                            """
+                            # I have the choice
+                            if self.IsEntityActive(availableEntities[choice]):
+                                # Disable it (remove from active entities list)
+                                self.RemoveActiveEntity(availableEntities[choice])
+                            else:
+                                # Enable it (add to active entities list)
+                                self.AddActiveEntity(availableEntities[choice])
+                            choice = True
+                            """
+                        else:
+                            raise Exception("Choice out of warehouses range")
+                    except:
+                        choice = False
 
     def LoadConfigurations(self) -> None:
         thisFolder = os.path.dirname(inspect.getfile(Configurator))

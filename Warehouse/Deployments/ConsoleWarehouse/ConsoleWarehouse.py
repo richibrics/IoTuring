@@ -1,7 +1,7 @@
 from Logger.Logger import Logger
 from Warehouse.Warehouse import Warehouse
 
-class Console_Warehouse(Warehouse):
+class ConsoleWarehouse(Warehouse):
     name = "Console"
 
     def Loop(self) -> None:
