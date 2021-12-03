@@ -7,12 +7,12 @@ Subclasses of "Warehouse" must have this functions
 ```
 
 @staticmethod
-def InstantiateWithConfiguration(configuration):
+def InstantiateWithConfiguration(configuration) -> None:
     """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
     return 
 
 @staticmethod
-def ConfigurationPreset():
+def ConfigurationPreset() -> MenuPreset:
     """ Prepare a preset to manage settings insert/edit for the warehouse """
     return None
 
