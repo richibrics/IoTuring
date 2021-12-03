@@ -51,12 +51,11 @@ class ClassManager():
         sys.modules[moduleName]=module
         return module
 
-    def GetClassFromModule(self,module): # From the module passed, I search for a Class that has the BASE class as parent
+    def GetClassFromModule(self,module): # From the module passed, I search for a Class that has classNmae=moduleName
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
-                for base in obj.__bases__: # Check parent class
-                    if(base==self.baseClass):
-                        return obj
+                if(name == module.__name__):
+                    return obj
 
 
     def GetModulesFilename(self,_path): # List files in the _path directory and get only files in subfolders

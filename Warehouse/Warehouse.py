@@ -48,3 +48,15 @@ class Warehouse():
     def Log(self, messageType, message) -> None:
         Logger.getInstance().Log(messageType, self.GetName() + " Warehouse", message)
         
+
+    # Example Call: class.ConfigurationPreset(class)
+
+    # These must be places only in subclasses of warehouses
+    def InstantiateWithConfiguration(self,configuration):
+        """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
+        return 
+
+
+    def ConfigurationPreset(self):
+        """ Prepare a preset to manage settings insert/edit for the warehouse """
+        return None

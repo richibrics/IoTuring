@@ -8,6 +8,7 @@ from ClassManager.WarehouseClassManager import WarehouseClassManager
 BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
 
 KEY_ACTIVE_ENTITIES = "active_entities"
+KEY_ACTIVE_WAREHOUSES = "active_warehouses"
 
 
 class Configurator:
@@ -82,10 +83,10 @@ class Configurator:
         wcm = WarehouseClassManager()
         
         while(True):
-            print("\nSelect your entities (X for enabled):")
+            print("\nSelect the warehouse you want to manage (X for enabled):")
             availableWarehouses = wcm.ListAvailableClassesNames()
             for index, whName in enumerate(availableWarehouses):
-                if not False: # TODO change this self.IsEntityActive(entityName):
+                if not self.IsWarehouseActive(whName.replace("Warehouse","")):
                     print("[ ] " + str(index+1) + " - " + whName.replace("Warehouse",""))
                 else:
                     print("[X] " + str(index+1) + " - " + whName.replace("Warehouse",""))
@@ -97,22 +98,15 @@ class Configurator:
                     return
                 else: 
                     try:
-                        choice = int(choice) -1
+                        choice = int(choice) - 1
                         if choice >= 0 and choice < len(availableWarehouses):
-                            pass
-                            """
-                            # I have the choice
-                            if self.IsEntityActive(availableEntities[choice]):
-                                # Disable it (remove from active entities list)
-                                self.RemoveActiveEntity(availableEntities[choice])
-                            else:
-                                # Enable it (add to active entities list)
-                                self.AddActiveEntity(availableEntities[choice])
+                            self.ManageSingleWarehouse(availableWarehouses[choice].replace("Warehouse",""),wcm)
                             choice = True
-                            """
                         else:
+                            print("Invalid choice")
                             raise Exception("Choice out of warehouses range")
-                    except:
+                    except Exception as e:
+                        print("Error in warehouses menu:",str(e))
                         choice = False
 
     def LoadConfigurations(self) -> None:
@@ -130,6 +124,26 @@ class Configurator:
         with open(path, "w") as f:
             f.write(json.dumps(self.config))
 
+    def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
+        print("\nWhat do you want to do with " + warehouseName + "?")
+        if self.IsWarehouseActive(warehouseName):
+            print("E - Edit the warehouse settings")
+            print("R - Remove the warehouse")
+        else:
+            print("A - Add the warehouse")
+        print("Q - Come back")
+
+        choice = input("Select an operation: ")
+        
+        if self.IsWarehouseActive(warehouseName):
+            if choice == "r" or choice == "R":
+                self.RemoveActiveWarehouse(warehouseName)
+            elif choice == "e" or choice == "E":
+                self.EditActiveWarehouse(warehouseName,wcm)
+        else:
+            if choice == "a" or choice == "A":
+                self.AddActiveWarehouse(warehouseName,wcm)
+
     def IsEntityActive(self, entityName) -> bool:
         return entityName in self.config[KEY_ACTIVE_ENTITIES]
 
@@ -140,3 +154,104 @@ class Configurator:
     def RemoveActiveEntity(self, entityName) -> None:
         if entityName in self.config[KEY_ACTIVE_ENTITIES]:
             self.config[KEY_ACTIVE_ENTITIES].remove(entityName)
+
+    def IsWarehouseActive(self, warehouseName) -> bool:
+        for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
+            if warehouseName == wh['type']:
+                return True
+        return False 
+
+    def AddActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+        """ Add warehouse to the preferences using a menu with the warehouse preset if available """
+
+        whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
+        try:
+            preset = whClass.ConfigurationPreset(whClass) # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
+            
+            print("\n\t-- Rules --")
+            print("\t\tIf you see {!} then the value is complusory")
+            print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
+            print("\t-- End of rules --\n")
+
+            for index, question in enumerate(preset.ListEntries()):
+                preset.Question(index)
+            
+            # Save added settings
+            self.MenuPresetToConfiguration(warehouseName,preset)
+        except Exception as e:
+            print(e)
+            preset = MenuPreset() # Use blank
+            print("No configuration available for this Warehouse :)")
+            self.MenuPresetToConfiguration(warehouseName,preset)
+
+
+    def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+        print("You can't do that at the moment bro")
+        # MenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to readd it later
+        # TO implement only when I know how to add removable value while editing configurations
+        pass # TODO Implement
+   
+    def RemoveActiveWarehouse(self, warehouseName) -> None:
+        for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
+            if warehouseName == wh['type']:
+                # I remove this wh from the list
+                self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
+                return
+
+    def MenuPresetToConfiguration(self,whName, preset) -> None:
+        """ Get a MenuPreset with responses and add the entries to the configurations dict """
+        _dict = preset.GetDict()
+        _dict["type"] = whName.replace("Warehouse","")
+        self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
+        print("Configuration added for \""+whName+"\" :)")
+
+
+
+class MenuPreset():
+
+    def __init__(self) -> None:
+        self.preset = []
+
+    def AddEntry(self,name,key,default=None,mandatory=False):
+        self.preset.append({"name":name,"key":key,"default":default,"mandatory":mandatory,"value": None})
+
+    def ListEntries(self):
+        return self.preset
+
+    def Question(self,id):
+        try:
+            question = ""
+            if id<len(self.preset):
+                question = "Add value for \""+self.preset[id]["name"]+"\""
+                if self.preset[id]['mandatory']:
+                    question = question + " {!}"
+                if self.preset[id]["default"] is not None:
+                    question = question + " [" + str(self.preset[id]["default"])+"]"
+
+                question = question + ": "
+                
+                value = input(question)
+
+                while value == "" and self.preset[id]["mandatory"]: # Mandatory loop
+                    value = input("You must provide a value for this key: ")
+
+                if value == "":
+                    if self.preset[id]["default"] is not None:
+                        self.preset[id]['value'] = self.preset[id]["default"] # Set in the preset
+                        return self.preset[id]["default"] # Also return it
+                    else:
+                        self.preset[id]['value'] = None # Set in the preset
+                        return None # Also return it
+                else:
+                    self.preset[id]['value'] = value # Set in the preset
+                    return value # Also return it
+        except Exception as e:
+            print("Error while making the question:",e)
+    
+    def GetDict(self) -> dict:
+        """ Get a dict with keys and responses"""
+        result = {}
+        for entry in self.preset:
+            result[entry['key']]=entry['value']
+        return result
+                
