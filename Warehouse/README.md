@@ -4,7 +4,7 @@
 
 Subclasses of "Warehouse" must have this functions
 
-‘‘‘
+```
 
 @staticmethod
 def InstantiateWithConfiguration(configuration):
@@ -16,7 +16,7 @@ def ConfigurationPreset():
     """ Prepare a preset to manage settings insert/edit for the warehouse """
     return None
 
-‘‘‘
+```
 
 These aren't in "Warehouse" because are static so would be unique in all Warehouses
 
