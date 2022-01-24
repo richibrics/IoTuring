@@ -10,6 +10,7 @@ BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
 
+KEY_WAREHOUSE_TYPE = "type"
 
 class Configurator:
     # Must be in the same folder of this file
@@ -18,6 +19,9 @@ class Configurator:
     def __init__(self) -> None:
         self.config = None
         self.LoadConfigurations()
+
+    def GetConfigurations(self):
+        return self.config.copy() # Safe return
 
     def Menu(self) -> None:
         run_app = False
@@ -157,7 +161,7 @@ class Configurator:
 
     def IsWarehouseActive(self, warehouseName) -> bool:
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
-            if warehouseName == wh['type']:
+            if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 return True
         return False 
 
@@ -166,24 +170,25 @@ class Configurator:
 
         whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
-            preset = whClass.ConfigurationPreset(whClass) # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
+            print(whClass.ConfigurationPreset)
+            preset = whClass.ConfigurationPreset() # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
             
-            print("\n\t-- Rules --")
-            print("\t\tIf you see {!} then the value is complusory")
-            print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
-            print("\t-- End of rules --\n")
+            if preset is not None:
+                print("\n\t-- Rules --")
+                print("\t\tIf you see {!} then the value is complusory")
+                print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
+                print("\t-- End of rules --\n")
 
-            for index, question in enumerate(preset.ListEntries()):
-                preset.Question(index)
+                for index, question in enumerate(preset.ListEntries()):
+                    preset.Question(index)
+            else:
+                preset = MenuPreset() # Use blank
+                print("No configuration available for this Warehouse :)")
             
             # Save added settings
             self.MenuPresetToConfiguration(warehouseName,preset)
         except Exception as e:
-            print(e)
-            preset = MenuPreset() # Use blank
-            print("No configuration available for this Warehouse :)")
-            self.MenuPresetToConfiguration(warehouseName,preset)
-
+            print("Error during preset loading: " + str(e))
 
     def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
         print("You can't do that at the moment bro")
@@ -193,7 +198,7 @@ class Configurator:
    
     def RemoveActiveWarehouse(self, warehouseName) -> None:
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
-            if warehouseName == wh['type']:
+            if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 # I remove this wh from the list
                 self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
                 return
@@ -201,7 +206,7 @@ class Configurator:
     def MenuPresetToConfiguration(self,whName, preset) -> None:
         """ Get a MenuPreset with responses and add the entries to the configurations dict """
         _dict = preset.GetDict()
-        _dict["type"] = whName.replace("Warehouse","")
+        _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse","")
         self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
         print("Configuration added for \""+whName+"\" :)")
 
@@ -255,3 +260,21 @@ class MenuPreset():
             result[entry['key']]=entry['value']
         return result
                 
+class ConfiguratorLoader():
+    configurator = None
+    def __init__(self,configurator: Configurator) -> None:
+        self.configurations = configurator.GetConfigurations()
+
+    def LoadWarehouses(self) -> list: # Return list of instances initialized using their configurations
+        warehouses = []
+        wcm = WarehouseClassManager()
+        for activeWarehouse in self.configurations[KEY_ACTIVE_WAREHOUSES]:
+            # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
+            warehouses.append(wcm.GetClassFromName(activeWarehouse[KEY_WAREHOUSE_TYPE]+"Warehouse").InstantiateWithConfiguration(activeWarehouse))
+        return warehouses
+
+    # warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance()): may be useful
+    def LoadEntities(self) -> list: # Return list of entities initialized
+        pass
+        # TODO IMPLEMENT
+

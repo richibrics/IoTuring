@@ -109,4 +109,4 @@ class MQTTClient:
     # LOG
 
     def Log(self, messageType, message):
-        Logger().getInstance().Log(messageType, 'MQTT', message)
+        Logger.getInstance().Log(messageType, 'MQTT', message)

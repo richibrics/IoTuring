@@ -1,5 +1,5 @@
 from App.App import App
-from Configurator.Configurator import Configurator
+from Configurator.Configurator import Configurator, ConfiguratorLoader
 from Entity.Deployments.Username.Username import Username
 from Entity.EntityManager import EntityManager
 from Logger.Logger import Logger
@@ -9,21 +9,25 @@ from Warehouse.Warehouse import Warehouse
 import sys
 
 warehouses = []
+entities =  []
 
 if __name__ == "__main__":
     configurator = Configurator()
 
-    if True or len(sys.argv)>1 and sys.argv[1]=="-c": # add -c to configure with the menu
+    if len(sys.argv)>1 and sys.argv[1]=="-c": # add -c to configure with the menu
         configurator.Menu()
 
-    logger = Logger() # Unique init of Logger. Then I will use Logger.getInstance() to get this instance
+    logger = Logger.getInstance() # Unique init of Logger. Then I will use Logger.getInstance() to get this instance
     logger.Log(Logger.LOG_INFO,"App",App()) # Print App info
     eM = EntityManager()
     
     # These will be done from the configuration reader
-    warehouses.append(ConsoleWarehouse())
-    warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance())
+    warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
+    entities =  ConfiguratorLoader(configurator).LoadEntities()
+    #warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance())
     for wh in warehouses:
+        for entity in entities:
+            wh.AddEntity(entity)
         wh.Start()
 
     eM.Start()

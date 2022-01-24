@@ -1,1 +1,1 @@
-{"active_entities": ["Username"], "active_warehouses": [{"type": "HomeAssistant"}]}
+{"active_entities": ["Username"], "active_warehouses": [{"address": "192.168.1.19", "port": 1883, "name": "PC", "username": "", "password": "", "type": "HomeAssistant"}, {"address": "19", "port": 1883, "name": "DomoticTuring", "username": "", "password": "", "type": "MQTT"}]}

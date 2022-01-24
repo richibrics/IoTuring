@@ -17,6 +17,7 @@ class Entity:
             Entity.__instance = self
 
         # Prepare the entity
+        self.tag = ""
         self.initializeState=False
         self.postinitializeState=False
         self.values = {}

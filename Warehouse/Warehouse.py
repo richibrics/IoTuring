@@ -40,7 +40,7 @@ class Warehouse():
 
     def Loop(self) -> None:
         """ Must be implemented in subclasses """
-        pass
+        raise NotImplementedError("Please implement Loop method for this Warehouse")
 
     def GetName(self) -> str:
         return self.name
@@ -49,14 +49,12 @@ class Warehouse():
         Logger.getInstance().Log(messageType, self.GetName() + " Warehouse", message)
         
 
-    # Example Call: class.ConfigurationPreset(class)
-
-    # These must be places only in subclasses of warehouses
+    @classmethod
     def InstantiateWithConfiguration(self,configuration):
         """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
         return 
 
-
+    @classmethod
     def ConfigurationPreset(self):
         """ Prepare a preset to manage settings insert/edit for the warehouse """
         return None

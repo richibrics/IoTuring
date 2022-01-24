@@ -1,7 +1,8 @@
+from django.apps import AppConfig
 from Configurator.Configurator import MenuPreset
 from Protocols.MQTTClient.MQTTClient import MQTTClient
 from Warehouse.Warehouse import Warehouse
-
+from App.App import App
 
 class MQTTWarehouse(Warehouse):
     client = None
@@ -13,19 +14,21 @@ class MQTTWarehouse(Warehouse):
     def Name(self):
         return "MQTT"
     
-    def InstantiateWithConfiguration(self,configuration):
+    @classmethod
+    def InstantiateWithConfiguration(self,configuration: dict):
         try:
             return MQTTWarehouse(configuration["address"], int(configuration["port"]),
                                 configuration["name"], configuration["username"],
                                 configuration["password"])
-        except:
-            raise Exception("Error while converting configuration to MQTTWarehouse")
+        except Exception as e:
+            raise Exception("Error while converting configuration to MQTTWarehouse: " + str(e))
 
+    @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
         preset.AddEntry("Address","address",mandatory=True)
         preset.AddEntry("Port","port",default=1883)
-        preset.AddEntry("Client name","name")
-        preset.AddEntry("Username","username")
-        preset.AddEntry("Password","password")
+        preset.AddEntry("Client name","name",default=App.NAME)
+        preset.AddEntry("Username","username",default="")
+        preset.AddEntry("Password","password",default="")
         return preset
