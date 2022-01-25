@@ -1,6 +1,7 @@
 import inspect  # To get this folder path and reach the configurations file
 import os  # Configurations file path manipulation
 import json
+from Logger.LogObject import LogObject
 
 from ClassManager.EntityClassManager import EntityClassManager
 from ClassManager.WarehouseClassManager import WarehouseClassManager
@@ -41,6 +42,7 @@ class Configurator:
                 elif choice == "c" or choice == "C":
                     choice = True  # Will start the program exiting from here
                     run_app = True
+                    print("") # Blank line
                     self.WriteConfigurations()
                 elif choice == "q" or choice == "Q":
                     self.WriteConfigurations()
@@ -260,7 +262,7 @@ class MenuPreset():
             result[entry['key']]=entry['value']
         return result
                 
-class ConfiguratorLoader():
+class ConfiguratorLoader(LogObject):
     configurator = None
     def __init__(self,configurator: Configurator) -> None:
         self.configurations = configurator.GetConfigurations()
@@ -275,6 +277,14 @@ class ConfiguratorLoader():
 
     # warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance()): may be useful
     def LoadEntities(self) -> list: # Return list of entities initialized
-        pass
-        # TODO IMPLEMENT
-
+        entities = []
+        ecm = EntityClassManager()
+        for activeEntity in self.configurations[KEY_ACTIVE_ENTITIES]:
+            entityClass = ecm.GetClassFromName(activeEntity)
+            if entityClass is None:
+                self.Log(self.LOG_ERROR,"Can't find",activeEntity,"entity, check your configurations.")
+            else:
+                entities.append(entityClass())
+            return entities
+        
+    

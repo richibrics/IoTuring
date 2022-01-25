@@ -1,11 +1,11 @@
-from Logger.Logger import Logger
+from Logger.LogObject import LogObject
 
 from threading import Thread
 import time
 
 DEFAULT_LOOP_TIMEOUT = 3
 
-class Warehouse():
+class Warehouse(LogObject):
     name = "Unnamed"
     
     def __init__(self) -> None:
@@ -42,17 +42,19 @@ class Warehouse():
         """ Must be implemented in subclasses """
         raise NotImplementedError("Please implement Loop method for this Warehouse")
 
-    def GetName(self) -> str:
+    def GetWarehouseName(self) -> str:
         return self.name
 
-    def Log(self, messageType, message) -> None:
-        Logger.getInstance().Log(messageType, self.GetName() + " Warehouse", message)
-        
+    def GetWarehouseId(self) -> str:
+        return "Warehouse." + self.GetWarehouseName()
+
+    def LogSource(self):
+        return self.GetWarehouseId()
 
     @classmethod
     def InstantiateWithConfiguration(self,configuration):
         """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
-        return 
+        return self() # here I only try to init without configurations (for those warehouses that do not override this function)
 
     @classmethod
     def ConfigurationPreset(self):

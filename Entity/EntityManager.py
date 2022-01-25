@@ -1,3 +1,4 @@
+from xmlrpc.client import Boolean
 from Entity.Entity import Entity
 from Entity.Deployments.Username.Username import Username
 
@@ -14,12 +15,13 @@ class EntityManager():
         """ Get entity name and return its class """
         return Username
 
-    def NewEntity(self, entityClass) -> Entity: 
+    def AddEntity(self, entity) -> Boolean: 
         """ Get an entity class, return an instantited entity (already added to my entites to update list) ready to be given to warehouses """
-        entity = entityClass()
         if entity not in self.entities:
             self.entities.append(entity)
-        return entity
+            return True
+        else:
+            return False
 
     def Start(self):
         self.InitializeEntities()

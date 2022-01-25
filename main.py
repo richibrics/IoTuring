@@ -24,12 +24,18 @@ if __name__ == "__main__":
     # These will be done from the configuration reader
     warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
     entities =  ConfiguratorLoader(configurator).LoadEntities()
-    #warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance())
-    for wh in warehouses:
-        for entity in entities:
-            wh.AddEntity(entity)
-        wh.Start()
 
+    # Add entites to the EntityManager
+    for entity in entities:
+        eM.AddEntity(entity)
+    
+    # Prepare entities in warehouses
+    for warehouse in warehouses:
+        for entity in entities:
+            warehouse.AddEntity(entity)
+        warehouse.Start()
+    
+    # Ready to start Entities loop
     eM.Start()
     
     logger.Log(Logger.LOG_DEBUG, "Main", "Main finished its work ;)")

@@ -1,21 +1,15 @@
 from typing import List
 from Exceptions.Exceptions import UnknownKeyException
-from Logger.Logger import Logger
+from Logger.LogObject import LogObject
 import time
 
 DEFAULT_UPDATE_TIMEOUT = 10
 
-class Entity:
+class Entity(LogObject):
     __instance = None
     name = "Unnamed"
 
     def __init__(self) -> None:
-        # Prepare the singleton
-        if Entity.__instance != None:
-            raise Exception("This class is a singleton!")
-        else:
-            Entity.__instance = self
-
         # Prepare the entity
         self.tag = ""
         self.initializeState=False
@@ -23,7 +17,6 @@ class Entity:
         self.values = {}
         self.valuesID = 0 # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
-
 
     def Initialize(self):
         """ Must be implemented in sub-classes """
@@ -34,10 +27,10 @@ class Entity:
         try:
             self.Initialize()
             self.initializeState=True
-            self.Log(Logger.LOG_INFO,"Initialization successfully completed")
+            self.Log(self.LOG_INFO,"Initialization successfully completed")
         except Exception as e:
-            self.Log(Logger.LOG_ERROR,"Initialization interrupted due to an error")
-            self.Log(Logger.LOG_ERROR,e)
+            self.Log(self.LOG_ERROR,"Initialization interrupted due to an error")
+            self.Log(self.LOG_ERROR,e)
             del(self)
     
 
@@ -50,10 +43,10 @@ class Entity:
         try:
             self.PostInitialize()
             self.postinitializeState=True
-            self.Log(Logger.LOG_INFO,"Post-initialization successfully completed")
+            self.Log(self.LOG_INFO,"Post-initialization successfully completed")
         except Exception as e:
-            self.Log(Logger.LOG_ERROR,"Post-initialization interrupted due to an error")
-            self.Log(Logger.LOG_ERROR,e)
+            self.Log(self.LOG_ERROR,"Post-initialization interrupted due to an error")
+            self.Log(self.LOG_ERROR,e)
             del(self)
 
     def CallUpdate(self):  # Call the Update method safely
@@ -61,7 +54,7 @@ class Entity:
         try:
             self.Update()
         except Exception as exc:
-            self.Log(Logger.LOG_ERROR, 'Error occured during update: ' + str(exc)) # TODO I need an exception manager
+            self.Log(self.LOG_ERROR, 'Error occured during update: ' + str(exc)) # TODO I need an exception manager
             # self.entityManager.UnloadEntity(self) # TODO Think how to improve this
 
     def Update(self):  #
@@ -71,14 +64,14 @@ class Entity:
 
     def AddKey(self,key) -> None:
         """ Register a key so after I can assign it a value """
-        self.Log(Logger.LOG_DEBUG,"Add key " + key)
+        self.Log(self.LOG_DEBUG,"Add key " + key)
         self.values[key]=None
 
     def SetValue(self,key,value) -> None:
         """ Set the value for a key """
         if key in self.KeyList():
             value = str(value)
-            self.Log(Logger.LOG_DEBUG,"Set " + key + " to " + value)
+            self.Log(self.LOG_DEBUG,"Set " + key + " to " + value)
             self.values[key]=value
         else:
             raise UnknownKeyException()
@@ -95,8 +88,8 @@ class Entity:
         return list(self.values.keys())
 
     def GetGlobalKey(self, key) -> str:
-        """ From a value key, return entityname.key to identify the value everywhere """
-        return self.GetName() + "." + key
+        """ From a value key, return entityname.key to identify the value everywhere """ 
+        return self.GetEntityId() + "." + key
 
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set a timeout between 2 updates """
@@ -113,17 +106,14 @@ class Entity:
             if self.ShouldUpdate():
                 self.CallUpdate()
 
-    def GetName(self) -> str:
+    def GetEntityName(self) -> str:
         return self.name
 
-    def Log(self, messageType, message) -> None:
-        Logger.getInstance().Log(messageType, self.GetName() + " Entity", message)
-        
-    
-    # Singleton method
-    @staticmethod
-    def getInstance():
-        """ Static access method. """
-        if Entity.__instance == None:
-            Entity()
-        return Entity.__instance
+    def GetEntityId(self)->str:
+        if self.tag is not None and self.tag != "":
+            return "Entity." + self.GetEntityName() +"." + self.tag
+        else:
+            return "Entity." + self.GetEntityName()
+
+    def LogSource(self):
+        return self.GetEntityId()

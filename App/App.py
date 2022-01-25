@@ -7,7 +7,7 @@ class App():
     # Version
     MAJOR_VERSION = "0"
     MINOR_VERSION = "0"
-    REVISION_NUMBER = "1"
+    REVISION_NUMBER = "2"
 
     @staticmethod 
     def getName() -> str:

@@ -2,7 +2,7 @@
 
 ## New Warehouse
 
-Subclasses of "Warehouse" must have this functions
+Subclasses of "Warehouse" must have this functions NOT SURE NOW
 
 ```
 

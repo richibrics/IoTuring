@@ -12,8 +12,8 @@ LOG_DEVELOPMENT = 5
 
 
 # Fill start of string with spaces to jusitfy the message (0: no padding)
-# First for type, third for source
-STRINGS_LENGTH = [8, 26]
+# First for type, second for source
+STRINGS_LENGTH = [8, 30]
 
 # number of spaces to separe the message from the previuos part of the row
 PRESTRING_MESSAGE_SEPARATOR_LEN = 2
@@ -23,4 +23,4 @@ LONG_MESSAGE_PRESTRING_CHAR = ' '
 CONSOLE_LOG_LEVEL = LOG_INFO
 FILE_LOG_LEVEL = LOG_DEBUG
 
-MESSAGE_WIDTH = 60
+MESSAGE_WIDTH = 95
