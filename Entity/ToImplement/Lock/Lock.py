@@ -1,5 +1,5 @@
 import subprocess
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 from Logger import Logger, ExceptionTracker
 
 TOPIC = 'lock_command'

@@ -1,6 +1,6 @@
 import psutil
 import math
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 
 # Virtual memory
 TOPIC_MEMORY_TOTAL = 'ram/physical_memory/total'

@@ -13,7 +13,7 @@ class EntityManager():
     @staticmethod
     def EntityNameToClass(name) -> Entity: # TODO Implement
         """ Get entity name and return its class """
-        return Username
+        raise NotImplementedError()
 
     def AddEntity(self, entity) -> Boolean: 
         """ Get an entity class, return an instantited entity (already added to my entites to update list) ready to be given to warehouses """

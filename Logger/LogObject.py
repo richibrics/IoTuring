@@ -1,6 +1,6 @@
-from ast import Str
-from pickle import NONE
-from tkinter import N
+
+
+
 from Logger.Logger import Logger
 
 class LogObject:
@@ -15,4 +15,4 @@ class LogObject:
 
     # to override in classes where I want a source different from class name
     def LogSource(self):
-        return self.__name__
+        return type(self).__name__

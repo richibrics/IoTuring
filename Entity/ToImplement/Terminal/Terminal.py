@@ -1,4 +1,4 @@
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 import subprocess
 import fnmatch
 from Logger import Logger, ExceptionTracker

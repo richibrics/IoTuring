@@ -1,5 +1,5 @@
 import psutil
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 
 
 TOPIC_PERCENTAGE = 'battery/battery_level_percentage'

@@ -1,4 +1,4 @@
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 from os import path
 from ctypes import *
 

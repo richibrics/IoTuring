@@ -1,5 +1,5 @@
 import os
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 
 
 TOPIC = 'message'

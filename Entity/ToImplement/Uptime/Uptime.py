@@ -1,9 +1,7 @@
 import uptime
-from Entities.Entity import Entity
-
+from Entity.Entity import Entity 
 
 TOPIC = 'uptime'
-
 
 class Uptime(Entity):
     def Initialize(self):

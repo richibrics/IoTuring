@@ -1,20 +1,22 @@
 from typing import List
-from Exceptions.Exceptions import UnknownKeyException
+from Exceptions.Exceptions import UnknownEntityKeyException
 from Logger.LogObject import LogObject
+from Entity.EntityData import EntitySensor, EntityCommand
 import time
 
 DEFAULT_UPDATE_TIMEOUT = 10
 
 class Entity(LogObject):
-    __instance = None
     name = "Unnamed"
 
     def __init__(self) -> None:
         # Prepare the entity
+        self.entitySensors = [] 
+        self.entityCommands = []
+
         self.tag = ""
         self.initializeState=False
-        self.postinitializeState=False
-        self.values = {}
+        self.postinitializeState=False 
         self.valuesID = 0 # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
 
@@ -62,34 +64,20 @@ class Entity(LogObject):
         # Can't be called directly, cause stops everything in exception, call only using CallUpdate
         pass  
 
-    def AddKey(self,key) -> None:
-        """ Register a key so after I can assign it a value """
-        self.Log(self.LOG_DEBUG,"Add key " + key)
-        self.values[key]=None
+    # TODO Safe to remove ?
+    # def AddKey(self,key) -> None:
+    #     """ Register a key so after I can assign it a value """
+    #     self.Log(self.LOG_DEBUG,"Add key " + key)
+    #     self.values[key]=None
 
-    def SetValue(self,key,value) -> None:
-        """ Set the value for a key """
-        if key in self.KeyList():
-            value = str(value)
-            self.Log(self.LOG_DEBUG,"Set " + key + " to " + value)
-            self.values[key]=value
-        else:
-            raise UnknownKeyException()
+    def SetEntitySensorValue(self,key,value) -> None:
+        """ Set the value for an entity sensor """
+        value = str(value)
+        self.GetEntitySensor(key).SetValue(value)
 
-    def GetValue(self,key) -> str:
-        """ Get value using its key """
-        if key in self.KeyList():
-            return self.values[key]
-        else:
-            raise UnknownKeyException()
-
-    def KeyList(self) -> List:
-        """ Return list of registered keys """
-        return list(self.values.keys())
-
-    def GetGlobalKey(self, key) -> str:
-        """ From a value key, return entityname.key to identify the value everywhere """ 
-        return self.GetEntityId() + "." + key
+    def GetEntitySensorValue(self,key) -> str:
+        """ Get value using its entity sensor key """
+        return self.GetEntitySensor(key).GetValue()
 
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set a timeout between 2 updates """
@@ -106,6 +94,26 @@ class Entity(LogObject):
             if self.ShouldUpdate():
                 self.CallUpdate()
 
+    def RegisterEntitySensor(self, entitySensor: EntitySensor):
+        self.entitySensors.append(entitySensor)
+
+    def RegisterEntityCommand(self, entityCommand: EntityCommand):
+        self.entityCommands.append(entityCommand)
+
+    def GetEntitySensors(self) -> List:
+        """ Return list of registered entity sensors """
+        return self.entitySensors.copy() # Safe return: nobody outside can change the value !
+
+    def GetEntityCommands(self) -> List:
+        """ Return list of registered keys """
+        return self.entityCommands() # Safe return: nobody outside can change the callback !
+
+    def GetEntitySensor(self,key) -> EntitySensor:
+        for sensor in self.entitySensors:
+            if sensor.GetKey() == key:
+                return sensor
+        raise UnknownEntityKeyException
+
     def GetEntityName(self) -> str:
         return self.name
 
@@ -117,3 +125,4 @@ class Entity(LogObject):
 
     def LogSource(self):
         return self.GetEntityId()
+

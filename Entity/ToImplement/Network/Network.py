@@ -4,7 +4,7 @@ import psutil
 import re
 import subprocess
 
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 from ValueFormatter import ValueFormatter
 
 supports_win_signal_strenght = True

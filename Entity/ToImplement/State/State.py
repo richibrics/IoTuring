@@ -1,5 +1,5 @@
 import psutil
-from Entities.Entity import Entity
+from Entity.Entity import Entity 
 import signal, sys
 import time
 

@@ -262,6 +262,7 @@ class MenuPreset():
             result[entry['key']]=entry['value']
         return result
                 
+
 class ConfiguratorLoader(LogObject):
     configurator = None
     def __init__(self,configurator: Configurator) -> None:
@@ -282,9 +283,9 @@ class ConfiguratorLoader(LogObject):
         for activeEntity in self.configurations[KEY_ACTIVE_ENTITIES]:
             entityClass = ecm.GetClassFromName(activeEntity)
             if entityClass is None:
-                self.Log(self.LOG_ERROR,"Can't find",activeEntity,"entity, check your configurations.")
+                self.Log(self.LOG_ERROR,"Can't find " + activeEntity + " entity, check your configurations.")
             else:
                 entities.append(entityClass())
-            return entities
+        return entities
         
     

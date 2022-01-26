@@ -1,5 +1,5 @@
-from Logger.Logger import Logger
-from App.App import App
+from Logger.LogObject import LogObject
+from MyApp.App import App
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 
@@ -13,7 +13,7 @@ MQTTClient Operations:
 
 """
 
-class MQTTClient:
+class MQTTClient(LogObject):
     client = None
     connected = False
 
@@ -33,7 +33,7 @@ class MQTTClient:
         self.topicsSubscribed = []
 
         
-        self.Log(Logger.LOG_INFO, 'Preparing MQTT client')
+        self.Log(self.LOG_INFO, 'Preparing MQTT client')
         self.SetupClient()
 
 
@@ -50,7 +50,7 @@ class MQTTClient:
 
 
     def AsyncConnect(self):
-        self.Log(Logger.LOG_INFO, 'MQTT Client ready to connect to the broker')
+        self.Log(self.LOG_INFO, 'MQTT Client ready to connect to the broker')
         # Connect async to the broker
         # If broker is not reachable wait till he's reachable
         self.client.connect_async(self.address, port=self.port)
@@ -62,14 +62,14 @@ class MQTTClient:
 
     def Event_OnClientConnect(self, client, userdata, flags, rc):
         if rc == 0:  # Connections is OK
-            self.Log(Logger.LOG_INFO, "Connection established")
+            self.Log(self.LOG_INFO, "Connection established")
             self.connected = True
             self.SubscribeToAllTopics()
         else:
-            self.Log(Logger.LOG_ERROR, "Connection error")
+            self.Log(self.LOG_ERROR, "Connection error")
 
     def Event_OnClientDisconnect(self, client, userdata, rc):
-        self.Log(Logger.LOG_ERROR, "Connection lost")
+        self.Log(self.LOG_ERROR, "Connection lost")
         self.connected = False
         self.topicsSubscribed.clear()
 
@@ -107,6 +107,10 @@ class MQTTClient:
         pass
     
     # LOG
+    def LogSource(self):
+        return "MQTT"
 
-    def Log(self, messageType, message):
-        Logger.getInstance().Log(messageType, 'MQTT', message)
+    # NORMALIZE
+    @staticmethod
+    def NormalizeTopic(entityDataId) -> str:
+        return entityDataId.replace(".","/")

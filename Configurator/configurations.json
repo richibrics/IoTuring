@@ -1,1 +1,1 @@
-{"active_entities": ["Username", "Username2"], "active_warehouses": [{"type": "Console"}]}
+{"active_entities": ["Username", "Os"], "active_warehouses": [{"address": "192.168.1.19", "port": 1883, "name": "LenovoYoga", "username": "", "password": "", "type": "MQTT"}]}

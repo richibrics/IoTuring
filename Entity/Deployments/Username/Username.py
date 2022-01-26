@@ -1,5 +1,6 @@
 import os
 from Entity.Entity import Entity
+from Entity.EntityData import EntitySensor
 
 KEY_USERNAME = "username"
 
@@ -7,8 +8,10 @@ class Username(Entity):
     name = "Username"
 
     def Initialize(self):
-        self.AddKey(KEY_USERNAME)
-        self.SetValue(KEY_USERNAME, str(self.GetUsername())) # Fixed value
+        self.RegisterEntitySensor(EntitySensor(self,KEY_USERNAME))
+
+    def PostInitialize(self):
+        self.SetEntitySensorValue(KEY_USERNAME,self.GetUsername())
 
     def Update(self):
         pass
@@ -19,4 +22,3 @@ class Username(Entity):
 
         # Gives username by splitting path based on OS
         return os.path.split(userhome)[-1] 
-

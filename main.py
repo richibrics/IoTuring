@@ -1,4 +1,4 @@
-from App.App import App
+from MyApp.App import App
 from Configurator.Configurator import Configurator, ConfiguratorLoader
 from Entity.Deployments.Username.Username import Username
 from Entity.EntityManager import EntityManager
