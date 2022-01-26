@@ -1,4 +1,4 @@
-from Configurator.Configurator import MenuPreset
+from Configurator.MenuPreset import MenuPreset
 from Warehouse.Deployments.MQTTWarehouse.MQTTWarehouse import MQTTWarehouse
 
 class HomeAssistantWarehouse(MQTTWarehouse):

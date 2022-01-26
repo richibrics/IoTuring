@@ -5,8 +5,9 @@ import inspect  # to get this file path
 from datetime import datetime  # for logging purpose and filename
 import json  # to print a dict easily
 
-
+# Singleton pattern used
 class Logger():
+
     from Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
     __instance = None
 
@@ -16,7 +17,7 @@ class Logger():
     def __init__(self) -> None:
         # Prepare the singleton
         if Logger.__instance != None:
-            raise Exception("This class is a singleton!")
+            raise Exception("This class is a singleton, use .getInstance() to access it!")
         else:
             Logger.__instance = self
 

@@ -6,6 +6,8 @@ from Logger.LogObject import LogObject
 from ClassManager.EntityClassManager import EntityClassManager
 from ClassManager.WarehouseClassManager import WarehouseClassManager
 
+from Configurator.MenuPreset import MenuPreset
+
 BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
 
 KEY_ACTIVE_ENTITIES = "active_entities"
@@ -13,7 +15,7 @@ KEY_ACTIVE_WAREHOUSES = "active_warehouses"
 
 KEY_WAREHOUSE_TYPE = "type"
 
-class Configurator:
+class Configurator(LogObject):
     # Must be in the same folder of this file
     configurations_filename = "configurations.json"
 
@@ -22,9 +24,11 @@ class Configurator:
         self.LoadConfigurations()
 
     def GetConfigurations(self):
+        """ Return a copy of the configurations dict"""
         return self.config.copy() # Safe return
 
     def Menu(self) -> None:
+        """ UI for Entities and Warehouses settings """
         run_app = False
         while(not run_app):
             print("\n1 - Select entities")
@@ -52,6 +56,7 @@ class Configurator:
                     choice = False
 
     def SelectEntities(self) -> None:
+        """ UI for Entities settings """
         ecm = EntityClassManager()
         while(True):
             print("\nSelect your entities (X for enabled):")
@@ -76,16 +81,24 @@ class Configurator:
                                 # Disable it (remove from active entities list)
                                 self.RemoveActiveEntity(availableEntities[choice])
                             else:
-                                # Enable it (add to active entities list)
-                                self.AddActiveEntity(availableEntities[choice])
+                                # Enable it (add to active entities list) if all dep entity are active, otherwise tell which dependencies must be actived before
+                                if self.CheckDependencies(availableEntities[choice],ecm):
+                                    self.AddActiveEntity(availableEntities[choice])
+                                else:
+                                    self.PrintDependencyError(availableEntities[choice],ecm)
                             choice = True
                         else:
-                            raise Exception("Choice out of entities range")
-                    except:
+                            raise IndexError("Choice out of entities range")
+                    except IndexError:
                         choice = False
+                        print("Please insert a valid Entity index")
+                    except Exception as e:
+                        choice = False
+                        self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
 
 
     def ManageWarehouses(self) -> None:
+        """ UI for Warehouses settings """
         wcm = WarehouseClassManager()
         
         while(True):
@@ -109,13 +122,16 @@ class Configurator:
                             self.ManageSingleWarehouse(availableWarehouses[choice].replace("Warehouse",""),wcm)
                             choice = True
                         else:
-                            print("Invalid choice")
-                            raise Exception("Choice out of warehouses range")
-                    except Exception as e:
-                        print("Error in warehouses menu:",str(e))
+                            raise IndexError("Choice out of warehouses range")
+                    except IndexError:
                         choice = False
+                        print("Please insert a valid Warehouse index")
+                    except Exception as e:
+                        choice = False
+                        self.Log(self.LOG_ERROR,"Error in Warehouse select menu: " + str(e))
 
     def LoadConfigurations(self) -> None:
+        """ Load into a dict in self the configurations file in this script's folder """
         thisFolder = os.path.dirname(inspect.getfile(Configurator))
         path = os.path.join(thisFolder, self.configurations_filename)
         try:
@@ -125,12 +141,14 @@ class Configurator:
             self.config = BLANK_CONFIGURATION
 
     def WriteConfigurations(self) -> None:
+        """ Save to configurations file in this script's folder the dict in self"""
         thisFolder = os.path.dirname(inspect.getfile(Configurator))
         path = os.path.join(thisFolder, self.configurations_filename)
         with open(path, "w") as f:
             f.write(json.dumps(self.config))
 
     def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
+        """ UI for single Warehouse settings """
         print("\nWhat do you want to do with " + warehouseName + "?")
         if self.IsWarehouseActive(warehouseName):
             print("E - Edit the warehouse settings")
@@ -151,17 +169,21 @@ class Configurator:
                 self.AddActiveWarehouse(warehouseName,wcm)
 
     def IsEntityActive(self, entityName) -> bool:
+        """ Return True if an Entity is active """
         return entityName in self.config[KEY_ACTIVE_ENTITIES]
 
     def AddActiveEntity(self, entityName) -> None:
+        """ Add entity name to the list of active entities if not already present """
         if not entityName in self.config[KEY_ACTIVE_ENTITIES]:
             self.config[KEY_ACTIVE_ENTITIES].append(entityName)
    
     def RemoveActiveEntity(self, entityName) -> None:
+        """ Remove entity name from the list of active entities if present """
         if entityName in self.config[KEY_ACTIVE_ENTITIES]:
             self.config[KEY_ACTIVE_ENTITIES].remove(entityName)
 
     def IsWarehouseActive(self, warehouseName) -> bool:
+        """ Return True if a warehouse is active """
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
             if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 return True
@@ -193,12 +215,14 @@ class Configurator:
             print("Error during preset loading: " + str(e))
 
     def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+        """ UI for single Warehouse settings edit """
         print("You can't do that at the moment bro")
         # MenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to readd it later
         # TO implement only when I know how to add removable value while editing configurations
         pass # TODO Implement
    
     def RemoveActiveWarehouse(self, warehouseName) -> None:
+        """ Remove warehouse name from the list of active warehouses if present """
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
             if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 # I remove this wh from the list
@@ -212,80 +236,23 @@ class Configurator:
         self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
         print("Configuration added for \""+whName+"\" :)")
 
+    def CheckDependencies(self,entity, entityClassManager: EntityClassManager):
+        """ Return True if there aren't entities that must be loaded before the passed one """
+        # Each entity has a dependency list. If all those dependencies are already active, I return True so the current entity can be activated
+        entityClass = entityClassManager.GetClassFromName(entity)
+        for dependency in entityClass.GetDependenciesList():
+            if dependency not in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+                return False
+        return True
 
+    def PrintDependencyError(self,entity, entityClassManager: EntityClassManager):
+        """ Run only if if self.CheckDependencies returned False. Print a message with the dependencies to activate before activating this entity """
 
-class MenuPreset():
+        print("!!! You can't activate this Entity. Please activate the following entities in order to use this one: !!!\n")
 
-    def __init__(self) -> None:
-        self.preset = []
+        entityClass = entityClassManager.GetClassFromName(entity)
+        for dependency in entityClass.GetDependenciesList():
+            if dependency not in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+                print("---> " + dependency + " <----")
 
-    def AddEntry(self,name,key,default=None,mandatory=False):
-        self.preset.append({"name":name,"key":key,"default":default,"mandatory":mandatory,"value": None})
-
-    def ListEntries(self):
-        return self.preset
-
-    def Question(self,id):
-        try:
-            question = ""
-            if id<len(self.preset):
-                question = "Add value for \""+self.preset[id]["name"]+"\""
-                if self.preset[id]['mandatory']:
-                    question = question + " {!}"
-                if self.preset[id]["default"] is not None:
-                    question = question + " [" + str(self.preset[id]["default"])+"]"
-
-                question = question + ": "
-                
-                value = input(question)
-
-                while value == "" and self.preset[id]["mandatory"]: # Mandatory loop
-                    value = input("You must provide a value for this key: ")
-
-                if value == "":
-                    if self.preset[id]["default"] is not None:
-                        self.preset[id]['value'] = self.preset[id]["default"] # Set in the preset
-                        return self.preset[id]["default"] # Also return it
-                    else:
-                        self.preset[id]['value'] = None # Set in the preset
-                        return None # Also return it
-                else:
-                    self.preset[id]['value'] = value # Set in the preset
-                    return value # Also return it
-        except Exception as e:
-            print("Error while making the question:",e)
-    
-    def GetDict(self) -> dict:
-        """ Get a dict with keys and responses"""
-        result = {}
-        for entry in self.preset:
-            result[entry['key']]=entry['value']
-        return result
-                
-
-class ConfiguratorLoader(LogObject):
-    configurator = None
-    def __init__(self,configurator: Configurator) -> None:
-        self.configurations = configurator.GetConfigurations()
-
-    def LoadWarehouses(self) -> list: # Return list of instances initialized using their configurations
-        warehouses = []
-        wcm = WarehouseClassManager()
-        for activeWarehouse in self.configurations[KEY_ACTIVE_WAREHOUSES]:
-            # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
-            warehouses.append(wcm.GetClassFromName(activeWarehouse[KEY_WAREHOUSE_TYPE]+"Warehouse").InstantiateWithConfiguration(activeWarehouse))
-        return warehouses
-
-    # warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance()): may be useful
-    def LoadEntities(self) -> list: # Return list of entities initialized
-        entities = []
-        ecm = EntityClassManager()
-        for activeEntity in self.configurations[KEY_ACTIVE_ENTITIES]:
-            entityClass = ecm.GetClassFromName(activeEntity)
-            if entityClass is None:
-                self.Log(self.LOG_ERROR,"Can't find " + activeEntity + " entity, check your configurations.")
-            else:
-                entities.append(entityClass())
-        return entities
-        
-    
+        print("\nThank you for the attention")

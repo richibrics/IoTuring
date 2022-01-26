@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-from Configurator.Configurator import MenuPreset
+from Configurator.MenuPreset import MenuPreset
 from Protocols.MQTTClient.MQTTClient import MQTTClient
 from Warehouse.Warehouse import Warehouse
 from MyApp.App import App

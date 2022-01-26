@@ -7,7 +7,8 @@ import time
 DEFAULT_UPDATE_TIMEOUT = 10
 
 class Entity(LogObject):
-    name = "Unnamed"
+    NAME = "Unnamed"
+    DEPENDENCIES = []
 
     def __init__(self) -> None:
         # Prepare the entity
@@ -115,7 +116,12 @@ class Entity(LogObject):
         raise UnknownEntityKeyException
 
     def GetEntityName(self) -> str:
-        return self.name
+        return self.NAME
+
+    @classmethod
+    def GetDependenciesList(self) -> str:
+        """ Static method, (safe) return the DEPENDENCIES list in the entity """
+        return self.DEPENDENCIES.copy() # Safe return
 
     def GetEntityId(self)->str:
         if self.tag is not None and self.tag != "":

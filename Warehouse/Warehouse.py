@@ -1,4 +1,5 @@
 from Logger.LogObject import LogObject
+from Entity.EntityManager import EntityManager
 
 from threading import Thread
 import time
@@ -9,12 +10,7 @@ class Warehouse(LogObject):
     name = "Unnamed"
     
     def __init__(self) -> None:
-        self.entities = []
         self.loopTimeout = DEFAULT_LOOP_TIMEOUT
-
-    def AddEntity(self, entityInstance) -> None:
-        """ Add an entity instance to the warehouse's enitities """
-        self.entities.append(entityInstance)
 
     def Start(self) -> None:
         """ Start a thread that will loop the Loop function"""
@@ -36,7 +32,7 @@ class Warehouse(LogObject):
                 self.Loop()
 
     def GetEntities(self) -> list:
-        return self.entities
+        return EntityManager.getInstance().GetEntities(includePassive=False)
 
     def Loop(self) -> None:
         """ Must be implemented in subclasses """

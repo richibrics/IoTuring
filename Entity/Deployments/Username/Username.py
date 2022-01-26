@@ -5,7 +5,7 @@ from Entity.EntityData import EntitySensor
 KEY_USERNAME = "username"
 
 class Username(Entity):
-    name = "Username"
+    NAME = "Username"
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self,KEY_USERNAME))

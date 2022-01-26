@@ -1,8 +1,8 @@
 import subprocess
-from Entity.Entity import Entity 
-from Logger import Logger, ExceptionTracker
+from Entity.Entity import Entity
+from Entity.EntityData import EntityCommand
 
-TOPIC = 'lock_command'
+KEY_LOCK = 'lock'
 
 commands = {
     'Windows': {
@@ -20,14 +20,18 @@ commands = {
 
 
 class Lock(Entity):
+    NAME = "Lock"
+    DEPENDENCIES = ["Os","DesktopEnvironment"]
+
     def Initialize(self):
-        self.SubscribeToTopic(TOPIC)
+        self.RegisterEntityCommand(EntityCommand(self,KEY_LOCK,self.Callback_Lock))
 
     def PostInitialize(self):
+        pass
+
+    def Callback_Lock(self, message):
         self.os = self.GetOS()
         self.de = self.GetDE()
-
-    def Callback(self, message):
         if self.os in commands:
             if self.de in commands[self.os]:
                 try:

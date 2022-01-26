@@ -5,7 +5,7 @@ from os import path
 import importlib.util
 import importlib.machinery
 import sys, inspect
-from Logger.Logger import Logger
+from Logger.LogObject import LogObject
 from ClassManager import consts
 
 # This is a parent class
@@ -21,9 +21,8 @@ from ClassManager import consts
 # The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
 
 
-class ClassManager(): 
+class ClassManager(LogObject): 
     def __init__(self):
-        self.logger=Logger.getInstance()
         self.modulesFilename=[]
         self.mainPath = path.dirname(path.abspath(
             sys.modules[self.__class__.__module__].__file__))
@@ -43,12 +42,15 @@ class ClassManager():
 
 
     def LoadModule(self,path): # Get module and load it from the path
-        loader = importlib.machinery.SourceFileLoader(self.ModuleNameFromPath(path), path)
-        spec = importlib.util.spec_from_loader(loader.name, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        moduleName=os.path.split(path)[1][:-3]
-        sys.modules[moduleName]=module
+        try:
+            loader = importlib.machinery.SourceFileLoader(self.ModuleNameFromPath(path), path)
+            spec = importlib.util.spec_from_loader(loader.name, loader)
+            module = importlib.util.module_from_spec(spec)
+            loader.exec_module(module)
+            moduleName=os.path.split(path)[1][:-3]
+            sys.modules[moduleName]=module
+        except Exception as e:
+            self.Log(self.LOG_ERROR,"Error while loading module " + path + ": " + str(e))
         return module
 
     def GetClassFromModule(self,module): # From the module passed, I search for a Class that has classNmae=moduleName
@@ -61,7 +63,7 @@ class ClassManager():
     def GetModulesFilename(self,_path): # List files in the _path directory and get only files in subfolders
         classesRootPath=path.join(self.mainPath,_path)
         if os.path.exists(classesRootPath):
-            self.Log(Logger.LOG_DEVELOPMENT,"Looking for python files in \"" + _path + os.sep +  "\"...")
+            self.Log(self.LOG_DEVELOPMENT,"Looking for python files in \"" + _path + os.sep +  "\"...")
             result = list(Path(classesRootPath).rglob("*.py"))
             entities = []
             for file in result:
@@ -72,7 +74,7 @@ class ClassManager():
                         entities.append(filename)
 
             self.modulesFilename = self.modulesFilename + entities
-            self.Log(Logger.LOG_DEVELOPMENT,"Found " + str(len(entities)) + " modules files")
+            self.Log(self.LOG_DEVELOPMENT,"Found " + str(len(entities)) + " modules files")
 
 
     def ModuleNameFromPath(self,path):
@@ -84,6 +86,3 @@ class ClassManager():
         for py in self.modulesFilename:
             res.append(path.basename(py).split(".py")[0])
         return res
-
-    def Log(self,_type,message):
-        self.logger.Log(_type,"Class Manager",message)

@@ -7,7 +7,7 @@ FIXED_VALUE_OS_MACOS = "macOS"
 KEY_OS = 'operating_system'
 
 class Os(Entity):
-    name = "Os"
+    NAME = "Os"
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self,KEY_OS))
