@@ -8,7 +8,7 @@ CONTENTS_VALUE_OPTION_KEY = "value"
 
 # TODO Here I need the possibility for fixed value -> a configuration
 class DesktopEnvironment(Entity):
-    NAME = "DestopEnvironment"
+    NAME = "DesktopEnvironment"
     
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self,KEY_DE))

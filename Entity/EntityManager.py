@@ -1,8 +1,3 @@
-from typing import List
-from xmlrpc.client import Boolean
-from Entity.Entity import Entity
-from Entity.Deployments.Username.Username import Username
-
 from threading import Thread
 
 # Singleton pattern used
@@ -24,7 +19,7 @@ class EntityManager():
         self.passiveEntities = []
 
     @staticmethod
-    def EntityNameToClass(name) -> Entity: # TODO Implement
+    def EntityNameToClass(name): # TODO Implement
         """ Get entity name and return its class """
         raise NotImplementedError()
 
@@ -57,11 +52,23 @@ class EntityManager():
         for entity in self.GetEntities(includePassive=True):
             entity.CallPostInitialize()
 
-    def ManageUpdates(self): # TODO Implement
+    def ManageUpdates(self): 
         """ Start a thread for each entity in which it will update periodically """
         for entity in self.GetEntities(includePassive=True):
             Thread(target=entity.LoopThread).start()
         
+
+    def GetDependentEntitySensorValue(self, callerEntity, entityToFind: str, dataKeyToFind: str):
+        """ Called by "callerEntity", return the value of "entityToFind"."dataKeyToFind" if it has value and if the callerEntity has the permission to access that entity.
+            Permission is granted if "entityToFind" is present in "callerEntity".GetDependenciesList() """
+        if entityToFind in callerEntity.GetDependenciesList(): # The entity to find must be in the list of entities that the caller entity (the one that wants the other entity) asked in the dependencies
+            for entity in self.GetEntities(includePassive=True):
+                if entity.GetEntityName() == entityToFind:
+                    if not entity.GetEntitySensorByKey(dataKeyToFind).HasValue():
+                        raise Exception("The Entity sensor you asked for hasn't got a value")
+                    return entity.GetEntitySensorByKey(dataKeyToFind).GetValue() # I don't return the entity or the entitydata, because I don't want any edit from outside its entity !
+
+
     # Singleton method
     @staticmethod
     def getInstance():

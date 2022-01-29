@@ -1,4 +1,5 @@
 from typing import List
+from Entity.EntityManager import EntityManager
 from Exceptions.Exceptions import UnknownEntityKeyException
 from Logger.LogObject import LogObject
 from Entity.EntityData import EntitySensor, EntityCommand
@@ -74,11 +75,13 @@ class Entity(LogObject):
     def SetEntitySensorValue(self,key,value) -> None:
         """ Set the value for an entity sensor """
         value = str(value)
-        self.GetEntitySensor(key).SetValue(value)
+        self.GetEntitySensorByKey(key).SetValue(value)
 
     def GetEntitySensorValue(self,key) -> str:
-        """ Get value using its entity sensor key """
-        return self.GetEntitySensor(key).GetValue()
+        """ Get value using its entity sensor key if the value is present (else raise an exception) """
+        if not self.GetEntitySensorByKey(key).HasValue():
+            raise Exception("The Entity sensor you asked for hasn't got a value")
+        return self.GetEntitySensorByKey(key).GetValue()
 
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set a timeout between 2 updates """
@@ -110,7 +113,7 @@ class Entity(LogObject):
         """ Return list of registered keys """
         return self.entityCommands.copy() # Safe return: nobody outside can change the callback !
 
-    def GetEntitySensor(self,key) -> EntitySensor:
+    def GetEntitySensorByKey(self,key) -> EntitySensor:
         for sensor in self.entitySensors:
             if sensor.GetKey() == key:
                 return sensor
@@ -123,6 +126,12 @@ class Entity(LogObject):
     def GetDependenciesList(self) -> str:
         """ Static method, (safe) return the DEPENDENCIES list in the entity """
         return self.DEPENDENCIES.copy() # Safe return
+
+    def GetDependentEntitySensorValue(self, entityToFind, dataKeyToFind):
+        """ Return the value of "entityToFind"."dataKeyToFind" if it has value and I have the permission to access that entity.
+            Permission is granted if "entityToFind" is present in self.GetDependenciesList() """
+        
+        return EntityManager.getInstance().GetDependentEntitySensorValue(self,entityToFind,dataKeyToFind)
 
     def GetEntityId(self)->str:
         if self.tag is not None and self.tag != "":

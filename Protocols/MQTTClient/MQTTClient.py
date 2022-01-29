@@ -78,7 +78,6 @@ class MQTTClient(LogObject):
         try:
             topicCallback = self.GetTopicCallback(message.topic)
             topicCallback.Call_Callback(message)
-            self.topicCallbacks.remove(topicCallback)
         except Exception as e:
             self.Log(self.LOG_WARNING,"Error in message receive: " + str(e))
 

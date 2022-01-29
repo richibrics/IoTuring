@@ -30,8 +30,9 @@ class Lock(Entity):
         pass
 
     def Callback_Lock(self, message):
-        self.os = self.GetOS()
-        self.de = self.GetDE()
+        self.os = self.GetDependentEntitySensorValue('Os',"operating_system")
+        self.de = self.GetDependentEntitySensorValue(
+            'DesktopEnvironment','desktop_environment')
         if self.os in commands:
             if self.de in commands[self.os]:
                 try:
@@ -46,22 +47,3 @@ class Lock(Entity):
         else:
             raise Exception(
                 'No lock command for this Operating System: ' + self.os)
-
-    def GetOS(self):
-        # Get OS from OsSensor and get temperature based on the os
-        os = self.FindEntity('Os')
-        if os:
-            if not os.postinitializeState: # I run this function in post initialize so the os sensor might not be ready
-                os.CallPostInitialize()
-            os.CallUpdate()
-            return os.GetTopicValue()
-
-    def GetDE(self):
-        # Get OS from OsSensor and get temperature based on the os
-        de = self.FindEntity(
-            'DesktopEnvironment')
-        if de:
-            if not de.postinitializeState: # I run this function in post initialize so the os sensor might not be ready
-                de.CallPostInitialize()
-            de.CallUpdate()
-            return de.GetTopicValue()
