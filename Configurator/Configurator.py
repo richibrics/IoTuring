@@ -246,7 +246,8 @@ class Configurator(LogObject):
         return True
 
     def PrintDependencyError(self,entity, entityClassManager: EntityClassManager):
-        """ Run only if if self.CheckDependencies returned False. Print a message with the dependencies to activate before activating this entity """
+        """ Run only if if self.CheckDependencies returned False. 
+            Prints a message with the dependencies the user has to activate before activating this entity """
 
         print("!!! You can't activate this Entity. Please activate the following entities in order to use this one: !!!\n")
 

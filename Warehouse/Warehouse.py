@@ -4,7 +4,7 @@ from Entity.EntityManager import EntityManager
 from threading import Thread
 import time
 
-DEFAULT_LOOP_TIMEOUT = 3
+DEFAULT_LOOP_TIMEOUT = 30
 
 class Warehouse(LogObject):
     name = "Unnamed"
@@ -14,6 +14,7 @@ class Warehouse(LogObject):
 
     def Start(self) -> None:
         """ Start a thread that will loop the Loop function"""
+        self.RegisterEntityCommands()
         Thread(target=self.LoopThread).start()
 
     def SetLoopTimeout(self, timeout) -> None:
@@ -34,8 +35,9 @@ class Warehouse(LogObject):
     def GetEntities(self) -> list:
         return EntityManager.getInstance().GetEntities(includePassive=False)
 
+    # Called by "LoopThread", with time constant defined in "ShouldCallLoop"
     def Loop(self) -> None:
-        """ Must be implemented in subclasses """
+        """ Must be implemented in subclasses, autoun at Warehouse __init__ """
         raise NotImplementedError("Please implement Loop method for this Warehouse")
 
     def GetWarehouseName(self) -> str:
@@ -46,6 +48,10 @@ class Warehouse(LogObject):
 
     def LogSource(self):
         return self.GetWarehouseId()
+
+    def RegisterEntityCommands(self):
+        """ Method for sub-class, autoun at Warehouse __init__ to prepare the entity commands events"""    
+        pass
 
     @classmethod
     def InstantiateWithConfiguration(self,configuration):

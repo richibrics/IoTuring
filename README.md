@@ -8,6 +8,7 @@ Then: each Warehouse runs async; an entityManager that works async and will call
 
 Maybe each entity has its thread where it sleep and wakes up when it has to update
 
+Attention: all entity must add the Command sensors in Initialize or PostInitialize and not after, so the Warehouses can handle them at initialization time
 
 ### Configurator
 

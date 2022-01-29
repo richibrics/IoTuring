@@ -5,7 +5,8 @@ from Warehouse.Warehouse import Warehouse
 from MyApp.App import App
 
 
-TOPIC_FORMAT = "{}/{}/{}" # That stands for: App name, Client name, EntityData Id
+TOPIC_FORMAT = "{}/{}/{}"  # That stands for: App name, Client name, EntityData Id
+
 
 class MQTTWarehouse(Warehouse):
     name = "MQTT"
@@ -16,15 +17,24 @@ class MQTTWarehouse(Warehouse):
         self.client = MQTTClient(address, port, clientName, username, password)
         self.client.AsyncConnect()
 
+    def RegisterEntityCommands(self):
+        """ Add EntityCommands to the MQTT client (subscribe to them) """
+        for entity in self.GetEntities():
+            for entityCommand in entity.GetEntityCommands():
+                self.client.AddNewTopicToSubscribeTo(
+                    self.MakeTopic(entityCommand), entityCommand.CallCallback)
+                self.Log(self.LOG_DEBUG, entityCommand.GetId() + " subscribed to " + self.MakeTopic(entityCommand))
+
     def Loop(self):
         # Here in Loop I send sensor's data (command callbacks are not managed here)
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
                 if(entitySensor.HasValue()):
-                    self.client.SendTopicData(self.MakeTopic(entitySensor), entitySensor.GetValue())
+                    self.client.SendTopicData(self.MakeTopic(
+                        entitySensor), entitySensor.GetValue())
 
-    def MakeTopic(self,entityData):
-        return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(),self.clientName,entityData.GetId()))
+    def MakeTopic(self, entityData):
+        return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, entityData.GetId()))
 
     # CONFIGURATION
 

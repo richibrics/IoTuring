@@ -99,6 +99,7 @@ class Entity(LogObject):
         self.entitySensors.append(entitySensor)
 
     def RegisterEntityCommand(self, entityCommand: EntityCommand):
+        """ Add EntityCommand to the Entity. This action must be in Initialize or in PostInitialize, so the Waerhouses can subscribe to them at initializing time"""
         self.entityCommands.append(entityCommand)
 
     def GetEntitySensors(self) -> List:
@@ -107,7 +108,7 @@ class Entity(LogObject):
 
     def GetEntityCommands(self) -> List:
         """ Return list of registered keys """
-        return self.entityCommands() # Safe return: nobody outside can change the callback !
+        return self.entityCommands.copy() # Safe return: nobody outside can change the callback !
 
     def GetEntitySensor(self,key) -> EntitySensor:
         for sensor in self.entitySensors:

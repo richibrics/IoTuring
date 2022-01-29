@@ -24,8 +24,8 @@ if __name__ == "__main__":
     eM = EntityManager.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
     
     # These will be done from the configuration reader
-    warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
     entities =  ConfiguratorLoader(configurator).LoadEntities()
+    warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
 
     # Add entites to the EntityManager
     for entity in entities:
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # Ready to start Entities loop
     eM.Start()
     
-    # Prepare  warehouses
+    # Prepare warehouses -  # after entities, so entitites have already told to which EntityCommand I need to subscribe !
     for warehouse in warehouses:
         warehouse.Start()
     

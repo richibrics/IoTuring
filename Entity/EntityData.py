@@ -43,12 +43,15 @@ class EntityCommand(EntityData):
         EntityData.__init__(self, entity, key)
         self.callbackFunction = callbackFunction
 
-    def CallCallback(self, payload):
+    def CallCallback(self, message):
+        """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """
         self.Log(self.LOG_DEBUG, "Callback")
         try:
-            self.RunCallback(payload)
+            self.RunCallback(message)
         except Exception as e:
-            self.Log(self.LOG_ERROR, "Error while running callback:", str(e))
+            self.Log(self.LOG_ERROR, "Error while running callback: " + str(e))
 
-    def RunCallback(self, payload):
-        self.callbackFunction(payload)
+    def RunCallback(self, message):
+        """ Called only by CallCallback. 
+            Run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """
+        self.callbackFunction(message)
