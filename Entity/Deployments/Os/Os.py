@@ -1,8 +1,8 @@
 import platform
 from Entity.Entity import Entity
 from Entity.EntityData import EntitySensor
+from Entity import consts
 
-FIXED_VALUE_OS_MACOS = "macOS"
 
 KEY_OS = 'operating_system'
 
@@ -22,5 +22,11 @@ class Os(Entity):
     def GetOperatingSystem(self):
         os = platform.system()
         if os == 'Darwin':  # It's macOS
-            return FIXED_VALUE_OS_MACOS
+            return consts.OS_FIXED_VALUE_MACOS
+        elif os == "Linux":
+            return consts.OS_FIXED_VALUE_LINUX
+        elif os == "Windows":
+            return consts.OS_FIXED_VALUE_WINDOWS
+        else:
+            self.Log(self.LOG_WARNING,"Operating system not in the fixed list. Please open a Git issue and warn about this: OS = \"" + os + "\"")
         return os

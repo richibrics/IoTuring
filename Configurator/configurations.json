@@ -1,1 +1,1 @@
-{"active_entities": ["Username", "Os", "DesktopEnvironment", "Lock"], "active_warehouses": [{"address": "192.168.1.19", "port": 1883, "name": "LenovoYoga", "username": "", "password": "", "type": "MQTT"}]}
+{"active_entities": [{"type": "Os"}, {"type": "DesktopEnvironment"}, {"type": "Lock"}, {"title": "Echo Dot", "message": "Si mangia !", "tag": "si_mangia", "type": "Notify"}], "active_warehouses": [{"address": "192.168.1.19", "port": 1883, "name": "LenovoYoga", "username": "", "password": "", "type": "MQTT"}]}

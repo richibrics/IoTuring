@@ -15,6 +15,11 @@ KEY_ACTIVE_WAREHOUSES = "active_warehouses"
 
 KEY_WAREHOUSE_TYPE = "type"
 
+KEY_ENTITY_TYPE = "type"
+KEY_ENTITY_TAG = "tag"
+
+SEPARATOR_CHAR_NUMBER = 150
+
 class Configurator(LogObject):
     # Must be in the same folder of this file
     configurations_filename = "configurations.json"
@@ -31,7 +36,8 @@ class Configurator(LogObject):
         """ UI for Entities and Warehouses settings """
         run_app = False
         while(not run_app):
-            print("\n1 - Select entities")
+            self.PrintSeparator()
+            print("1 - Manage entities")
             print("2 - Manage warehouses")
             print("C - Start DomoticTuring")
             print("Q - Quit\n")
@@ -40,7 +46,7 @@ class Configurator(LogObject):
             while not choice:
                 choice = input("Select your choice: ")
                 if choice == "1":
-                    self.SelectEntities()
+                    self.ManageEntities()
                 elif choice == "2":
                     self.ManageWarehouses()
                 elif choice == "c" or choice == "C":
@@ -55,46 +61,44 @@ class Configurator(LogObject):
                     print("Invalid choice")
                     choice = False
 
-    def SelectEntities(self) -> None:
+    def ManageEntities(self) -> None:
         """ UI for Entities settings """
         ecm = EntityClassManager()
         while(True):
-            print("\nSelect your entities (X for enabled):")
-            availableEntities = ecm.ListAvailableClassesNames()
-            for index, entityName in enumerate(availableEntities):
-                if not self.IsEntityActive(entityName):
-                    print("[ ] " + str(index+1) + " - " + entityName)
+            self.PrintSeparator()
+            print("Active entities: (input the entity number to edit its configuration or to disable it)")
+            i=0
+            for entity in self.config[KEY_ACTIVE_ENTITIES]:
+                if not KEY_ENTITY_TAG in entity:
+                    print(i+1,"-",entity[KEY_ENTITY_TYPE])
                 else:
-                    print("[X] " + str(index+1) + " - " + entityName)
-            print("    Q - Come back\n")
+                    print(i+1,"-",entity[KEY_ENTITY_TYPE] , "with tag" , entity[KEY_ENTITY_TAG])
+                i+=1
+            print("\nA - Add a new entity")
+            print("Q - Come back")
             choice = False
             while not choice:
-                choice = input("Which one do you want to enable/disable ? ")
-                if choice == "q" or choice == "Q":
-                    return
-                else: 
-                    try:
-                        choice = int(choice) -1
-                        if choice >= 0 and choice < len(availableEntities):
-                            # I have the choice
-                            if self.IsEntityActive(availableEntities[choice]):
-                                # Disable it (remove from active entities list)
-                                self.RemoveActiveEntity(availableEntities[choice])
-                            else:
-                                # Enable it (add to active entities list) if all dep entity are active, otherwise tell which dependencies must be actived before
-                                if self.CheckDependencies(availableEntities[choice],ecm):
-                                    self.AddActiveEntity(availableEntities[choice])
-                                else:
-                                    self.PrintDependencyError(availableEntities[choice],ecm)
+                choice = input("\nSelect your choice: ")
+                try:
+                    if choice == 'a' or choice == 'A':
+                        choice = True
+                        self.SelectNewEntity(ecm) 
+                    elif choice == "q" or choice == "Q":
+                        return
+                    else:
+                        choice = int(choice) # If not valid I have a ValueError
+                        choice = choice - 1 # So now chosen entity = active entity in configurations
+                        if choice >= 0 and choice < len(self.config[KEY_ACTIVE_ENTITIES]):
                             choice = True
+                            self.ManageSingleEntity() # TODO Implement
                         else:
-                            raise IndexError("Choice out of entities range")
-                    except IndexError:
-                        choice = False
-                        print("Please insert a valid Entity index")
-                    except Exception as e:
-                        choice = False
-                        self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
+                            raise ValueError()
+                except ValueError:
+                    choice = False
+                    print("Please insert a valid choice")
+                except Exception as e:
+                    choice = False
+                    self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
 
 
     def ManageWarehouses(self) -> None:
@@ -102,7 +106,8 @@ class Configurator(LogObject):
         wcm = WarehouseClassManager()
         
         while(True):
-            print("\nSelect the warehouse you want to manage (X for enabled):")
+            self.PrintSeparator()
+            print("Select the warehouse you want to manage (X for enabled):")
             availableWarehouses = wcm.ListAvailableClassesNames()
             for index, whName in enumerate(availableWarehouses):
                 if not self.IsWarehouseActive(whName.replace("Warehouse","")):
@@ -168,15 +173,77 @@ class Configurator(LogObject):
             if choice == "a" or choice == "A":
                 self.AddActiveWarehouse(warehouseName,wcm)
 
+    def SelectNewEntity(self, ecm: EntityClassManager):
+        """ UI to add a new Entity """
+        choice = False
+        while not choice:
+            entityList = ecm.ListAvailableClassesNames()
+            # Now I remove the entities that are active and that do not allow multi instances
+            for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
+                if not ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE]).AllowMultiInstance():
+                    entityList.remove(activeEntity[KEY_ENTITY_TYPE])
+
+            # Print entities with their index in order to choose them
+            self.PrintSeparator()
+            print("Available entities: ")
+            print("PS: if you don't see the entity you want, it may be already active and may not accept another version of itself)\n")
+            i=0
+            for entity in entityList:
+                print(i+1,"-",entity)
+                i+=1        
+                
+            print("\nQ - Come back")
+
+            choice = input("\nSelect your choice: ")
+            try:
+                if choice == "q" or choice == "Q":
+                    return
+                else: 
+                    choice = int(choice) # If not valid I have a ValueError
+                    choice = choice - 1 # So now chosen entity = active entity in configurations
+                    if choice >= 0 and choice < len(entityList):
+                        # Use the entity name to get the menupreset and configure it
+                        self.AddActiveEntity(entityList[choice],ecm)
+                        choice = True
+                    else:
+                        raise ValueError()
+            except ValueError:
+                choice = False
+                print("Please insert a valid choice")
+            except Exception as e:
+                choice = False
+                self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
+
+    def AddActiveEntity(self, entityName, ecm: EntityClassManager):
+        """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
+        entityClass = ecm.GetClassFromName(entityName)
+        try:
+            preset = entityClass.ConfigurationPreset()
+
+            if preset is not None: # Then let's configure the Entity
+                # Ask also for Tag if the entity allows multi-instance
+                if entityClass.AllowMultiInstance():
+                    preset.AddTagQuestion()
+                    
+                preset.PrintRules()
+                for index, question in enumerate(preset.ListEntries()):
+                    preset.Question(index)
+                
+            else:
+                preset = MenuPreset() # Use blank
+                print("No configuration available for this Entity :)")
+
+            self.EntityMenuPresetToConfiguration(entityName,preset)
+        except Exception as e:
+            print("Error during entity preset loading: " + str(e))
+
     def IsEntityActive(self, entityName) -> bool:
         """ Return True if an Entity is active """
-        return entityName in self.config[KEY_ACTIVE_ENTITIES]
+        for entity in self.config[KEY_ACTIVE_ENTITIES]:
+            if entityName == entity[KEY_ENTITY_TYPE]:
+                return True
+        return False 
 
-    def AddActiveEntity(self, entityName) -> None:
-        """ Add entity name to the list of active entities if not already present """
-        if not entityName in self.config[KEY_ACTIVE_ENTITIES]:
-            self.config[KEY_ACTIVE_ENTITIES].append(entityName)
-   
     def RemoveActiveEntity(self, entityName) -> None:
         """ Remove entity name from the list of active entities if present """
         if entityName in self.config[KEY_ACTIVE_ENTITIES]:
@@ -194,14 +261,10 @@ class Configurator(LogObject):
 
         whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
-            print(whClass.ConfigurationPreset)
             preset = whClass.ConfigurationPreset() # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
             
             if preset is not None:
-                print("\n\t-- Rules --")
-                print("\t\tIf you see {!} then the value is complusory")
-                print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
-                print("\t-- End of rules --\n")
+                preset.PrintRules()
 
                 for index, question in enumerate(preset.ListEntries()):
                     preset.Question(index)
@@ -210,14 +273,14 @@ class Configurator(LogObject):
                 print("No configuration available for this Warehouse :)")
             
             # Save added settings
-            self.MenuPresetToConfiguration(warehouseName,preset)
+            self.WarehouseMenuPresetToConfiguration(warehouseName,preset)
         except Exception as e:
-            print("Error during preset loading: " + str(e))
+            print("Error during warehouse preset loading: " + str(e))
 
     def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
         """ UI for single Warehouse settings edit """
         print("You can't do that at the moment bro")
-        # MenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to readd it later
+        # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
         pass # TODO Implement
    
@@ -229,12 +292,19 @@ class Configurator(LogObject):
                 self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
                 return
 
-    def MenuPresetToConfiguration(self,whName, preset) -> None:
-        """ Get a MenuPreset with responses and add the entries to the configurations dict """
+    def WarehouseMenuPresetToConfiguration(self,whName, preset) -> None:
+        """ Get a MenuPreset with responses and add the entries to the configurations dict in warehouse part """
         _dict = preset.GetDict()
         _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse","")
         self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
         print("Configuration added for \""+whName+"\" :)")
+
+    def EntityMenuPresetToConfiguration(self,entityName, preset) -> None:
+        """ Get a MenuPreset with responses and add the entries to the configurations dict in entity part """
+        _dict = preset.GetDict()
+        _dict[KEY_ENTITY_TYPE] = entityName
+        self.config[KEY_ACTIVE_ENTITIES].append(_dict)
+        print("Configuration added for \""+entityName+"\" :)")
 
     def CheckDependencies(self,entity, entityClassManager: EntityClassManager):
         """ Return True if there aren't entities that must be loaded before the passed one """
@@ -257,3 +327,6 @@ class Configurator(LogObject):
                 print("---> " + dependency + " <----")
 
         print("\nThank you for the attention")
+
+    def PrintSeparator(self):
+        print("\n"+SEPARATOR_CHAR_NUMBER*'#')

@@ -13,7 +13,7 @@ class Warehouse(LogObject):
         self.loopTimeout = DEFAULT_LOOP_TIMEOUT
 
     def Start(self) -> None:
-        """ Start a thread that will loop the Loop function"""
+        """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
         self.RegisterEntityCommands()
         Thread(target=self.LoopThread).start()
 
@@ -37,7 +37,7 @@ class Warehouse(LogObject):
 
     # Called by "LoopThread", with time constant defined in "ShouldCallLoop"
     def Loop(self) -> None:
-        """ Must be implemented in subclasses, autoun at Warehouse __init__ """
+        """ Must be implemented in subclasses, autorun at Warehouse __init__ """
         raise NotImplementedError("Please implement Loop method for this Warehouse")
 
     def GetWarehouseName(self) -> str:
@@ -53,6 +53,8 @@ class Warehouse(LogObject):
         """ Method for sub-class, autoun at Warehouse __init__ to prepare the entity commands events"""    
         pass
 
+    # Configuration methods
+    
     @classmethod
     def InstantiateWithConfiguration(self,configuration):
         """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """

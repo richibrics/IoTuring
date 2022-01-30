@@ -81,7 +81,7 @@ class ClassManager(LogObject):
         classname=os.path.split(path)
         return classname[1][:-3] 
 
-    def ListAvailableClassesNames(self) -> str:
+    def ListAvailableClassesNames(self) -> list:
         res = []
         for py in self.modulesFilename:
             res.append(path.basename(py).split(".py")[0])

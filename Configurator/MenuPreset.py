@@ -46,3 +46,15 @@ class MenuPreset():
             result[entry['key']]=entry['value']
         return result
                 
+    @staticmethod
+    def PrintRules() -> None:
+        """ Print configuration rules, like a legend for complusory symbol and default values """
+        print("\n\t-- Rules --")
+        print("\t\tIf you see {!} then the value is complusory")
+        print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
+        print("\t-- End of rules --\n")
+
+    def AddTagQuestion(self):
+        """ Add a Tag question (compulsory, no default) to the preset.
+            Useful for entities that must have a tag because of their multi-instance possibility """
+        self.AddEntry("Tag","tag",mandatory=True)

@@ -1,29 +1,33 @@
-from typing import List
 from Entity.EntityManager import EntityManager
 from Exceptions.Exceptions import UnknownEntityKeyException
 from Logger.LogObject import LogObject
 from Entity.EntityData import EntitySensor, EntityCommand
 import time
 
+KEY_ENTITY_TAG = 'tag' # from Configurator.Configurator
+
 DEFAULT_UPDATE_TIMEOUT = 10
 
 class Entity(LogObject):
     NAME = "Unnamed"
     DEPENDENCIES = []
+    ALLOW_MULTI_INSTANCE = False
 
-    def __init__(self) -> None:
+    def __init__(self,configurations) -> None:
         # Prepare the entity
         self.entitySensors = [] 
         self.entityCommands = []
 
-        self.tag = ""
+        self.configurations = configurations
+        self.SetTagFromConfiguration()
+
         self.initializeState=False
         self.postinitializeState=False 
         self.valuesID = 0 # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
 
     def Initialize(self):
-        """ Must be implemented in sub-classes """
+        """ Must be implemented in sub-classes, may be useful here to use the configuration """
         pass
 
     def CallInitialize(self): 
@@ -105,11 +109,11 @@ class Entity(LogObject):
         """ Add EntityCommand to the Entity. This action must be in Initialize or in PostInitialize, so the Waerhouses can subscribe to them at initializing time"""
         self.entityCommands.append(entityCommand)
 
-    def GetEntitySensors(self) -> List:
+    def GetEntitySensors(self) -> list:
         """ Return list of registered entity sensors """
         return self.entitySensors.copy() # Safe return: nobody outside can change the value !
 
-    def GetEntityCommands(self) -> List:
+    def GetEntityCommands(self) -> list:
         """ Return list of registered keys """
         return self.entityCommands.copy() # Safe return: nobody outside can change the callback !
 
@@ -139,6 +143,32 @@ class Entity(LogObject):
         else:
             return "Entity." + self.GetEntityName()
 
+    def GetConfigurations(self) -> dict:
+        """ Safe return entity configurations """
+        if self.configurations:
+            return self.configurations.copy()
+        else:
+            return None
+
     def LogSource(self):
         return self.GetEntityId()
 
+    def SetTagFromConfiguration(self):
+        """ Set tag from configuration or set it blank if not present there """
+        if self.GetConfigurations() is not None and KEY_ENTITY_TAG in self.GetConfigurations():
+            self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
+        else: 
+            self.tag = ""
+
+    @classmethod
+    def AllowMultiInstance(self):
+        """ Return True if this Entity can have multiple instances, useful for customizable entities 
+            These entities are the ones that must have a tag to be recognized """
+        return self.ALLOW_MULTI_INSTANCE
+
+    # Configuration methods
+
+    @classmethod
+    def ConfigurationPreset(self):
+        """ Prepare a preset to manage settings insert/edit for the warehouse """
+        return None
