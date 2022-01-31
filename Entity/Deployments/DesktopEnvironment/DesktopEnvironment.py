@@ -12,9 +12,7 @@ class DesktopEnvironment(Entity):
     
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self,KEY_DE))
-
-    def PostInitialize(self):
-        # The value for this sensor is static for the entire script run time
+        # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
         self.SetEntitySensorValue(KEY_DE,self.GetDesktopEnvironment())
 
     # If value passed use it else get it from the system

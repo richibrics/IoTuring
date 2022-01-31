@@ -46,12 +46,14 @@ class Configurator(LogObject):
             while not choice:
                 choice = input("Select your choice: ")
                 if choice == "1":
+                    choice = True  # Valid choice
                     self.ManageEntities()
                 elif choice == "2":
+                    choice = True  # Valid choice
                     self.ManageWarehouses()
                 elif choice == "c" or choice == "C":
-                    choice = True  # Will start the program exiting from here
-                    run_app = True
+                    choice = True   # Valid choice
+                    run_app = True # Will start the program exiting from here
                     print("") # Blank line
                     self.WriteConfigurations()
                 elif choice == "q" or choice == "Q":
@@ -65,19 +67,19 @@ class Configurator(LogObject):
         """ UI for Entities settings """
         ecm = EntityClassManager()
         while(True):
-            self.PrintSeparator()
-            print("Active entities: (input the entity number to edit its configuration or to disable it)")
-            i=0
-            for entity in self.config[KEY_ACTIVE_ENTITIES]:
-                if not KEY_ENTITY_TAG in entity:
-                    print(i+1,"-",entity[KEY_ENTITY_TYPE])
-                else:
-                    print(i+1,"-",entity[KEY_ENTITY_TYPE] , "with tag" , entity[KEY_ENTITY_TAG])
-                i+=1
-            print("\nA - Add a new entity")
-            print("Q - Come back")
             choice = False
             while not choice:
+                self.PrintSeparator()
+                print("Active entities: (enter the entity number to edit its configuration or to disable it)")
+                i=0
+                for entity in self.config[KEY_ACTIVE_ENTITIES]:
+                    if not KEY_ENTITY_TAG in entity:
+                        print(i+1,"-",entity[KEY_ENTITY_TYPE])
+                    else:
+                        print(i+1,"-",entity[KEY_ENTITY_TYPE] , "with tag" , entity[KEY_ENTITY_TAG])
+                    i+=1
+                print("\nA - Add a new entity")
+                print("Q - Come back")
                 choice = input("\nSelect your choice: ")
                 try:
                     if choice == 'a' or choice == 'A':
@@ -89,8 +91,8 @@ class Configurator(LogObject):
                         choice = int(choice) # If not valid I have a ValueError
                         choice = choice - 1 # So now chosen entity = active entity in configurations
                         if choice >= 0 and choice < len(self.config[KEY_ACTIVE_ENTITIES]):
+                            self.ManageSingleEntity(self.config[KEY_ACTIVE_ENTITIES][choice],ecm) 
                             choice = True
-                            self.ManageSingleEntity() # TODO Implement
                         else:
                             raise ValueError()
                 except ValueError:
@@ -173,6 +175,23 @@ class Configurator(LogObject):
             if choice == "a" or choice == "A":
                 self.AddActiveWarehouse(warehouseName,wcm)
 
+    def ManageSingleEntity(self, entityConfig, ecm:EntityClassManager):
+        """ UI to manage an active warehouse (edit config/remove) """
+        choice = False
+        while(not choice):
+            self.PrintSeparator()
+            print("What do you want to do with " + entityConfig[KEY_ENTITY_TYPE] + "?")
+            print("\nE - Edit the entity settings")
+            print("R - Remove the entity")
+            print("Q - Come back")
+
+            choice = input("Select an operation: ")
+            
+            if choice == "r" or choice == "R":
+                self.RemoveActiveEntity(entityConfig,ecm)
+            elif choice == "e" or choice == "E":
+                self.EditActiveEntity(entityConfig,ecm)
+
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
         choice = False
@@ -244,10 +263,23 @@ class Configurator(LogObject):
                 return True
         return False 
 
-    def RemoveActiveEntity(self, entityName) -> None:
+    def RemoveActiveEntity(self, entityConfig, ecm:EntityClassManager) -> None:
         """ Remove entity name from the list of active entities if present """
-        if entityName in self.config[KEY_ACTIVE_ENTITIES]:
-            self.config[KEY_ACTIVE_ENTITIES].remove(entityName)
+        # TODO Check if no dependencies from it
+
+        for activeEntity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+            if activeEntity != entityConfig:
+                # Get class from entity type
+                entityClass = ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
+                # Retrieve entity dependencies
+                deps = entityClass.GetDependenciesList()
+                # Check if entity I want to remove is dependent from the entity I'm iterating
+                if entityConfig[KEY_ENTITY_TYPE] in deps:
+                    raise Exception("Can't remove this entity because "  + activeEntity[KEY_ENTITY_TYPE] + " depends from it :(")
+
+
+        if entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
+            self.config[KEY_ACTIVE_ENTITIES].remove(entityConfig)
 
     def IsWarehouseActive(self, warehouseName) -> bool:
         """ Return True if a warehouse is active """
@@ -282,6 +314,12 @@ class Configurator(LogObject):
         print("You can't do that at the moment bro")
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
+        pass # TODO Implement
+
+    def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
+        """ UI for single Entity settings edit """
+        print("You can't do that at the moment bro")
+        
         pass # TODO Implement
    
     def RemoveActiveWarehouse(self, warehouseName) -> None:

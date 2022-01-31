@@ -11,11 +11,9 @@ class Os(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self,KEY_OS))
- 
-    def PostInitialize(self):
-        # The value for this sensor is static for the entire script run time
+        # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
         self.SetEntitySensorValue(KEY_OS,self.GetOperatingSystem())
-        
+ 
     def Update(self):
         pass
 
