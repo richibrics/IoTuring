@@ -4,7 +4,7 @@ from Entity.EntityManager import EntityManager
 from threading import Thread
 import time
 
-DEFAULT_LOOP_TIMEOUT = 30
+DEFAULT_LOOP_TIMEOUT = 10
 
 class Warehouse(LogObject):
     name = "Unnamed"

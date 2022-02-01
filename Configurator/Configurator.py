@@ -168,7 +168,8 @@ class Configurator(LogObject):
         
         if self.IsWarehouseActive(warehouseName):
             if choice == "r" or choice == "R":
-                self.RemoveActiveWarehouse(warehouseName)
+                if(Configurator.ConfirmQuestion()):
+                    self.RemoveActiveWarehouse(warehouseName)
             elif choice == "e" or choice == "E":
                 self.EditActiveWarehouse(warehouseName,wcm)
         else:
@@ -188,7 +189,8 @@ class Configurator(LogObject):
             choice = input("Select an operation: ")
             
             if choice == "r" or choice == "R":
-                self.RemoveActiveEntity(entityConfig,ecm)
+                if(Configurator.ConfirmQuestion()):
+                    self.RemoveActiveEntity(entityConfig,ecm)
             elif choice == "e" or choice == "E":
                 self.EditActiveEntity(entityConfig,ecm)
 
@@ -250,7 +252,7 @@ class Configurator(LogObject):
                 
             else:
                 preset = MenuPreset() # Use blank
-                print("No configuration available for this Entity :)")
+                print("No configuration needed for this Entity :)")
 
             self.EntityMenuPresetToConfiguration(entityName,preset)
         except Exception as e:
@@ -302,7 +304,7 @@ class Configurator(LogObject):
                     preset.Question(index)
             else:
                 preset = MenuPreset() # Use blank
-                print("No configuration available for this Warehouse :)")
+                print("No configuration needed for this Warehouse :)")
             
             # Save added settings
             self.WarehouseMenuPresetToConfiguration(warehouseName,preset)
@@ -368,3 +370,11 @@ class Configurator(LogObject):
 
     def PrintSeparator(self):
         print("\n"+SEPARATOR_CHAR_NUMBER*'#')
+
+    @staticmethod
+    def ConfirmQuestion():
+        value = input("You sure ? [y/n] ")
+        if value == "y" or value == "Y":
+            return True
+        else:
+            return False

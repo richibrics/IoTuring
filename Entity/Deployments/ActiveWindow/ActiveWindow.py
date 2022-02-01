@@ -1,4 +1,6 @@
-from Entity.Entity import Entity 
+from Entity.Entity import Entity
+from Entity.EntityData import EntitySensor 
+from Entity import consts
 
 # Linux dep
 try:
@@ -19,38 +21,36 @@ except:
 # macOS dep
 try:
     from AppKit import NSWorkspace
-    from Quartz import (
-        CGWindowListCopyWindowInfo,
-        kCGWindowListOptionOnScreenOnly,
-        kCGNullWindowID
-    )
     macos_support=True
 except:
     macos_support=False
 
 
-TOPIC = 'active_window'
+KEY = 'active_window'
 
 
 class ActiveWindow(Entity):
+    NAME = "ActiveWindow"
+    DEPENDENCIES = ["Os"]
+
     def Initialize(self):
-        self.AddTopic(TOPIC)
+        self.RegisterEntitySensor(EntitySensor(self,KEY))
 
     def PostInitialize(self):
-        os = self.GetOS()
-        self.UpdateSpecificFunction = None   # Specific function for this os/de, set this here to avoid all if else except at each update
+        os = self.GetDependentEntitySensorValue("Os","operating_system")
+        self.UpdateSpecificFunction = None   # Specific function for this os/de, set this here to avoid all OS filters on Update
 
-        if os == self.consts.FIXED_VALUE_OS_LINUX:
+        if os == consts.OS_FIXED_VALUE_LINUX:
             if linux_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Linux
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif os == self.consts.FIXED_VALUE_OS_WINDOWS:
+        elif os == consts.OS_FIXED_VALUE_WINDOWS:
             if windows_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Windows
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif os == self.consts.FIXED_VALUE_OS_MACOS:
+        elif os == consts.OS_FIXED_VALUE_MACOS:
             if macos_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_macOS
             else:
@@ -60,23 +60,12 @@ class ActiveWindow(Entity):
                 'Entity not available for this operating system')
 
     def Update(self):
-        self.SetTopicValue(TOPIC, str(self.UpdateSpecificFunction()))
+        self.SetEntitySensorValue(KEY,str(self.UpdateSpecificFunction()))
 
     def GetActiveWindow_macOS(self):
-        curr_app = NSWorkspace.sharedWorkspace().frontmostApplication()
-        curr_pid = NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationProcessIdentifier']
-        curr_app_name = curr_app.localizedName()
-        options = kCGWindowListOptionOnScreenOnly
-        windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID)
-        for window in windowList:
-            pid = window['kCGWindowOwnerPID']
-            windowNumber = window['kCGWindowNumber']
-            ownerName = window['kCGWindowOwnerName']
-            geometry = window['kCGWindowBounds']
-            windowTitle = window.get('kCGWindowName', u'Unknown')
-            if curr_pid == pid:
-                return windowTitle
-
+        curr_app = NSWorkspace.sharedWorkspace().activeApplication()
+        curr_app_name = curr_app['NSApplicationName']
+        return curr_app_name # Better choice beacuse on Mac the window title is a bit buggy
 
     def GetActiveWindow_Windows(self):
         return GetWindowText(GetForegroundWindow())
@@ -97,12 +86,3 @@ class ActiveWindow(Entity):
                 return match.group( 'name' ).decode( 'UTF-8' ).strip( '"' )
 
         return 'Inactive'
-
-    def GetOS(self):
-        # Get OS from OsSensor and get temperature based on the os
-        os = self.FindEntity('Os')
-        if os:
-            if not os.postinitializeState: # I run this function in post initialize so the os sensor might not be ready
-                os.CallPostInitialize()
-            os.CallUpdate()
-            return os.GetTopicValue()
