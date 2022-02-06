@@ -2,7 +2,7 @@ from Logger.Logger import Logger
 from Warehouse.Warehouse import Warehouse
 
 class ConsoleWarehouse(Warehouse):
-    name = "Console"
+    NAME = "Console"
 
     def Loop(self):
         for entity in self.GetEntities():

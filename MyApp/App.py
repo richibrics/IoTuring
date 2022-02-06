@@ -3,6 +3,7 @@ from os import fchdir
 class App():
     NAME = "DomoticTuring"
     DESCRIPTION_FILENAME = "MyApp/description.txt"
+    VENDOR = "Riccardo Briccola"
 
     # Version
     MAJOR_VERSION = "0"
@@ -12,6 +13,11 @@ class App():
     @staticmethod 
     def getName() -> str:
         return App.NAME
+    
+    @staticmethod 
+    def getVendor() -> str:
+        return App.VENDOR
+    
 
     @staticmethod 
     def getDescription() -> str:

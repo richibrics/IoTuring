@@ -36,6 +36,9 @@ class MQTTClient(LogObject):
         self.Log(self.LOG_INFO, 'Preparing MQTT client')
         self.SetupClient()
 
+    def IsConnected(self):
+        """ Return True if client is currently connected """
+        return self.connected
 
     def SetupClient(self) -> None:
         self.client = MqttClient.Client(self.name)

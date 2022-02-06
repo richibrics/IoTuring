@@ -70,12 +70,6 @@ class Entity(LogObject):
         # Can't be called directly, cause stops everything in exception, call only using CallUpdate
         pass  
 
-    # TODO Safe to remove ?
-    # def AddKey(self,key) -> None:
-    #     """ Register a key so after I can assign it a value """
-    #     self.Log(self.LOG_DEBUG,"Add key " + key)
-    #     self.values[key]=None
-
     def SetEntitySensorValue(self,key,value) -> None:
         """ Set the value for an entity sensor """
         value = str(value)
@@ -110,12 +104,16 @@ class Entity(LogObject):
         self.entityCommands.append(entityCommand)
 
     def GetEntitySensors(self) -> list:
-        """ Return list of registered entity sensors """
+        """ safe - Return list of registered entity sensors """
         return self.entitySensors.copy() # Safe return: nobody outside can change the value !
 
     def GetEntityCommands(self) -> list:
-        """ Return list of registered keys """
+        """ safe - Return list of registered entity commands """
         return self.entityCommands.copy() # Safe return: nobody outside can change the callback !
+
+    def GetAllEntityData(self) -> list:
+        """ safe - Return list of entity sensors and commands """ 
+        return self.entityCommands.copy() + self.entitySensors.copy()  # Safe return: nobody outside can change the callback !
 
     def GetEntitySensorByKey(self,key) -> EntitySensor:
         for sensor in self.entitySensors:
@@ -124,7 +122,19 @@ class Entity(LogObject):
         raise UnknownEntityKeyException
 
     def GetEntityName(self) -> str:
+        """ Return entity name """
         return self.NAME
+
+    def GetEntityTag(self) -> str:
+        """ Return entity identifier tag """
+        return self.tag # Set from SetTagFromConfiguration on entity init
+
+    def GetEntityNameWithTag(self) -> str:
+        """ Return entity name and tag combined (or name alone if no tag is present) """
+        if self.tag == "":
+            return self.GetEntityName()    
+        else:
+            return self.GetEntityName()+" @" + self.GetEntityTag()
 
     @classmethod
     def GetDependenciesList(self) -> str:

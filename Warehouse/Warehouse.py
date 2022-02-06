@@ -1,3 +1,4 @@
+from signal import raise_signal
 from Logger.LogObject import LogObject
 from Entity.EntityManager import EntityManager
 
@@ -7,14 +8,14 @@ import time
 DEFAULT_LOOP_TIMEOUT = 10
 
 class Warehouse(LogObject):
-    name = "Unnamed"
+    NAME = "Unnamed"
     
-    def __init__(self) -> None:
+    def __init__(self,configurations) -> None:
         self.loopTimeout = DEFAULT_LOOP_TIMEOUT
+        self.configurations = configurations
 
     def Start(self) -> None:
         """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
-        self.RegisterEntityCommands()
         Thread(target=self.LoopThread).start()
 
     def SetLoopTimeout(self, timeout) -> None:
@@ -28,6 +29,7 @@ class Warehouse(LogObject):
 
     def LoopThread(self) -> None:
         """ Entry point of the warehouse thread, will run Loop() periodically """
+        self.Loop() # First call without sleep before
         while(True):
             if self.ShouldCallLoop():
                 self.Loop()
@@ -41,7 +43,7 @@ class Warehouse(LogObject):
         raise NotImplementedError("Please implement Loop method for this Warehouse")
 
     def GetWarehouseName(self) -> str:
-        return self.name
+        return self.NAME
 
     def GetWarehouseId(self) -> str:
         return "Warehouse." + self.GetWarehouseName()
@@ -49,17 +51,18 @@ class Warehouse(LogObject):
     def LogSource(self):
         return self.GetWarehouseId()
 
-    def RegisterEntityCommands(self):
-        """ Method for sub-class, autoun at Warehouse __init__ to prepare the entity commands events"""    
-        pass
+    def GetConfigurations(self) -> dict:
+        """ Safe return configurations dict """
+        return self.configurations.copy()
+
+    def GetFromConfigurations(self,key):
+        """ Get value from confiugurations with key (if not present raise Exception) """
+        if key in self.GetConfigurations():
+            return self.GetConfigurations()[key]
+        else:
+            raise Exception("Can't find key " + key + " in configurations")
 
     # Configuration methods
-    
-    @classmethod
-    def InstantiateWithConfiguration(self,configuration):
-        """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
-        return self() # here I only try to init without configurations (for those warehouses that do not override this function)
-
     @classmethod
     def ConfigurationPreset(self):
         """ Prepare a preset to manage settings insert/edit for the warehouse """

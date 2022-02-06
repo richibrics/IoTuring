@@ -63,9 +63,12 @@ class ActiveWindow(Entity):
         self.SetEntitySensorValue(KEY,str(self.UpdateSpecificFunction()))
 
     def GetActiveWindow_macOS(self):
-        curr_app = NSWorkspace.sharedWorkspace().activeApplication()
-        curr_app_name = curr_app['NSApplicationName']
-        return curr_app_name # Better choice beacuse on Mac the window title is a bit buggy
+        try:
+            curr_app = NSWorkspace.sharedWorkspace().activeApplication()
+            curr_app_name = curr_app['NSApplicationName']
+            return curr_app_name # Better choice beacuse on Mac the window title is a bit buggy
+        except:
+            return "Inactive"
 
     def GetActiveWindow_Windows(self):
         return GetWindowText(GetForegroundWindow())
