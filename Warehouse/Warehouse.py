@@ -1,4 +1,5 @@
 from signal import raise_signal
+from Configurator.MenuPreset import BooleanAnswers
 from Logger.LogObject import LogObject
 from Entity.EntityManager import EntityManager
 
@@ -61,6 +62,14 @@ class Warehouse(LogObject):
             return self.GetConfigurations()[key]
         else:
             raise Exception("Can't find key " + key + " in configurations")
+
+    def GetTrueOrFalseFromConfigurations(self,key):
+        """ Get boolean value from confiugurations with key (if not present raise Exception) """
+        value = self.GetFromConfigurations(key).lower()
+        if value in BooleanAnswers.TRUE_ANSWERS:
+            return True
+        else:
+            return False
 
     # Configuration methods
     @classmethod

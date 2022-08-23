@@ -58,3 +58,6 @@ class MenuPreset():
         """ Add a Tag question (compulsory, no default) to the preset.
             Useful for entities that must have a tag because of their multi-instance possibility """
         self.AddEntry("Tag","tag",mandatory=True)
+
+class BooleanAnswers:
+    TRUE_ANSWERS = ["y", "yes", "t", "true", "ok", "okay"]

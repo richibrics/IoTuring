@@ -12,6 +12,7 @@ CONFIG_KEY_PORT = "port"
 CONFIG_KEY_NAME = "name"
 CONFIG_KEY_USERNAME = "username"
 CONFIG_KEY_PASSWORD = "password"
+CONFIG_KEY_ADD_NAME_TO_ENTITY = "add_name"
 
 CONFIGURATION_SEND_LOOP_SKIP_NUMBER = 10
 
@@ -26,7 +27,11 @@ class HomeAssistantWarehouse(Warehouse):
                                     self.GetFromConfigurations(CONFIG_KEY_NAME),
                                     self.GetFromConfigurations(CONFIG_KEY_USERNAME),
                                     self.GetFromConfigurations(CONFIG_KEY_PASSWORD))
+                                    
         self.client.AsyncConnect()
+
+        self.addNameToEntityName = self.GetTrueOrFalseFromConfigurations(CONFIG_KEY_ADD_NAME_TO_ENTITY)
+
         self.RegisterEntityCommands()
 
         self.loopCounter = 0
@@ -68,6 +73,10 @@ class HomeAssistantWarehouse(Warehouse):
                 autoDiscoverySendTopic = ""
                 payload = {}
                 payload['name'] = entity.GetEntityNameWithTag() + " - " + entityData.GetKey()
+
+                if self.addNameToEntityName:
+                    payload['name'] = self.clientName + " - " + payload['name']
+
                 payload['device'] = self.MakeApplicationConfiguration()
                 payload['unique_id'] = entityData.GetId()
 
@@ -100,9 +109,10 @@ class HomeAssistantWarehouse(Warehouse):
     @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
-        preset.AddEntry("Home assistant broker address",CONFIG_KEY_ADDRESS,mandatory=True)
+        preset.AddEntry("Home assistant MQTT broker address",CONFIG_KEY_ADDRESS,mandatory=True)
         preset.AddEntry("Port",CONFIG_KEY_PORT,default=1883)
         preset.AddEntry("Client name",CONFIG_KEY_NAME,mandatory=True)
         preset.AddEntry("Username",CONFIG_KEY_USERNAME,default="")
         preset.AddEntry("Password",CONFIG_KEY_PASSWORD,default="")
+        preset.AddEntry("Add computer name to entity name ? Y/N",CONFIG_KEY_PASSWORD,default="Y")
         return preset

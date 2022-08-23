@@ -2,3 +2,5 @@ __pycache__
 Logger/Logs
 nogit.*
 commands_topic.txt
+.vscode/launch.json
+.DS_Store
