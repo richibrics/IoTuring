@@ -4,3 +4,4 @@ nogit.*
 commands_topic.txt
 .vscode/launch.json
 .DS_Store
+Configurator/configurations.json

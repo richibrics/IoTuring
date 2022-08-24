@@ -1,0 +1,31 @@
+Battery - percentage:
+  device_class: battery
+Battery - charging:
+  custom_type: binary_sensor
+  device_class: "battery_charging"
+  payload_on: "True"
+  payload_off: "False"
+Os - operating_system:
+  icon: "mdi:apple-keyboard-command"
+ActiveWindow - active_window:
+  icon: "mdi:window-restore"
+BootTime - boot_time:
+  icon: "mdi:clock"
+DesktopEnvironment - desktop_environment:
+  icon: "mdi:window-maximize"
+Username - username:
+  icon: "mdi:account-supervisor-circle"
+Lock - lock:
+  icon: "mdi:lock"
+Notify:
+  icon: "mdi:forum"
+Hostname:
+  icon: "mdi:form-textbox"
+Power - shutdown:
+  icon: "mdi:power"
+Power - reboot:
+  icon: "mdi:restart"
+Power - sleep:
+  icon: "mdi:power-sleep"
+Disk:
+  icon: "mdi:harddisk"

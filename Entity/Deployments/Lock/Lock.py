@@ -27,12 +27,11 @@ class Lock(Entity):
         self.RegisterEntityCommand(EntityCommand(self,KEY_LOCK,self.Callback_Lock))
 
     def PostInitialize(self):
-        pass
-
-    def Callback_Lock(self, message):
         self.os = self.GetDependentEntitySensorValue('Os',"operating_system")
         self.de = self.GetDependentEntitySensorValue(
             'DesktopEnvironment','desktop_environment')
+
+    def Callback_Lock(self, message):
         if self.os in commands:
             if self.de in commands[self.os]:
                 try:

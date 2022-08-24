@@ -1,4 +1,5 @@
 from Entity.EntityManager import EntityManager
+from Entity.ValueFormatter import ValueFormatter
 from Exceptions.Exceptions import UnknownEntityKeyException
 from Logger.LogObject import LogObject
 from Entity.EntityData import EntitySensor, EntityCommand
@@ -70,9 +71,13 @@ class Entity(LogObject):
         # Can't be called directly, cause stops everything in exception, call only using CallUpdate
         pass  
 
-    def SetEntitySensorValue(self,key,value) -> None:
-        """ Set the value for an entity sensor """
+    def SetEntitySensorValue(self,key,value, value_formatter_options=None) -> None:
+        """ Set the value for an entity sensor. A value_formatter_options (got from ValueFormatter) can be passed to format the value """
         value = str(value)
+
+        if value_formatter_options is not None:
+            value = ValueFormatter.GetFormattedValue(value, value_formatter_options)
+
         self.GetEntitySensorByKey(key).SetValue(value)
 
     def GetEntitySensorValue(self,key) -> str:
@@ -97,10 +102,11 @@ class Entity(LogObject):
                 self.CallUpdate()
 
     def RegisterEntitySensor(self, entitySensor: EntitySensor):
+        """ Add EntitySensor to the Entity. This action must be in Initialize or in PostInitialize """
         self.entitySensors.append(entitySensor)
 
     def RegisterEntityCommand(self, entityCommand: EntityCommand):
-        """ Add EntityCommand to the Entity. This action must be in Initialize or in PostInitialize, so the Waerhouses can subscribe to them at initializing time"""
+        """ Add EntityCommand to the Entity. This action must be in Initialize or in PostInitialize, so the Warehouses can subscribe to them at initializing time"""
         self.entityCommands.append(entityCommand)
 
     def GetEntitySensors(self) -> list:

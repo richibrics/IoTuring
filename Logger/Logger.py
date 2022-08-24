@@ -95,9 +95,9 @@ class Logger():
                 consts.LONG_MESSAGE_PRESTRING_CHAR+consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '
             
         # After log I close the file so the log is visible outside the script # TODO Better way to do this without closing always the file ?
-        if self.log_file_descriptor is not None:
-            self.log_file_descriptor.close()
-        self.log_file_descriptor = None
+        #if self.log_file_descriptor is not None:
+        #    self.log_file_descriptor.close()
+        #self.log_file_descriptor = None
 
     def LogDict(self, messageLevel, source, dict):
         try:
