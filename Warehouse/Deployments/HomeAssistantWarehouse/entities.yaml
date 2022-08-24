@@ -1,4 +1,5 @@
 Battery - percentage:
+  unit_of_measurement: "%"
   device_class: battery
 Battery - charging:
   custom_type: binary_sensor
@@ -9,7 +10,10 @@ Os - operating_system:
   icon: "mdi:apple-keyboard-command"
 ActiveWindow - active_window:
   icon: "mdi:window-restore"
-BootTime - boot_time:
+BootTime:
+  icon: "mdi:clock"
+UpTime:
+  unit_of_measurement: "min"
   icon: "mdi:clock"
 DesktopEnvironment - desktop_environment:
   icon: "mdi:window-maximize"
@@ -28,4 +32,25 @@ Power - reboot:
 Power - sleep:
   icon: "mdi:power-sleep"
 Disk:
+  unit_of_measurement: "%"
   icon: "mdi:harddisk"
+Ram .*(free|total|available|used):
+  unit_of_measurement: "MB"
+  icon: "mdi:memory"
+Ram .*percentage:
+  unit_of_measurement: "%"
+  icon: "mdi:memory"
+Cpu .*percentage:
+  unit_of_measurement: "%"
+  icon: "mdi:calculator-variant"
+Cpu .*freq.*:
+  unit_of_measurement: "Hz"
+  icon: "mdi:calculator-variant"
+Cpu: # if no matches with above CPU patterns, set this
+  icon: "mdi:calculator-variant"
+Time:
+  icon: "mdi:clock"
+Monitor - turn_all_on:
+  icon: "mdi:monitor-star"
+Monitor - turn_all_off:
+  icon: "mdi:monitor-off"
