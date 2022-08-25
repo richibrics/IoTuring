@@ -54,3 +54,5 @@ Monitor - turn_all_on:
   icon: "mdi:monitor-star"
 Monitor - turn_all_off:
   icon: "mdi:monitor-off"
+AppInfo:
+  icon: "mdi:information-outline"

@@ -143,5 +143,5 @@ class HomeAssistantWarehouse(Warehouse):
         preset.AddEntry("Client name",CONFIG_KEY_NAME,mandatory=True)
         preset.AddEntry("Username",CONFIG_KEY_USERNAME,default="")
         preset.AddEntry("Password",CONFIG_KEY_PASSWORD,default="")
-        preset.AddEntry("Add computer name to entity name ? Y/N",CONFIG_KEY_PASSWORD,default="Y")
+        preset.AddEntry("Add computer name to entity name ? Y/N",CONFIG_KEY_ADD_NAME_TO_ENTITY,default="Y")
         return preset

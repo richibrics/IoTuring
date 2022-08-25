@@ -1,12 +1,12 @@
 class App():
-    NAME = "DomoticTuring"
+    NAME = "IoTuring"
     DESCRIPTION_FILENAME = "MyApp/description.txt"
     VENDOR = "Riccardo Briccola"
 
     # Version
-    MAJOR_VERSION = "0"
+    MAJOR_VERSION = "1"
     MINOR_VERSION = "0"
-    REVISION_NUMBER = "2"
+    REVISION_NUMBER = "0"
 
     @staticmethod 
     def getName() -> str:

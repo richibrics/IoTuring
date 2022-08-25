@@ -8,7 +8,7 @@ from ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from Configurator.MenuPreset import MenuPreset
 
-BLANK_CONFIGURATION = {'active_entities': [], 'warehouses': []}
+BLANK_CONFIGURATION = {'active_entities': [{"type": "AppInfo"}], 'active_warehouses': []}
 
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
@@ -39,7 +39,7 @@ class Configurator(LogObject):
             self.PrintSeparator()
             print("1 - Manage entities")
             print("2 - Manage warehouses")
-            print("C - Start DomoticTuring")
+            print("C - Start IoTuring")
             print("Q - Quit\n")
 
             choice = False
@@ -146,6 +146,12 @@ class Configurator(LogObject):
                 self.config = json.loads(f.read())
         except:
             self.config = BLANK_CONFIGURATION
+    
+        # check valid keys
+        if not KEY_ACTIVE_ENTITIES in self.config or not KEY_ACTIVE_WAREHOUSES in self.config:
+            self.Log(self.LOG_ERROR, "Invalid configurations, you may have broken them manually. Check you have a dict like this in your configurations file (or delete it to generate a new one) : ")
+            self.Log(self.LOG_ERROR, BLANK_CONFIGURATION)
+            exit(1)
 
     def WriteConfigurations(self) -> None:
         """ Save to configurations file in this script's folder the dict in self"""
@@ -313,15 +319,14 @@ class Configurator(LogObject):
 
     def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
         """ UI for single Warehouse settings edit """
-        print("You can't do that at the moment bro")
+        print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
         pass # TODO Implement
 
     def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
         """ UI for single Entity settings edit """
-        print("You can't do that at the moment bro")
-        
+        print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
         pass # TODO Implement
    
     def RemoveActiveWarehouse(self, warehouseName) -> None:

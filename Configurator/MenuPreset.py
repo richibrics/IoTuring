@@ -51,7 +51,7 @@ class MenuPreset():
         """ Print configuration rules, like a legend for complusory symbol and default values """
         print("\n\t-- Rules --")
         print("\t\tIf you see {!} then the value is complusory")
-        print("\t\tIf you see [*] then the value in the brackets is the default one: leave blank the input to use that value")
+        print("\t\tIf you see [ ] then the value in the brackets is the default one: leave blank the input to use that value")
         print("\t-- End of rules --\n")
 
     def AddTagQuestion(self):
@@ -60,4 +60,4 @@ class MenuPreset():
         self.AddEntry("Tag","tag",mandatory=True)
 
 class BooleanAnswers:
-    TRUE_ANSWERS = ["y", "yes", "t", "true", "ok", "okay"]
+    TRUE_ANSWERS = ["y", "yes", "t", "true", "ok", "okay"] # all lower !

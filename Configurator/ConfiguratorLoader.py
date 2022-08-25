@@ -3,7 +3,6 @@ from Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_
 from ClassManager.WarehouseClassManager import WarehouseClassManager
 from ClassManager.EntityClassManager import EntityClassManager
 
-
 class ConfiguratorLoader(LogObject):
     configurator = None
 
@@ -14,6 +13,9 @@ class ConfiguratorLoader(LogObject):
     def LoadWarehouses(self) -> list:
         warehouses = []
         wcm = WarehouseClassManager()
+        if not KEY_ACTIVE_WAREHOUSES in self.configurations:
+            self.Log(self.LOG_ERROR, "You have to enable at least one warehouse: configure it using -c argument")
+            exit(1)
         for activeWarehouse in self.configurations[KEY_ACTIVE_WAREHOUSES]:
             # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
             whClass = wcm.GetClassFromName(activeWarehouse[KEY_WAREHOUSE_TYPE]+"Warehouse")
@@ -27,6 +29,9 @@ class ConfiguratorLoader(LogObject):
     def LoadEntities(self) -> list:  # Return list of entities initialized
         entities = []
         ecm = EntityClassManager()
+        if not KEY_ACTIVE_ENTITIES in self.configurations:
+            self.Log(self.LOG_ERROR, "You have to enable at least one entity: configure it using -c argument")
+            exit(1)
         for activeEntity in self.configurations[KEY_ACTIVE_ENTITIES]:
             entityClass = ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
             if entityClass is None:

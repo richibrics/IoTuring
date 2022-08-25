@@ -13,13 +13,15 @@ warehouses = []
 entities =  []
 
 if __name__ == "__main__":
+    logger = Logger.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
+    
     configurator = Configurator()
 
     if len(sys.argv)>1 and sys.argv[1]=="-c": # add -c to configure with the menu
         configurator.Menu()
 
-    logger = Logger.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
     logger.Log(Logger.LOG_INFO,"App",App()) # Print App info
+    logger.Log(Logger.LOG_INFO, "Configurator", "Run the script with -c to enter configuration mode")
 
     eM = EntityManager.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
     
