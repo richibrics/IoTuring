@@ -1,4 +1,3 @@
-from signal import raise_signal
 from Configurator.MenuPreset import BooleanAnswers
 from Logger.LogObject import LogObject
 from Entity.EntityManager import EntityManager

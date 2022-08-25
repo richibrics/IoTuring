@@ -99,17 +99,15 @@ class HomeAssistantWarehouse(Warehouse):
                     payload['name'] = self.clientName + " " + payload['name']
 
                 payload['device'] = self.MakeApplicationConfiguration()
-                payload['unique_id'] = entityData.GetId()
-
-                # TODO Add all customizable configurations
+                payload['unique_id'] = self.clientName + "." + entityData.GetId()
 
                 if entityData in entity.GetEntitySensors(): # it's an EntitySensorData
                     payload['expire_after']=600 # TODO Improve
                     payload['state_topic'] = self.MakeValuesTopic(entityData)
-                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),entityData.GetId().replace(".","_"))
+                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),payload['unique_id'].replace(".","_"))
                 else: # it's a EntityCommandData
                     payload['command_topic'] = self.MakeValuesTopic(entityData)                    
-                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),entityData.GetId().replace(".","_"))
+                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),payload['unique_id'].replace(".","_"))
 
                 # Send
                 self.client.SendTopicData(autoDiscoverySendTopic,json.dumps(payload))

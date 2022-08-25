@@ -1,0 +1,4 @@
+paho-mqtt
+psutil
+uptime
+PyYAML

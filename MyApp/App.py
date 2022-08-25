@@ -1,5 +1,3 @@
-from os import fchdir
-
 class App():
     NAME = "DomoticTuring"
     DESCRIPTION_FILENAME = "MyApp/description.txt"
