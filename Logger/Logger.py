@@ -28,7 +28,7 @@ class Logger():
         """ Set filename with timestamp and also call setup folder """
         dateTimeObj = datetime.now()
         self.log_filename = os.path.join(
-            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT))
+            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT).replace(":","_"))
         return self.log_filename
 
     def SetupFolder(self) -> str:
