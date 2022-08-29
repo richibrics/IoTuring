@@ -145,6 +145,7 @@ class Configurator(LogObject):
             with open(path, "r") as f:
                 self.config = json.loads(f.read())
         except:
+            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.")
             self.config = BLANK_CONFIGURATION
     
         # check valid keys
