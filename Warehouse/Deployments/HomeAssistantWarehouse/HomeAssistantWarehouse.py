@@ -61,13 +61,14 @@ class HomeAssistantWarehouse(Warehouse):
     def Loop(self):
         # Send online state
         self.client.SendTopicData(self.MakeValuesTopic(LWT_TOPIC_SUFFIX),LWT_PAYLOAD_ONLINE)
-
+        
         while(not self.client.IsConnected()):
             pass
 
-        # Machanism to call the function to send discovery data every CONFIGURATION_SEND_LOOP_SKIP_NUMBER loop
+        # Mechanism to call the function to send discovery data every CONFIGURATION_SEND_LOOP_SKIP_NUMBER loop
         if self.loopCounter == 0:
             self.SendEntityDataConfigurations()
+            
         self.loopCounter = (self.loopCounter+1)%CONFIGURATION_SEND_LOOP_SKIP_NUMBER # Every time I send data, every X also configurations
 
         # Sensor value
@@ -118,6 +119,11 @@ class HomeAssistantWarehouse(Warehouse):
                     payload['command_topic'] = self.MakeEntityDataTopic(entityData)                    
                     autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),payload['unique_id'].replace(".","_"))
 
+                # Add availability configuration
+                payload["availability_topic"] = self.MakeValuesTopic(LWT_TOPIC_SUFFIX)    
+                payload["payload_available"] = LWT_PAYLOAD_ONLINE
+                payload["payload_not_available"] = LWT_PAYLOAD_OFFLINE
+            
                 # Send
                 self.client.SendTopicData(autoDiscoverySendTopic,json.dumps(payload))
 
@@ -135,16 +141,15 @@ class HomeAssistantWarehouse(Warehouse):
         lwt_discovery["device_class"] = "connectivity"
         lwt_discovery['state_topic'] = self.MakeValuesTopic(LWT_TOPIC_SUFFIX)
 
+        lwt_discovery["payload_on"] = LWT_PAYLOAD_ONLINE
+        lwt_discovery["payload_off"] = LWT_PAYLOAD_OFFLINE
+
         autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format("binary_sensor",App.getName(),lwt_discovery['unique_id'].replace(".","_"))
 
         # send
         self.client.SendTopicData(autoDiscoverySendTopic,json.dumps(lwt_discovery))
 
         
-            
-           
-
-    
     def AddEntityDataCustomConfigurations(self, entityDataName, payload):
         """ Add custom info to the entity data, reading it from external file and accessing the information using the entity data name """
         with open(os.path.join(os.path.dirname(inspect.getfile(HomeAssistantWarehouse)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)) as yaml_data:

@@ -92,7 +92,7 @@ class MQTTClient(LogObject):
 
     def LwtSet(self, topic, payload) -> None:
         # Sets Lwt message data
-        self.client.will_set(topic, payload = payload, retain = True)
+        self.client.will_set(topic, payload = payload, retain = False)
 
     # INCOMING MESSAGES PART / SUBSCRIBE
 
