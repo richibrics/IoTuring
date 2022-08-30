@@ -85,12 +85,16 @@ class MQTTClient(LogObject):
             self.Log(self.LOG_WARNING,"Error in message receive: " + str(e))
 
 
-    # INCOMING MESSAGES PART
+    # OUTCOMING MESSAGES PART
 
     def SendTopicData(self, topic, data) -> None:
         self.client.publish(topic, data)
 
-    # OUTCOMING MESSAGES PART / SUBSCRIBE
+    def LwtSet(self, topic, payload) -> None:
+        # Sets Lwt message data
+        self.client.will_set(topic, payload = payload, retain = True)
+
+    # INCOMING MESSAGES PART / SUBSCRIBE
 
     def AddNewTopicToSubscribeTo(self, topic, callbackFunction) -> TopicCallback:
         topicCallback = TopicCallback(topic,callbackFunction)

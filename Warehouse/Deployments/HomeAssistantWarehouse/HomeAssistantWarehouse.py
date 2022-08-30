@@ -23,6 +23,10 @@ CONFIGURATION_SEND_LOOP_SKIP_NUMBER = 10
 EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
 EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE = "custom_type"
 
+LWT_TOPIC_SUFFIX = "LWT"
+LWT_PAYLOAD_ONLINE = "ON"
+LWT_PAYLOAD_OFFLINE = "OFF"
+
 class HomeAssistantWarehouse(Warehouse):
     NAME = "HomeAssistant"
 
@@ -34,7 +38,8 @@ class HomeAssistantWarehouse(Warehouse):
                                     self.GetFromConfigurations(CONFIG_KEY_NAME),
                                     self.GetFromConfigurations(CONFIG_KEY_USERNAME),
                                     self.GetFromConfigurations(CONFIG_KEY_PASSWORD))
-                                    
+        self.client.LwtSet(self.MakeValuesTopic(LWT_TOPIC_SUFFIX), LWT_PAYLOAD_OFFLINE)
+
         self.client.AsyncConnect()
 
         self.addNameToEntityName = self.GetTrueOrFalseFromConfigurations(CONFIG_KEY_ADD_NAME_TO_ENTITY)
@@ -43,17 +48,20 @@ class HomeAssistantWarehouse(Warehouse):
 
         self.loopCounter = 0
 
-        super().Start() # Then run other inits (start the loop for example)
+        super().Start() # Then run other inits (start the Loop method for example)
 
     def RegisterEntityCommands(self):
         """ Add EntityCommands to the MQTT client (subscribe to them) """
         for entity in self.GetEntities():
             for entityCommand in entity.GetEntityCommands():
                 self.client.AddNewTopicToSubscribeTo(
-                    self.MakeValuesTopic(entityCommand), entityCommand.CallCallback)
-                self.Log(self.LOG_DEBUG, entityCommand.GetId() + " subscribed to " + self.MakeValuesTopic(entityCommand))
+                    self.MakeEntityDataTopic(entityCommand), entityCommand.CallCallback)
+                self.Log(self.LOG_DEBUG, entityCommand.GetId() + " subscribed to " + self.MakeEntityDataTopic(entityCommand))
 
     def Loop(self):
+        # Send online state
+        self.client.SendTopicData(self.MakeValuesTopic(LWT_TOPIC_SUFFIX),LWT_PAYLOAD_ONLINE)
+
         while(not self.client.IsConnected()):
             pass
 
@@ -71,10 +79,11 @@ class HomeAssistantWarehouse(Warehouse):
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
                 if(entitySensor.HasValue()):
-                    self.client.SendTopicData(self.MakeValuesTopic(
+                    self.client.SendTopicData(self.MakeEntityDataTopic(
                         entitySensor), entitySensor.GetValue())
 
     def SendEntityDataConfigurations(self):
+        self.SendLwtSensorConfiguration()
         for entity in self.GetEntities():
             for entityData in entity.GetAllEntityData():
                 data_type = ""
@@ -103,14 +112,37 @@ class HomeAssistantWarehouse(Warehouse):
 
                 if entityData in entity.GetEntitySensors(): # it's an EntitySensorData
                     payload['expire_after']=600 # TODO Improve
-                    payload['state_topic'] = self.MakeValuesTopic(entityData)
+                    payload['state_topic'] = self.MakeEntityDataTopic(entityData)
                     autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),payload['unique_id'].replace(".","_"))
                 else: # it's a EntityCommandData
-                    payload['command_topic'] = self.MakeValuesTopic(entityData)                    
+                    payload['command_topic'] = self.MakeEntityDataTopic(entityData)                    
                     autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(data_type,App.getName(),payload['unique_id'].replace(".","_"))
 
                 # Send
                 self.client.SendTopicData(autoDiscoverySendTopic,json.dumps(payload))
+
+    def SendLwtSensorConfiguration(self):
+        """ Sends the same configuration as any other entity, but for the lwt message value (so we have
+            a message with a value that isn't from an entity and we want to send discovery data for it) """
+        lwt_discovery = {}
+        lwt_discovery['name']= "Connectivity"
+
+        if self.addNameToEntityName:
+            lwt_discovery['name'] = self.clientName + " " + lwt_discovery['name']
+
+        lwt_discovery['device'] = self.MakeApplicationConfiguration()
+        lwt_discovery['unique_id'] = self.clientName + ".connectivity"
+        lwt_discovery["device_class"] = "connectivity"
+        lwt_discovery['state_topic'] = self.MakeValuesTopic(LWT_TOPIC_SUFFIX)
+
+        autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format("binary_sensor",App.getName(),lwt_discovery['unique_id'].replace(".","_"))
+
+        # send
+        self.client.SendTopicData(autoDiscoverySendTopic,json.dumps(lwt_discovery))
+
+        
+            
+           
 
     
     def AddEntityDataCustomConfigurations(self, entityDataName, payload):
@@ -123,8 +155,13 @@ class HomeAssistantWarehouse(Warehouse):
                     return  {**payload, **entityDataConfiguration} # merge payload and additional configurations
         return payload # if nothing found
 
-    def MakeValuesTopic(self, entityData):
-        return MQTTClient.NormalizeTopic(TOPIC_DATA_FORMAT.format(App.getName(), self.clientName, entityData.GetId()))
+    def MakeEntityDataTopic(self, entityData):
+        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
+        return self.MakeValuesTopic(entityData.GetId())
+
+    def MakeValuesTopic(self, topic_suffix):
+        """ Prepares a topic, including the app name, the client name and finally a passed id """
+        return MQTTClient.NormalizeTopic(TOPIC_DATA_FORMAT.format(App.getName(), self.clientName, topic_suffix))
 
     def MakeApplicationConfiguration(self):  # Add device information
         device = {}
