@@ -40,6 +40,4 @@ if __name__ == "__main__":
     for warehouse in warehouses:
         warehouse.Start()
     
-    
     logger.Log(Logger.LOG_DEBUG, "Main", "Main finished its work ;)")
-    exit(0)
