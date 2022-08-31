@@ -2,6 +2,10 @@
 
 Simple and powerful script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant.
 
+Like his predecessor - **PyMonitorMQTT** - IoTuring allows you to choose which data are sent and which command are expected to be given. 
+
+**Why you should use this ?** You don't have to write your configurations manually, entities are updated asynchronously and multiple warehouses can be used with one single run (and this is not deprecated obviously!).
+
 ## Install
 
 ### Install Python
