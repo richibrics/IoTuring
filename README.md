@@ -70,6 +70,8 @@ Your computer will show in HomeAssistant as a single Device, so all your entitie
 The device will also have some properties like connectivity and battery status.
 
 You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
+
+
 ![device](https://user-images.githubusercontent.com/12238652/187725698-dafceb9c-c746-4a84-9b2c-caf5ea46a802.gif)
 
 All sensors and switches will be available to be added to your dashboard in your favourite cards !
