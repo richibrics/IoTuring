@@ -12,4 +12,4 @@ class Uptime(Entity):
         self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def Update(self):
-        self.SetEntitySensorValue(KEY, uptime.uptime(), ValueFormatter.Options(ValueFormatter.TYPE_TIME, 2, "m"))
+        self.SetEntitySensorValue(KEY, uptime.uptime(), ValueFormatter.Options(ValueFormatter.TYPE_TIME, 0, "m"))
