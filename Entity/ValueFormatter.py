@@ -96,6 +96,9 @@ class ValueFormatter():
         
         if asked_size and asked_size in BYTE_SIZES:
             powOf1024 = BYTE_SIZES.index(asked_size)
+        # If value == 0 math.log failes, so simply send 0:
+        elif float(value) == 0:
+            powOf1024 = 0
         else:
             powOf1024 = math.floor(math.log(value, 1024))
 
