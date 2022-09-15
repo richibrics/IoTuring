@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from MyApp.App import App
 from Configurator.Configurator import Configurator
 from Configurator.ConfiguratorLoader import ConfiguratorLoader

@@ -1,9 +1,11 @@
-import uptime
+import psutil
+import time
 from Entity.Entity import Entity
 from Entity.EntityData import EntitySensor
-from Entity.ValueFormatter import ValueFormatter 
+from Entity.ValueFormatter import ValueFormatter
 
 KEY = 'uptime'
+
 
 class Uptime(Entity):
     NAME = "UpTime"
@@ -12,4 +14,5 @@ class Uptime(Entity):
         self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def Update(self):
-        self.SetEntitySensorValue(KEY, uptime.uptime(), ValueFormatter.Options(ValueFormatter.TYPE_TIME, 0, "m"))
+        self.SetEntitySensorValue(KEY, time.time() - psutil.boot_time(),
+                                  ValueFormatter.Options(ValueFormatter.TYPE_TIME, 0, "m"))
