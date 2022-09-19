@@ -1,4 +1,5 @@
 paho-mqtt
 psutil
+dbus-python
 notify2
 PyYAML
