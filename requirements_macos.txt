@@ -1,5 +1,4 @@
 paho-mqtt
 psutil
-uptime
 PyYAML
 PyObjC
