@@ -96,7 +96,7 @@ class HomeAssistantWarehouse(Warehouse):
                 if entityData in entity.GetEntitySensors(): # it's an EntitySensorData
                     data_type = "sensor"
                 else: # it's a EntityCommandData
-                    data_type = "switch"
+                    data_type = "button"
 
                 # add custom info to the entity data, reading it from external file and accessing the information using the entity data name
                 payload = self.AddEntityDataCustomConfigurations(payload['name'], payload)
