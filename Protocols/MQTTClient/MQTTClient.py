@@ -22,7 +22,7 @@ class MQTTClient(LogObject):
     # After the init, you have to connect with AsyncConnect !
     def __init__(self,address,port=1883,name=None,username="",password=""):
         self.address = address
-        self.port = port
+        self.port = int(port)
         self.name = name
         self.username = username
         self.password = password
