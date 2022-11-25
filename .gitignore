@@ -5,8 +5,4 @@ commands_topic.txt
 .vscode/launch.json
 .DS_Store
 Configurator/configurations.json
-bin
-lib
-lib64
-pyvenv.cfg
-include/
+.venv
