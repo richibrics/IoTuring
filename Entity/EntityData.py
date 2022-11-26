@@ -23,15 +23,23 @@ class EntitySensor(EntityData):
     def __init__(self, entity, key):
         EntityData.__init__(self, entity, key)
         self.value = None
+        self.extraAttributes = None
 
     def SetValue(self, value):
         value = str(value)
         self.Log(self.LOG_DEBUG, "Set to " + value)
         self.value = value
         return self.value
+    
+    def SetExtraAttributes(self, _dict):
+        # a dict with name: value that is compatible only with certain warehouses
+        self.extraAttributes = _dict
 
     def GetValue(self):
         return self.value
+
+    def GetExtraAttributes(self):
+        return self.extraAttributes
 
     def HasValue(self):
         """ True if self.value isn't empty """
