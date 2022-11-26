@@ -90,7 +90,7 @@ class Notify(Entity):
                 self.notification_message, self.notification_title,)
             os.system(command)
         else:
-            self.Log(self.Logger.LOG_WARNING,"No notify command available for this operating system ("+ str(self.os) +")... Aborting")
+            self.Log(self.LOG_WARNING,"No notify command available for this operating system ("+ str(self.os) +")... Aborting")
 
     @classmethod
     def ConfigurationPreset(self):
