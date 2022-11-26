@@ -23,6 +23,10 @@ except:
 
 KEY = 'notify'
 
+# To send notification data through message payload use these two
+PAYLOAD_KEY_TITLE = "title"
+PAYLOAD_KEY_MESSAGE = "message"
+
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
 
@@ -69,8 +73,8 @@ class Notify(Entity):
             messageDict = ''
             try:
                 messageDict = eval(message.payload.decode('utf-8'))
-                self.notification_title = messageDict['title']
-                self.notification_message = messageDict['message']
+                self.notification_title = messageDict[PAYLOAD_KEY_TITLE]
+                self.notification_message = messageDict[PAYLOAD_KEY_MESSAGE]
             except:
                 raise Exception(
                     'Incorrect payload and no title and message set in configuration!'
