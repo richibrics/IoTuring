@@ -2,11 +2,7 @@ __pycache__
 Logger/Logs
 nogit.*
 commands_topic.txt
-.vscode/launch.json
+.vscode
 .DS_Store
-Configurator/configurations.json
-bin
-lib
-lib64
-pyvenv.cfg
-include/
+Configurator/configurations.json*
+.venv

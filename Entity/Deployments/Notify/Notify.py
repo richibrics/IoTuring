@@ -23,6 +23,10 @@ except:
 
 KEY = 'notify'
 
+# To send notification data through message payload use these two
+PAYLOAD_KEY_TITLE = "title"
+PAYLOAD_KEY_MESSAGE = "message"
+
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
 
@@ -35,8 +39,8 @@ class Notify(Entity):
     
     def Initialize(self):
         try:
-            self.notification_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
-            self.notification_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
+            self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
+            self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
@@ -58,15 +62,23 @@ class Notify(Entity):
                     'Notify not available, have you installed \'notify2\' on pip ?')
 
     def Callback(self, message):
-        # TO DO
-        # Convert the payload in a dict
-        messageDict = ''
-        try:
-            messageDict = eval(message.payload.decode('utf-8'))
-        except:
-            pass  # No message or title in the payload
 
         # Priority for configuration content and title. If not set there, will try to find them in the payload
+        if self.config_title and self.config_message:
+            self.notification_title = self.config_title
+            self.notification_message = self.config_message
+        
+        else:
+            # Convert the payload to a dict:
+            messageDict = ''
+            try:
+                messageDict = eval(message.payload.decode('utf-8'))
+                self.notification_title = messageDict[PAYLOAD_KEY_TITLE]
+                self.notification_message = messageDict[PAYLOAD_KEY_MESSAGE]
+            except:
+                raise Exception(
+                    'Incorrect payload and no title and message set in configuration!'
+                )
 
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
@@ -82,11 +94,11 @@ class Notify(Entity):
                 self.notification_message, self.notification_title,)
             os.system(command)
         else:
-            self.Log(self.Logger.LOG_WARNING,"No notify command available for this operating system ("+ str(self.os) +")... Aborting")
+            self.Log(self.LOG_WARNING,"No notify command available for this operating system ("+ str(self.os) +")... Aborting")
 
     @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
-        preset.AddEntry("Notification title", CONFIG_KEY_TITLE, mandatory=True)
-        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, mandatory=True)
+        preset.AddEntry("Notification title (Leave empty if you want to define it in the payload)", CONFIG_KEY_TITLE)
+        preset.AddEntry("Notification message (Leave empty if you want to define it in the payload)", CONFIG_KEY_MESSAGE)
         return preset
