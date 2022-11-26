@@ -14,7 +14,7 @@ import sys
 warehouses = []
 entities =  []
 
-if __name__ == "__main__":
+def loop():
     logger = Logger.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
     
     configurator = Configurator()

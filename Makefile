@@ -1,6 +1,6 @@
 run:
-	python3 main.py
+	python3 .
 config:
-	python3 main.py -c
+	python3 . -c
 clean:
 	find . | grep -E "(__pycache__|\.pyc|\.pyo$$)" | xargs rm -rf

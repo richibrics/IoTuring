@@ -26,22 +26,22 @@ To install required packages you need [pip](https://www.makeuseof.com/tag/instal
 To install dependencies all together, you only have to type in your terminal a PIP command.
 You need to install different packages depending on your operating system.
 
-If you're running a Linux distro, run 
+On Linux:
 
-```
-pip install -r requirements_linux.txt
-```
-
-If you're running Windows, run 
-
-```
-pip install -r requirements_win.txt
+```shell
+pip install .[linux]
 ```
 
-If you're running macOS, run 
+On Windows:
 
+```shell
+pip install .[win]
 ```
-pip install -r requirements_macos.txt
+
+On MacOs:
+
+```shell
+pip install .[macos]
 ```
 
 ### Configure
@@ -50,7 +50,7 @@ The first time you run IoTuring you need to specify which entities and warehouse
 To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
 
 ```
-python main.py -c
+IoTuring -c
 ```
 
 A simple menu will show and you will be able to configure your entities and warehouses !
@@ -63,7 +63,7 @@ You will be able to enter the configuration menu whenever you want (with the sam
 You can simply run IoTuring using this command
 
 ```
-python main.py
+IoTuring
 ```
 
 ### HomeAssistant demo

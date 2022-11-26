@@ -6,3 +6,5 @@ commands_topic.txt
 .DS_Store
 Configurator/configurations.json*
 .venv
+build
+*.egg-info
