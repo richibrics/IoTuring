@@ -8,7 +8,7 @@ class App():
     
     NAME = METADATA['Name']
     DESCRIPTION = METADATA['Summary']
-    VENDOR = METADATA['Maintainer-Email']
+    VENDOR = METADATA['Maintainer-email'].split(' <')[0]
     VERSION = METADATA['Version']
 
     @staticmethod 

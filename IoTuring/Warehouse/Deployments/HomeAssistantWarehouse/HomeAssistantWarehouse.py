@@ -174,7 +174,7 @@ class HomeAssistantWarehouse(Warehouse):
         device['model'] = self.clientName
         device['identifiers'] = self.clientName
         device['manufacturer'] = App.getName() + " by " + App.getVendor()
-        device['sw_version'] = App.getVendor()
+        device['sw_version'] = App.getVersion()
         return device
 
     @classmethod
