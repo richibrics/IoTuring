@@ -1,4 +1,4 @@
-from Entity.Entity import Entity 
+from IoTuring.Entity.Entity import Entity 
 import subprocess
 
 supports_win_brightness = True

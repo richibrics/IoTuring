@@ -1,7 +1,7 @@
-from Entity.Entity import Entity 
+from IoTuring.Entity.Entity import Entity 
 import psutil
 import json
-from Logger import Logger, ExceptionTracker
+from IoTuring.Logger import Logger, ExceptionTracker
 
 supports_win_temperature = True
 try:

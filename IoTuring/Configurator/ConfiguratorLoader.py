@@ -1,7 +1,7 @@
-from Logger.LogObject import LogObject
-from Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE
-from ClassManager.WarehouseClassManager import WarehouseClassManager
-from ClassManager.EntityClassManager import EntityClassManager
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE
+from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
+from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 
 class ConfiguratorLoader(LogObject):
     configurator = None

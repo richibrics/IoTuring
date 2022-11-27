@@ -1,12 +1,12 @@
 import inspect  # To get this folder path and reach the configurations file
 import os  # Configurations file path manipulation
 import json
-from Logger.LogObject import LogObject
+from IoTuring.Logger.LogObject import LogObject
 
-from ClassManager.EntityClassManager import EntityClassManager
-from ClassManager.WarehouseClassManager import WarehouseClassManager
+from IoTuring.ClassManager.EntityClassManager import EntityClassManager
+from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
-from Configurator.MenuPreset import MenuPreset
+from IoTuring.Configurator.MenuPreset import MenuPreset
 
 BLANK_CONFIGURATION = {'active_entities': [{"type": "AppInfo"}], 'active_warehouses': []}
 

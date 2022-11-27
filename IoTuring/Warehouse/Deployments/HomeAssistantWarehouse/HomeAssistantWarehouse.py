@@ -1,9 +1,9 @@
 import inspect
 import os
-from Configurator.MenuPreset import MenuPreset
-from Protocols.MQTTClient.MQTTClient import MQTTClient
-from Warehouse.Warehouse import Warehouse
-from MyApp.App import App
+from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
+from IoTuring.Warehouse.Warehouse import Warehouse
+from IoTuring.MyApp.App import App
 import json
 import yaml
 import re

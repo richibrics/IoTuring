@@ -1,5 +1,5 @@
 from io import TextIOWrapper
-import Logger.consts as consts
+import IoTuring.Logger.consts as consts
 import os  # to access directory functions
 import inspect  # to get this file path
 from datetime import datetime  # for logging purpose and filename
@@ -8,7 +8,7 @@ import json  # to print a dict easily
 # Singleton pattern used
 class Logger():
 
-    from Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
+    from IoTuring.Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
     __instance = None
 
     log_filename = ""

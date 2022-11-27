@@ -1,8 +1,8 @@
-from Entity.EntityManager import EntityManager
-from Entity.ValueFormatter import ValueFormatter
-from Exceptions.Exceptions import UnknownEntityKeyException
-from Logger.LogObject import LogObject
-from Entity.EntityData import EntitySensor, EntityCommand
+from IoTuring.Entity.EntityManager import EntityManager
+from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Entity.EntityData import EntitySensor, EntityCommand
 import time
 
 KEY_ENTITY_TAG = 'tag' # from Configurator.Configurator

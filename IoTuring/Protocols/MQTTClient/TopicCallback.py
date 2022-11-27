@@ -1,4 +1,4 @@
-from Logger.LogObject import LogObject
+from IoTuring.Logger.LogObject import LogObject
 
 import paho.mqtt.client as mqtt
 

@@ -1,12 +1,12 @@
-from Entity.Entity import Entity
-from Entity.EntityData import EntityCommand 
-from MyApp.App import App
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntityCommand 
+from IoTuring.MyApp.App import App
 
-from Configurator.MenuPreset import MenuPreset
+from IoTuring.Configurator.MenuPreset import MenuPreset
 
 import os
 
-from Entity import consts
+from IoTuring.Entity import consts
 
 supports_win = True
 try:

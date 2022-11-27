@@ -1,6 +1,6 @@
-from ClassManager.ClassManager import ClassManager
-from ClassManager import consts
-from Entity.Entity import Entity
+from IoTuring.ClassManager.ClassManager import ClassManager
+from IoTuring.ClassManager import consts
+from IoTuring.Entity.Entity import Entity
 
 class EntityClassManager(ClassManager): # Class to load Entities from the Entitties dir and get them from name 
     def __init__(self):

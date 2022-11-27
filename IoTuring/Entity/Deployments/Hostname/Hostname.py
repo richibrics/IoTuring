@@ -1,6 +1,6 @@
 import socket
-from Entity.Entity import Entity
-from Entity.EntityData import EntitySensor 
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntitySensor 
 
 KEY_HOSTNAME = 'hostname'
 

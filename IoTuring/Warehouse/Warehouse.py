@@ -1,6 +1,6 @@
-from Configurator.MenuPreset import BooleanAnswers
-from Logger.LogObject import LogObject
-from Entity.EntityManager import EntityManager
+from IoTuring.Configurator.MenuPreset import BooleanAnswers
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Entity.EntityManager import EntityManager
 
 from threading import Thread
 import time

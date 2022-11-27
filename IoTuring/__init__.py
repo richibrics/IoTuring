@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-from MyApp.App import App
-from Configurator.Configurator import Configurator
-from Configurator.ConfiguratorLoader import ConfiguratorLoader
-from Entity.Deployments.Username.Username import Username
-from Entity.EntityManager import EntityManager
-from Logger.Logger import Logger
-from Entity.Entity import Entity
-from Warehouse.Deployments.ConsoleWarehouse.ConsoleWarehouse import ConsoleWarehouse
-from Warehouse.Warehouse import Warehouse
+from IoTuring.MyApp.App import App
+from IoTuring.Configurator.Configurator import Configurator
+from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
+from IoTuring.Entity.Deployments.Username.Username import Username
+from IoTuring.Entity.EntityManager import EntityManager
+from IoTuring.Logger.Logger import Logger
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Warehouse.Deployments.ConsoleWarehouse.ConsoleWarehouse import ConsoleWarehouse
+from IoTuring.Warehouse.Warehouse import Warehouse
 import sys
 
 warehouses = []

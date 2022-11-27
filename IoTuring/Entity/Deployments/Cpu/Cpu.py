@@ -1,7 +1,7 @@
 import psutil
-from Entity.ValueFormatter import ValueFormatter
-from Entity.Entity import Entity
-from Entity.EntityData import EntitySensor 
+from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntitySensor 
 
 
 # Basic CPU info

@@ -1,7 +1,7 @@
 import imp
-from Entity.Entity import Entity
-from Entity.EntityData import EntitySensor 
-from MyApp.App import App
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntitySensor 
+from IoTuring.MyApp.App import App
 
 KEY_NAME = 'name'
 KEY_VERSION = 'version'

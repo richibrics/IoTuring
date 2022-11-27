@@ -1,6 +1,6 @@
 import subprocess
-from Entity.Entity import Entity
-from Entity.EntityData import EntityCommand
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntityCommand
 
 KEY_LOCK = 'lock'
 

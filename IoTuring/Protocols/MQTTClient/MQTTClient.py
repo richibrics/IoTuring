@@ -1,9 +1,9 @@
-from Logger.LogObject import LogObject
-from MyApp.App import App
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.MyApp.App import App
 import paho.mqtt.client as MqttClient
 import paho.mqtt.publish as publish
 
-from Protocols.MQTTClient.TopicCallback import TopicCallback
+from IoTuring.Protocols.MQTTClient.TopicCallback import TopicCallback
 
 """
 

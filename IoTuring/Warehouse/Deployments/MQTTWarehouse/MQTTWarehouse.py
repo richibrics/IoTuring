@@ -1,7 +1,7 @@
-from Configurator.MenuPreset import MenuPreset
-from Protocols.MQTTClient.MQTTClient import MQTTClient
-from Warehouse.Warehouse import Warehouse
-from MyApp.App import App
+from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
+from IoTuring.Warehouse.Warehouse import Warehouse
+from IoTuring.MyApp.App import App
 
 import inspect  # To get this folder path 
 import os  # To get this folder path 

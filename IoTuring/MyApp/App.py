@@ -1,5 +1,5 @@
 import inspect
-from Logger.Logger import Logger
+from IoTuring.Logger.Logger import Logger
 import os
 
 class App():

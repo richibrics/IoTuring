@@ -48,8 +48,3 @@ IoTuring = "IoTuring:loop"
 
 [build-system]
 requires = ["setuptools", "wheel"]
-
-[tool.setuptools]
-package-dir = {"" = "."}
-packages = ["IoTuring"]
-

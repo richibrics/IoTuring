@@ -1,7 +1,7 @@
-from Entity.Entity import Entity 
+from IoTuring.Entity.Entity import Entity 
 import subprocess
 import fnmatch
-from Logger import Logger, ExceptionTracker
+from IoTuring.Logger import Logger, ExceptionTracker
 
 TOPIC = 'terminal_command'
 

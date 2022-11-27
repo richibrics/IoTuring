@@ -1,5 +1,5 @@
-from Logger.Logger import Logger
-from Warehouse.Warehouse import Warehouse
+from IoTuring.Logger.Logger import Logger
+from IoTuring.Warehouse.Warehouse import Warehouse
 
 class ConsoleWarehouse(Warehouse):
     NAME = "Console"

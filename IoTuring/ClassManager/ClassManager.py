@@ -1,12 +1,12 @@
 import os
-from Entity.Entity import Entity
+from IoTuring.Entity.Entity import Entity
 from pathlib import Path
 from os import path
 import importlib.util
 import importlib.machinery
 import sys, inspect
-from Logger.LogObject import LogObject
-from ClassManager import consts
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.ClassManager import consts
 
 # This is a parent class
 

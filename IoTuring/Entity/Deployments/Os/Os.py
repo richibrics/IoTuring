@@ -1,7 +1,7 @@
 import platform
-from Entity.Entity import Entity
-from Entity.EntityData import EntitySensor
-from Entity import consts
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntitySensor
+from IoTuring.Entity import consts
 
 
 KEY_OS = 'operating_system'

@@ -1,7 +1,7 @@
 import datetime
 import psutil
-from Entity.Entity import Entity
-from Entity.EntityData import EntitySensor
+from IoTuring.Entity.Entity import Entity
+from IoTuring.Entity.EntityData import EntitySensor
 
 KEY_BOOT_TIME = 'boot_time'
 

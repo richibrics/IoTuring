@@ -1,10 +1,10 @@
 
 
 
-from Logger.Logger import Logger
+from IoTuring.Logger.Logger import Logger
 
 class LogObject:
-    from Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
+    from IoTuring.Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
 
     def Log(self, messageType, message):
         Logger.getInstance().Log(
