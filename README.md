@@ -12,36 +12,59 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ## Install
 
-### Install Python
+### Requirements
 
-IoTuring needs Python3.7 or later to run.
-You can install it [here](https://www.python.org/downloads/).
+- [Git](https://git-scm.com/)
+- [Python 3.7+](https://www.python.org/downloads/)
+- [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
-### Install PIP
+Some platforms may need other software for some entities.
 
-To install required packages you need [pip](https://www.makeuseof.com/tag/install-pip-for-python/)
+#### Install all requirements on ArchLinux
 
-### Install dependencies
+```shell
+pacman -Syu base-devel git python python-pip
+```
 
-To install dependencies all together, you only have to type in your terminal a PIP command.
-You need to install different packages depending on your operating system.
+#### Install and update all requirements on Debain
+
+```shell
+apt install git python3 python3-pip libdbus-glib-1-dev
+pip install --upgrade pip
+```
+
+#### Install and update all requirements on Ubuntu
+
+```
+apt install git python3 python3-pip libdbus-glib-1-dev meson patchelf
+pip install --upgrade pip
+```
+
+#### Windows
+
+- [Python](https://www.python.org/downloads/), pip included
+- [Git](https://git-scm.com/download/win), just accept the defaults
+
+### Download and install with pip
 
 On Linux:
 
 ```shell
-pip install .[linux]
+pip install "IoTuring[linux] @ git+https://github.com/richibrics/IoTuring"
 ```
 
 On Windows:
 
 ```shell
-pip install .[win]
+py -m pip install "IoTuring[win] @ git+https://github.com/richibrics/IoTuring"
 ```
+
+Note: on Windows you have to prefix every command with `py -m` as here.
 
 On MacOs:
 
 ```shell
-pip install .[macos]
+pip install "IoTuring[macos] @ git+https://github.com/richibrics/IoTuring"
 ```
 
 ### Configure
@@ -68,7 +91,7 @@ IoTuring
 
 ### HomeAssistant demo
 
-Your computer will show in HomeAssistant as a single Device, so all your entities will be grouped together. 
+Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
 The device will also have some properties like connectivity and battery status.
 
 You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
