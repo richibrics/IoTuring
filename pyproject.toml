@@ -1,6 +1,6 @@
 [project]
 name = "IoTuring"
-version = "2022.11.1"
+version = "1.0.0"
 description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -50,4 +50,4 @@ IoTuring = "IoTuring:loop"
 requires = ["setuptools", "wheel"]
 
 [tool.setuptools]
-package-dir = {"" = "."}
+package-dir = {"" = "IoTuring"}
