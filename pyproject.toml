@@ -50,4 +50,6 @@ IoTuring = "IoTuring:loop"
 requires = ["setuptools", "wheel"]
 
 [tool.setuptools]
-package-dir = {"" = "IoTuring"}
+package-dir = {"" = "."}
+packages = ["IoTuring"]
+
