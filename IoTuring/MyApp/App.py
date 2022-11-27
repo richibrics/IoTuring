@@ -1,16 +1,15 @@
 import inspect
 from IoTuring.Logger.Logger import Logger
+from importlib_metadata import metadata
 import os
 
 class App():
-    NAME = "IoTuring"
-    DESCRIPTION_FILENAME = "description.txt"
-    VENDOR = "Riccardo Briccola"
-
-    # Version
-    MAJOR_VERSION = "1"
-    MINOR_VERSION = "0"
-    REVISION_NUMBER = "0"
+    METADATA = metadata('IoTuring')
+    
+    NAME = METADATA['Name']
+    DESCRIPTION = METADATA['Summary']
+    VENDOR = METADATA['Maintainer-Email']
+    VERSION = METADATA['Version']
 
     @staticmethod 
     def getName() -> str:
@@ -22,18 +21,11 @@ class App():
     
     @staticmethod 
     def getDescription() -> str:
-        thisFolder = os.path.dirname(inspect.getfile(App))
-        path = os.path.join(thisFolder, App.DESCRIPTION_FILENAME)
-        try:
-            with open(path,"r") as f:
-                return f.read()
-        except:
-            Logger.getInstance().Log(Logger.LOG_ERROR, "MyApp", "Can't get App description")
-            return ""
+        return App.DESCRIPTION
 
     @staticmethod 
     def getVersion() -> str:
-        return App.MAJOR_VERSION+"."+App.MINOR_VERSION+"."+App.REVISION_NUMBER
+        return App.VERSION
    
     def __str__(self) -> str:
         msg = ""

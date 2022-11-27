@@ -23,7 +23,8 @@ dependencies = [
   "paho-mqtt",
   "psutil",
   "notify2",
-  "PyYAML"
+  "PyYAML",
+  "importlib_metadata"
 ]
 
 [project.optional-dependencies]
