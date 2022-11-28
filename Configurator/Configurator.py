@@ -18,7 +18,7 @@ KEY_WAREHOUSE_TYPE = "type"
 KEY_ENTITY_TYPE = "type"
 KEY_ENTITY_TAG = "tag"
 
-SEPARATOR_CHAR_NUMBER = 150
+SEPARATOR_CHAR_NUMBER = 120
 
 class Configurator(LogObject):
     # Must be in the same folder of this file
@@ -231,7 +231,10 @@ class Configurator(LogObject):
                     choice = choice - 1 # So now chosen entity = active entity in configurations
                     if choice >= 0 and choice < len(entityList):
                         # Use the entity name to get the menupreset and configure it
-                        self.AddActiveEntity(entityList[choice],ecm)
+                        if(self.CheckDependencies(entityList[choice],ecm)):
+                            self.AddActiveEntity(entityList[choice],ecm)
+                        else:
+                            self.PrintDependencyError(entityList[choice],ecm)
                         choice = True
                     else:
                         raise ValueError()
@@ -357,7 +360,11 @@ class Configurator(LogObject):
         # Each entity has a dependency list. If all those dependencies are already active, I return True so the current entity can be activated
         entityClass = entityClassManager.GetClassFromName(entity)
         for dependency in entityClass.GetDependenciesList():
-            if dependency not in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+            found = False
+            for active_entity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+                if dependency == active_entity[KEY_ENTITY_TYPE]:
+                    found = True
+            if not found:
                 return False
         return True
 
@@ -365,14 +372,14 @@ class Configurator(LogObject):
         """ Run only if if self.CheckDependencies returned False. 
             Prints a message with the dependencies the user has to activate before activating this entity """
 
-        print("!!! You can't activate this Entity. Please activate the following entities in order to use this one: !!!\n")
+        print("!!! You can't activate this Entity. Please activate the following entities in order to use this one: !!!")
 
         entityClass = entityClassManager.GetClassFromName(entity)
         for dependency in entityClass.GetDependenciesList():
             if dependency not in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
                 print("---> " + dependency + " <----")
 
-        print("\nThank you for the attention")
+        print("End of dependencies list")
 
     def PrintSeparator(self):
         print("\n"+SEPARATOR_CHAR_NUMBER*'#')
