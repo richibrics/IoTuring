@@ -135,3 +135,12 @@ Change **YOURUSERNAMEHERE** with the user that runs the script.
 - HomeAssistant: shares sensors and switches to HomeAssistant. The machine is shown as a Device and all the entites are grouped together. **recommended**
 - MQTT: sends data to MQTT broker and subscribes to commands topics.
 - Console: prints data to the console
+
+
+## Development/editable install
+
+```shell
+git clone https://github.com/richibrics/IoTuring
+cd IoTuring
+pip install -e .
+```
