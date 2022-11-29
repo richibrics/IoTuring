@@ -196,8 +196,13 @@ class Configurator(LogObject):
             choice = input("Select an operation: ")
             
             if choice == "r" or choice == "R":
-                if(Configurator.ConfirmQuestion()):
-                    self.RemoveActiveEntity(entityConfig,ecm)
+                # get dependencies errors: if no one, okay; print those with error func otherwise.
+                deps = self.CheckDependencies_AbleToRemove(entityConfig[KEY_ENTITY_TYPE], ecm)
+                if(len(deps)==0):
+                    if(Configurator.ConfirmQuestion()):
+                        self.RemoveActiveEntity(entityConfig,ecm)
+                else:
+                    self.PrintDependencyError_RemoveEntity(deps)
             elif choice == "e" or choice == "E":
                 self.EditActiveEntity(entityConfig,ecm)
 
@@ -230,11 +235,12 @@ class Configurator(LogObject):
                     choice = int(choice) # If not valid I have a ValueError
                     choice = choice - 1 # So now chosen entity = active entity in configurations
                     if choice >= 0 and choice < len(entityList):
-                        # Use the entity name to get the menupreset and configure it
-                        if(self.CheckDependencies(entityList[choice],ecm)):
-                            self.AddActiveEntity(entityList[choice],ecm)
+                        # get dependencies error if available: or okay or print those with its function
+                        deps = self.CheckDependencies_AbleToActivate(entityList[choice],ecm)
+                        if(len(deps)==0):
+                            self.AddActiveEntity(entityList[choice],ecm) # WIll also open the configuration menu
                         else:
-                            self.PrintDependencyError(entityList[choice],ecm)
+                            self.PrintDependencyError_ActivateEntity(deps)
                         choice = True
                     else:
                         raise ValueError()
@@ -355,29 +361,46 @@ class Configurator(LogObject):
         self.config[KEY_ACTIVE_ENTITIES].append(_dict)
         print("Configuration added for \""+entityName+"\" :)")
 
-    def CheckDependencies(self,entity, entityClassManager: EntityClassManager):
-        """ Return True if there aren't entities that must be loaded before the passed one """
-        # Each entity has a dependency list. If all those dependencies are already active, I return True so the current entity can be activated
-        entityClass = entityClassManager.GetClassFromName(entity)
+    def CheckDependencies_AbleToActivate(self, entityToActivate, entityClassManager: EntityClassManager):
+        """ Return list of entities depends on. """
+        entityClass = entityClassManager.GetClassFromName(entityToActivate)
+        dependingOn = entityClass.DEPENDENCIES.copy()
         for dependency in entityClass.GetDependenciesList():
-            found = False
             for active_entity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
                 if dependency == active_entity[KEY_ENTITY_TYPE]:
-                    found = True
-            if not found:
-                return False
-        return True
+                    dependingOn.remove(dependency)
+        return dependingOn
 
-    def PrintDependencyError(self,entity, entityClassManager: EntityClassManager):
-        """ Run only if if self.CheckDependencies returned False. 
-            Prints a message with the dependencies the user has to activate before activating this entity """
+
+    def CheckDependencies_AbleToRemove(self, entityToDisable, entityClassManager: EntityClassManager):
+        """ Return list of entities depend on this. """
+        # Each entity has a dependency list. Check if active entities do not rely on this.
+        dependingOnThis = []
+        for activeEntity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
+            # List of dependencies is in the class: load the class
+            entityClass = entityClassManager.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
+            for dependency in entityClass.DEPENDENCIES:
+                if dependency == entityToDisable:
+                    dependingOnThis.append(activeEntity[KEY_ENTITY_TYPE])
+        return dependingOnThis
+
+    def PrintDependencyError_ActivateEntity(self, dependencies):
+        """ Prints a message with the dependencies the user has to activate before activating this entity """
 
         print("!!! You can't activate this Entity. Please activate the following entities in order to use this one: !!!")
 
-        entityClass = entityClassManager.GetClassFromName(entity)
-        for dependency in entityClass.GetDependenciesList():
-            if dependency not in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
-                print("---> " + dependency + " <----")
+        for dependency in dependencies:
+            print("---> " + dependency + " <----")
+
+        print("End of dependencies list")
+
+    def PrintDependencyError_RemoveEntity(self, dependencies):
+        """ Prints a message with the dependencies the user has to remove before removing this entity """
+
+        print("!!! You can't remove this Entity. Please remove the following entities in order to remove this one: !!!")
+
+        for dependency in dependencies:
+            print("---> " + dependency + " <----")
 
         print("End of dependencies list")
 
