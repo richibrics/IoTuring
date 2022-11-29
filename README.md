@@ -137,10 +137,24 @@ Change **YOURUSERNAMEHERE** with the user that runs the script.
 - Console: prints data to the console
 
 
-## Development/editable install
+## Development
+
+### Editable install
+
+[Pip documentation](https://pip.pypa.io/en/stable/topics/local-project-installs/)
 
 ```shell
 git clone https://github.com/richibrics/IoTuring
 cd IoTuring
 pip install -e .
 ```
+
+### Versioning
+
+The project uses [calendar versioning](https://calver.org/):
+
+`YYYY.0M.0D`:
+
+- `YYYY`: Full year: 2022, 2023 ...
+- `0M`: Zero-padded month: 01, 02 ... 11, 12
+- `0D`: Zero-padded day: 01, 02 ... 30, 31
