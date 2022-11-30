@@ -1,4 +1,0 @@
-paho-mqtt
-psutil
-win10toast
-PyYAML
