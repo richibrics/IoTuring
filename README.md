@@ -153,8 +153,8 @@ pip install -e .
 
 The project uses [calendar versioning](https://calver.org/):
 
-`YYYY.0M.0D`:
+`YYYY.0M.n`:
 
 - `YYYY`: Full year: 2022, 2023 ...
 - `0M`: Zero-padded month: 01, 02 ... 11, 12
-- `0D`: Zero-padded day: 01, 02 ... 30, 31
+- `n`: Build number in the month: 1, 2 ...
