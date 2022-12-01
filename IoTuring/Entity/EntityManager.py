@@ -37,8 +37,11 @@ class EntityManager():
         self.ManageUpdates()
 
     def GetEntities(self, includePassive) -> list:
-        """ Return a list with entities that update periodically that have an active behaviour: can send and receive data.
-            Add also passive entities if asked (useful for dependency check/get) (False if it's a call by warehouse that wants to send the data!)"""
+        """ 
+            Return a list with entities.
+            includePassive = True: returns all entities (included those that were loaded due to dependencies)
+            includePassive = False: returns only entities that can send and receive data to/from warehouses. 
+        """
         if not includePassive:
             return self.activeEntities
         else:
