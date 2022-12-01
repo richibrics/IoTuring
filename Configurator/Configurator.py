@@ -364,7 +364,7 @@ class Configurator(LogObject):
     def CheckDependencies_AbleToActivate(self, entityToActivate, entityClassManager: EntityClassManager):
         """ Return list of entities depends on. """
         entityClass = entityClassManager.GetClassFromName(entityToActivate)
-        dependingOn = entityClass.DEPENDENCIES.copy()
+        dependingOn = entityClass.GetDependenciesList()
         for dependency in entityClass.GetDependenciesList():
             for active_entity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
                 if dependency == active_entity[KEY_ENTITY_TYPE]:
@@ -379,7 +379,7 @@ class Configurator(LogObject):
         for activeEntity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
             # List of dependencies is in the class: load the class
             entityClass = entityClassManager.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
-            for dependency in entityClass.DEPENDENCIES:
+            for dependency in entityClass.GetDependenciesList():
                 if dependency == entityToDisable:
                     dependingOnThis.append(activeEntity[KEY_ENTITY_TYPE])
         return dependingOnThis

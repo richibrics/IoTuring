@@ -68,6 +68,17 @@ class EntityManager():
                         raise Exception("The Entity sensor you asked for hasn't got a value")
                     return entity.GetEntitySensorByKey(dataKeyToFind).GetValue() # I don't return the entity or the entitydata, because I don't want any edit from outside its entity !
 
+    
+    def CheckEntityDependenciesSatisfied(self, callerEntity) -> list:
+        """ Returns all the Entities specified in an entity dependencies list that have not been initialized,
+            which means they could have been not activated from the configuration or not working correctly """
+        not_found_deps = callerEntity.GetDependenciesList()
+        for dependency in callerEntity.GetDependenciesList():
+            for entity in self.GetEntities(True):
+                if dependency == entity.__class__.__name__:
+                    not_found_deps.remove(dependency)
+        return not_found_deps
+
 
     # Singleton method
     @staticmethod
