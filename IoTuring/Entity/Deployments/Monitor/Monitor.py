@@ -1,13 +1,14 @@
 import subprocess
 import ctypes
 import os as sys_os
-from IoTuring.Entity.Entity import Entity 
+from IoTuring.Entity.Entity import Entity
 from ctypes import *
 
 from IoTuring.Entity.EntityData import EntityCommand
 
 KEY_TURN_ALL_OFF = 'turn_all_off'
 KEY_TURN_ALL_ON = 'turn_all_on'
+
 
 class Monitor(Entity):
     NAME = "Monitor"
@@ -16,11 +17,13 @@ class Monitor(Entity):
         pass
 
     def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os',"operating_system")
+        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
 
         if self.os == 'Windows' or (self.os == 'Linux' and sys_os.environ.get('DISPLAY')):
-            self.RegisterEntityCommand(EntityCommand(self, KEY_TURN_ALL_OFF, self.CallbackTurnAllOff))
-            self.RegisterEntityCommand(EntityCommand(self, KEY_TURN_ALL_ON, self.CallbackTurnAllOn))
+            self.RegisterEntityCommand(EntityCommand(
+                self, KEY_TURN_ALL_OFF, self.CallbackTurnAllOff))
+            self.RegisterEntityCommand(EntityCommand(
+                self, KEY_TURN_ALL_ON, self.CallbackTurnAllOn))
 
     def CallbackTurnAllOff(self, message):
         if self.os == 'Windows':

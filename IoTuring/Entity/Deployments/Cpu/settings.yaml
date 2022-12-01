@@ -59,14 +59,14 @@ discovery:
         unit_of_measurement: "Hz"
         icon: "mdi:calculator-variant"
 
-    - topic: cpu/cpu_freq/max 
+    - topic: cpu/cpu_freq/max
       advanced_topic: True
       payload:
         name: "Cpu maximum frequency"
         unit_of_measurement: "Hz"
         icon: "mdi:calculator-variant"
 
-    - topic: cpu/cpu_freq/current 
+    - topic: cpu/cpu_freq/current
       advanced_topic: True
       payload:
         name: "Cpu current frequency"

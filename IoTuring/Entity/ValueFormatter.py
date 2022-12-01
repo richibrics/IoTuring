@@ -18,9 +18,10 @@ VALUEFORMATTER_OPTIONS_SIZE_KEY = "size"
 # Lists of measure units
 BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 TIME_SIZES = ['s', 'm', 'h', 'd']
-TIME_SIZES_DIVIDERS = [1,60,60,24]
+TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 
 DO_NOT_TOUCH_DECIMALS = -1
+
 
 class ValueFormatter():
     TYPE_NONE = 0
@@ -33,13 +34,13 @@ class ValueFormatter():
     @staticmethod
     def GetFormattedValue(value, options):
         valueType = options[VALUEFORMATTER_OPTIONS_TYPE_KEY]
-        if valueType == ValueFormatter.TYPE_NONE:  # edit needed only if decimals 
+        if valueType == ValueFormatter.TYPE_NONE:  # edit needed only if decimals
             if options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY] == DO_NOT_TOUCH_DECIMALS:
                 return value
             else:
                 return round(value, options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY])
         elif valueType == ValueFormatter.TYPE_BYTE:
-            return ValueFormatter.ByteFormatter(value,options)
+            return ValueFormatter.ByteFormatter(value, options)
         elif valueType == ValueFormatter.TYPE_MILLISECONDS:
             return ValueFormatter.MillisecondsFormatter(value, options)
         elif valueType == ValueFormatter.TYPE_TIME:
@@ -53,13 +54,13 @@ class ValueFormatter():
                 return str(value)
         else:
             return str(value)
- 
+
     @staticmethod
-    def TimeFormatter(value,options):
+    def TimeFormatter(value, options):
         # Get value in seconds, and adjustable
         asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
         decimals = options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY]
-        
+
         if asked_size and asked_size in TIME_SIZES:
             index = TIME_SIZES.index(asked_size)
             divider = 1
@@ -76,7 +77,7 @@ class ValueFormatter():
 
         if ENABLE_UNIT:
             result = result + TIME_SIZES[index]
-    
+
         return result
 
     @staticmethod
@@ -87,13 +88,13 @@ class ValueFormatter():
         else:
             return str(value)
 
-    # Get from number of bytes the correct byte size: 1045B is 1KB. If size_wanted passed and is SIZE_MEGABYTE, if I have 10^9B, I won't diplay 1GB but c.a. 1000MB   
+    # Get from number of bytes the correct byte size: 1045B is 1KB. If size_wanted passed and is SIZE_MEGABYTE, if I have 10^9B, I won't diplay 1GB but c.a. 1000MB
     @staticmethod
     def ByteFormatter(value, options):
         # Get value in bytes
         asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
         decimals = options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY]
-        
+
         if asked_size and asked_size in BYTE_SIZES:
             powOf1024 = BYTE_SIZES.index(asked_size)
         # If value == 0 math.log failes, so simply send 0:
@@ -109,9 +110,8 @@ class ValueFormatter():
 
         if ENABLE_UNIT:
             result = result + BYTE_SIZES[powOf1024]
-    
-        return result
 
+        return result
 
     @staticmethod
     def FrequencyFormatter(value, options):
@@ -122,5 +122,5 @@ class ValueFormatter():
             return str(value)
 
     @staticmethod
-    def Options(value_type = TYPE_NONE, decimals=DO_NOT_TOUCH_DECIMALS, adjust_size=None):
-        return {VALUEFORMATTER_OPTIONS_TYPE_KEY: value_type, VALUEFORMATTER_OPTIONS_DECIMALS_KEY: decimals, VALUEFORMATTER_OPTIONS_SIZE_KEY:adjust_size}
+    def Options(value_type=TYPE_NONE, decimals=DO_NOT_TOUCH_DECIMALS, adjust_size=None):
+        return {VALUEFORMATTER_OPTIONS_TYPE_KEY: value_type, VALUEFORMATTER_OPTIONS_DECIMALS_KEY: decimals, VALUEFORMATTER_OPTIONS_SIZE_KEY: adjust_size}

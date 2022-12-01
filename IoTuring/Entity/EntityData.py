@@ -35,7 +35,8 @@ class EntitySensor(EntityData):
 
     def HasValue(self):
         """ True if self.value isn't empty """
-        return self.value is not None 
+        return self.value is not None
+
 
 class EntityCommand(EntityData):
 

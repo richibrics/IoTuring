@@ -8,7 +8,8 @@ from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
-BLANK_CONFIGURATION = {'active_entities': [{"type": "AppInfo"}], 'active_warehouses': []}
+BLANK_CONFIGURATION = {'active_entities': [
+    {"type": "AppInfo"}], 'active_warehouses': []}
 
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
@@ -20,6 +21,7 @@ KEY_ENTITY_TAG = "tag"
 
 SEPARATOR_CHAR_NUMBER = 120
 
+
 class Configurator(LogObject):
     # Must be in the same folder of this file
     configurations_filename = "configurations.json"
@@ -30,7 +32,7 @@ class Configurator(LogObject):
 
     def GetConfigurations(self):
         """ Return a copy of the configurations dict"""
-        return self.config.copy() # Safe return
+        return self.config.copy()  # Safe return
 
     def Menu(self) -> None:
         """ UI for Entities and Warehouses settings """
@@ -53,8 +55,8 @@ class Configurator(LogObject):
                     self.ManageWarehouses()
                 elif choice == "c" or choice == "C":
                     choice = True   # Valid choice
-                    run_app = True # Will start the program exiting from here
-                    print("") # Blank line
+                    run_app = True  # Will start the program exiting from here
+                    print("")  #  Blank line
                     self.WriteConfigurations()
                 elif choice == "q" or choice == "Q":
                     self.WriteConfigurations()
@@ -70,28 +72,32 @@ class Configurator(LogObject):
             choice = False
             while not choice:
                 self.PrintSeparator()
-                print("Active entities: (enter the entity number to edit its configuration or to disable it)")
-                i=0
+                print(
+                    "Active entities: (enter the entity number to edit its configuration or to disable it)")
+                i = 0
                 for entity in self.config[KEY_ACTIVE_ENTITIES]:
                     if not KEY_ENTITY_TAG in entity:
-                        print(i+1,"-",entity[KEY_ENTITY_TYPE])
+                        print(i+1, "-", entity[KEY_ENTITY_TYPE])
                     else:
-                        print(i+1,"-",entity[KEY_ENTITY_TYPE] , "with tag" , entity[KEY_ENTITY_TAG])
-                    i+=1
+                        print(i+1, "-", entity[KEY_ENTITY_TYPE],
+                              "with tag", entity[KEY_ENTITY_TAG])
+                    i += 1
                 print("\nA - Add a new entity")
                 print("Q - Come back")
                 choice = input("\nSelect your choice: ")
                 try:
                     if choice == 'a' or choice == 'A':
                         choice = True
-                        self.SelectNewEntity(ecm) 
+                        self.SelectNewEntity(ecm)
                     elif choice == "q" or choice == "Q":
                         return
                     else:
-                        choice = int(choice) # If not valid I have a ValueError
-                        choice = choice - 1 # So now chosen entity = active entity in configurations
+                        # If not valid I have a ValueError
+                        choice = int(choice)
+                        choice = choice - 1  # So now chosen entity = active entity in configurations
                         if choice >= 0 and choice < len(self.config[KEY_ACTIVE_ENTITIES]):
-                            self.ManageSingleEntity(self.config[KEY_ACTIVE_ENTITIES][choice],ecm) 
+                            self.ManageSingleEntity(
+                                self.config[KEY_ACTIVE_ENTITIES][choice], ecm)
                             choice = True
                         else:
                             raise ValueError()
@@ -100,33 +106,36 @@ class Configurator(LogObject):
                     print("Please insert a valid choice")
                 except Exception as e:
                     choice = False
-                    self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
-
+                    self.Log(self.LOG_ERROR,
+                             "Error in Entity select menu: " + str(e))
 
     def ManageWarehouses(self) -> None:
         """ UI for Warehouses settings """
         wcm = WarehouseClassManager()
-        
+
         while(True):
             self.PrintSeparator()
             print("Select the warehouse you want to manage (X for enabled):")
             availableWarehouses = wcm.ListAvailableClassesNames()
             for index, whName in enumerate(availableWarehouses):
-                if not self.IsWarehouseActive(whName.replace("Warehouse","")):
-                    print("[ ] " + str(index+1) + " - " + whName.replace("Warehouse",""))
+                if not self.IsWarehouseActive(whName.replace("Warehouse", "")):
+                    print("[ ] " + str(index+1) + " - " +
+                          whName.replace("Warehouse", ""))
                 else:
-                    print("[X] " + str(index+1) + " - " + whName.replace("Warehouse",""))
+                    print("[X] " + str(index+1) + " - " +
+                          whName.replace("Warehouse", ""))
             print("    Q - Come back\n")
             choice = False
             while not choice:
                 choice = input("Which one do you want to manage ? ")
                 if choice == "q" or choice == "Q":
                     return
-                else: 
+                else:
                     try:
                         choice = int(choice) - 1
                         if choice >= 0 and choice < len(availableWarehouses):
-                            self.ManageSingleWarehouse(availableWarehouses[choice].replace("Warehouse",""),wcm)
+                            self.ManageSingleWarehouse(
+                                availableWarehouses[choice].replace("Warehouse", ""), wcm)
                             choice = True
                         else:
                             raise IndexError("Choice out of warehouses range")
@@ -135,7 +144,8 @@ class Configurator(LogObject):
                         print("Please insert a valid Warehouse index")
                     except Exception as e:
                         choice = False
-                        self.Log(self.LOG_ERROR,"Error in Warehouse select menu: " + str(e))
+                        self.Log(self.LOG_ERROR,
+                                 "Error in Warehouse select menu: " + str(e))
 
     def LoadConfigurations(self) -> None:
         """ Load into a dict in self the configurations file in this script's folder """
@@ -147,7 +157,7 @@ class Configurator(LogObject):
         except:
             self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.")
             self.config = BLANK_CONFIGURATION
-    
+
         # check valid keys
         if not KEY_ACTIVE_ENTITIES in self.config or not KEY_ACTIVE_WAREHOUSES in self.config:
             self.Log(self.LOG_ERROR, "Invalid configurations, you may have broken them manually. Check you have a dict like this in your configurations file (or delete it to generate a new one) : ")
@@ -172,39 +182,41 @@ class Configurator(LogObject):
         print("Q - Come back")
 
         choice = input("Select an operation: ")
-        
+
         if self.IsWarehouseActive(warehouseName):
             if choice == "r" or choice == "R":
                 if(Configurator.ConfirmQuestion()):
                     self.RemoveActiveWarehouse(warehouseName)
             elif choice == "e" or choice == "E":
-                self.EditActiveWarehouse(warehouseName,wcm)
+                self.EditActiveWarehouse(warehouseName, wcm)
         else:
             if choice == "a" or choice == "A":
-                self.AddActiveWarehouse(warehouseName,wcm)
+                self.AddActiveWarehouse(warehouseName, wcm)
 
-    def ManageSingleEntity(self, entityConfig, ecm:EntityClassManager):
+    def ManageSingleEntity(self, entityConfig, ecm: EntityClassManager):
         """ UI to manage an active warehouse (edit config/remove) """
         choice = False
         while(not choice):
             self.PrintSeparator()
-            print("What do you want to do with " + entityConfig[KEY_ENTITY_TYPE] + "?")
+            print("What do you want to do with " +
+                  entityConfig[KEY_ENTITY_TYPE] + "?")
             print("\nE - Edit the entity settings")
             print("R - Remove the entity")
             print("Q - Come back")
 
             choice = input("Select an operation: ")
-            
+
             if choice == "r" or choice == "R":
                 # get dependencies errors: if no one, okay; print those with error func otherwise.
-                deps = self.CheckDependencies_AbleToRemove(entityConfig[KEY_ENTITY_TYPE], ecm)
-                if(len(deps)==0):
+                deps = self.CheckDependencies_AbleToRemove(
+                    entityConfig[KEY_ENTITY_TYPE], ecm)
+                if(len(deps) == 0):
                     if(Configurator.ConfirmQuestion()):
-                        self.RemoveActiveEntity(entityConfig,ecm)
+                        self.RemoveActiveEntity(entityConfig, ecm)
                 else:
                     self.PrintDependencyError_RemoveEntity(deps)
             elif choice == "e" or choice == "E":
-                self.EditActiveEntity(entityConfig,ecm)
+                self.EditActiveEntity(entityConfig, ecm)
 
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
@@ -220,25 +232,27 @@ class Configurator(LogObject):
             self.PrintSeparator()
             print("Available entities: ")
             print("PS: if you don't see the entity you want, it may be already active and may not accept another version of itself)\n")
-            i=0
+            i = 0
             for entity in entityList:
-                print(i+1,"-",entity)
-                i+=1        
-                
+                print(i+1, "-", entity)
+                i += 1
+
             print("\nQ - Come back")
 
             choice = input("\nSelect your choice: ")
             try:
                 if choice == "q" or choice == "Q":
                     return
-                else: 
-                    choice = int(choice) # If not valid I have a ValueError
-                    choice = choice - 1 # So now chosen entity = active entity in configurations
+                else:
+                    choice = int(choice)  # If not valid I have a ValueError
+                    choice = choice - 1  # So now chosen entity = active entity in configurations
                     if choice >= 0 and choice < len(entityList):
                         # get dependencies error if available: or okay or print those with its function
-                        deps = self.CheckDependencies_AbleToActivate(entityList[choice],ecm)
-                        if(len(deps)==0):
-                            self.AddActiveEntity(entityList[choice],ecm) # WIll also open the configuration menu
+                        deps = self.CheckDependencies_AbleToActivate(
+                            entityList[choice], ecm)
+                        if(len(deps) == 0):
+                            # WIll also open the configuration menu
+                            self.AddActiveEntity(entityList[choice], ecm)
                         else:
                             self.PrintDependencyError_ActivateEntity(deps)
                         choice = True
@@ -249,7 +263,8 @@ class Configurator(LogObject):
                 print("Please insert a valid choice")
             except Exception as e:
                 choice = False
-                self.Log(self.LOG_ERROR,"Error in Entity select menu: " + str(e))
+                self.Log(self.LOG_ERROR,
+                         "Error in Entity select menu: " + str(e))
 
     def AddActiveEntity(self, entityName, ecm: EntityClassManager):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
@@ -257,20 +272,20 @@ class Configurator(LogObject):
         try:
             preset = entityClass.ConfigurationPreset()
 
-            if preset is not None: # Then let's configure the Entity
+            if preset is not None:  # Then let's configure the Entity
                 # Ask also for Tag if the entity allows multi-instance
                 if entityClass.AllowMultiInstance():
                     preset.AddTagQuestion()
-                    
+
                 preset.PrintRules()
                 for index, question in enumerate(preset.ListEntries()):
                     preset.Question(index)
-                
+
             else:
-                preset = MenuPreset() # Use blank
+                preset = MenuPreset()  # Use blank
                 print("No configuration needed for this Entity :)")
 
-            self.EntityMenuPresetToConfiguration(entityName,preset)
+            self.EntityMenuPresetToConfiguration(entityName, preset)
         except Exception as e:
             print("Error during entity preset loading: " + str(e))
 
@@ -279,22 +294,23 @@ class Configurator(LogObject):
         for entity in self.config[KEY_ACTIVE_ENTITIES]:
             if entityName == entity[KEY_ENTITY_TYPE]:
                 return True
-        return False 
+        return False
 
-    def RemoveActiveEntity(self, entityConfig, ecm:EntityClassManager) -> None:
+    def RemoveActiveEntity(self, entityConfig, ecm: EntityClassManager) -> None:
         """ Remove entity name from the list of active entities if present """
         # TODO Check if no dependencies from it
 
         for activeEntity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
             if activeEntity != entityConfig:
                 # Get class from entity type
-                entityClass = ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
+                entityClass = ecm.GetClassFromName(
+                    activeEntity[KEY_ENTITY_TYPE])
                 # Retrieve entity dependencies
                 deps = entityClass.GetDependenciesList()
                 # Check if entity I want to remove is dependent from the entity I'm iterating
                 if entityConfig[KEY_ENTITY_TYPE] in deps:
-                    raise Exception("Can't remove this entity because "  + activeEntity[KEY_ENTITY_TYPE] + " depends from it :(")
-
+                    raise Exception("Can't remove this entity because " +
+                                    activeEntity[KEY_ENTITY_TYPE] + " depends from it :(")
 
         if entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
             self.config[KEY_ACTIVE_ENTITIES].remove(entityConfig)
@@ -304,26 +320,27 @@ class Configurator(LogObject):
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
             if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 return True
-        return False 
+        return False
 
     def AddActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
         """ Add warehouse to the preferences using a menu with the warehouse preset if available """
 
         whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
-            preset = whClass.ConfigurationPreset() # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
-            
+            # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
+            preset = whClass.ConfigurationPreset()
+
             if preset is not None:
                 preset.PrintRules()
 
                 for index, question in enumerate(preset.ListEntries()):
                     preset.Question(index)
             else:
-                preset = MenuPreset() # Use blank
+                preset = MenuPreset()  # Use blank
                 print("No configuration needed for this Warehouse :)")
-            
+
             # Save added settings
-            self.WarehouseMenuPresetToConfiguration(warehouseName,preset)
+            self.WarehouseMenuPresetToConfiguration(warehouseName, preset)
         except Exception as e:
             print("Error during warehouse preset loading: " + str(e))
 
@@ -332,13 +349,13 @@ class Configurator(LogObject):
         print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
-        pass # TODO Implement
+        pass  # TODO Implement
 
     def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
         """ UI for single Entity settings edit """
         print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
-        pass # TODO Implement
-   
+        pass  # TODO Implement
+
     def RemoveActiveWarehouse(self, warehouseName) -> None:
         """ Remove warehouse name from the list of active warehouses if present """
         for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
@@ -347,14 +364,14 @@ class Configurator(LogObject):
                 self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
                 return
 
-    def WarehouseMenuPresetToConfiguration(self,whName, preset) -> None:
+    def WarehouseMenuPresetToConfiguration(self, whName, preset) -> None:
         """ Get a MenuPreset with responses and add the entries to the configurations dict in warehouse part """
         _dict = preset.GetDict()
-        _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse","")
+        _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse", "")
         self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
         print("Configuration added for \""+whName+"\" :)")
 
-    def EntityMenuPresetToConfiguration(self,entityName, preset) -> None:
+    def EntityMenuPresetToConfiguration(self, entityName, preset) -> None:
         """ Get a MenuPreset with responses and add the entries to the configurations dict in entity part """
         _dict = preset.GetDict()
         _dict[KEY_ENTITY_TYPE] = entityName
@@ -371,14 +388,14 @@ class Configurator(LogObject):
                     dependingOn.remove(dependency)
         return dependingOn
 
-
     def CheckDependencies_AbleToRemove(self, entityToDisable, entityClassManager: EntityClassManager):
         """ Return list of entities depend on this. """
         # Each entity has a dependency list. Check if active entities do not rely on this.
         dependingOnThis = []
         for activeEntity in self.GetConfigurations()[KEY_ACTIVE_ENTITIES]:
             # List of dependencies is in the class: load the class
-            entityClass = entityClassManager.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
+            entityClass = entityClassManager.GetClassFromName(
+                activeEntity[KEY_ENTITY_TYPE])
             for dependency in entityClass.GetDependenciesList():
                 if dependency == entityToDisable:
                     dependingOnThis.append(activeEntity[KEY_ENTITY_TYPE])

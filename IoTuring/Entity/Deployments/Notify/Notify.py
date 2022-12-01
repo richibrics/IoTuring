@@ -1,5 +1,5 @@
 from IoTuring.Entity.Entity import Entity
-from IoTuring.Entity.EntityData import EntityCommand 
+from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.App import App
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
@@ -17,7 +17,7 @@ except:
 
 supports_unix = True
 try:
-    import notify2 
+    import notify2
 except:
     supports_unix = False
 
@@ -32,11 +32,12 @@ CONFIG_KEY_MESSAGE = "message"
 
 DEFAULT_DURATION = 10  # Seconds
 
+
 class Notify(Entity):
     NAME = "Notify"
     DEPENDENCIES = ["Os"]
     ALLOW_MULTI_INSTANCE = True
-    
+
     def Initialize(self):
         try:
             self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
@@ -44,11 +45,11 @@ class Notify(Entity):
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
-        self.RegisterEntityCommand(EntityCommand(self,KEY,self.Callback))
+        self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     # I need it here cause I have to check the right import for my OS (and I may not know the OS in Init function)
     def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue("Os","operating_system")
+        self.os = self.GetDependentEntitySensorValue("Os", "operating_system")
         if self.os == consts.OS_FIXED_VALUE_WINDOWS:
             if not supports_win:
                 raise Exception(
@@ -67,7 +68,7 @@ class Notify(Entity):
         if self.config_title and self.config_message:
             self.notification_title = self.config_title
             self.notification_message = self.config_message
-        
+
         else:
             # Convert the payload to a dict:
             messageDict = ''
@@ -87,18 +88,22 @@ class Notify(Entity):
             toaster.show_toast(
                 self.notification_title, self.notification_message, duration=DEFAULT_DURATION, threaded=False)
         elif self.os == consts.OS_FIXED_VALUE_LINUX:
-            notification = notify2.Notification(self.notification_title, self.notification_message)
+            notification = notify2.Notification(
+                self.notification_title, self.notification_message)
             notification.show()
         elif self.os == consts.OS_FIXED_VALUE_MACOS:
             command = 'osascript -e \'display notification "{}" with title "{}"\''.format(
                 self.notification_message, self.notification_title,)
             os.system(command)
         else:
-            self.Log(self.LOG_WARNING,"No notify command available for this operating system ("+ str(self.os) +")... Aborting")
+            self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
+                     str(self.os) + ")... Aborting")
 
     @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
-        preset.AddEntry("Notification title (Leave empty if you want to define it in the payload)", CONFIG_KEY_TITLE)
-        preset.AddEntry("Notification message (Leave empty if you want to define it in the payload)", CONFIG_KEY_MESSAGE)
+        preset.AddEntry(
+            "Notification title (Leave empty if you want to define it in the payload)", CONFIG_KEY_TITLE)
+        preset.AddEntry(
+            "Notification message (Leave empty if you want to define it in the payload)", CONFIG_KEY_MESSAGE)
         return preset

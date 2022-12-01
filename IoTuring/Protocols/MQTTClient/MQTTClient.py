@@ -15,12 +15,13 @@ MQTTClient Operations:
 
 """
 
+
 class MQTTClient(LogObject):
     client = None
     connected = False
 
     # After the init, you have to connect with AsyncConnect !
-    def __init__(self,address,port=1883,name=None,username="",password=""):
+    def __init__(self, address, port=1883, name=None, username="", password=""):
         self.address = address
         self.port = int(port)
         self.name = name
@@ -32,7 +33,7 @@ class MQTTClient(LogObject):
 
         # List of TopicCallback objects, which I use to call callbacks, compare topics, keep subscribed state
         self.topicCallbacks = []
-        
+
         self.Log(self.LOG_INFO, 'Preparing MQTT client')
         self.SetupClient()
 
@@ -50,7 +51,6 @@ class MQTTClient(LogObject):
         self.client.on_connect = self.Event_OnClientConnect
         self.client.on_disconnect = self.Event_OnClientDisconnect
         self.client.on_message = self.Event_OnMessageReceive
-
 
     def AsyncConnect(self) -> None:
         """ Connect async to the broker """
@@ -82,8 +82,7 @@ class MQTTClient(LogObject):
             topicCallback = self.GetTopicCallback(message.topic)
             topicCallback.Call_Callback(message)
         except Exception as e:
-            self.Log(self.LOG_WARNING,"Error in message receive: " + str(e))
-
+            self.Log(self.LOG_WARNING, "Error in message receive: " + str(e))
 
     # OUTCOMING MESSAGES PART
 
@@ -92,12 +91,12 @@ class MQTTClient(LogObject):
 
     def LwtSet(self, topic, payload) -> None:
         # Sets Lwt message data
-        self.client.will_set(topic, payload = payload, retain = False)
+        self.client.will_set(topic, payload=payload, retain=False)
 
     # INCOMING MESSAGES PART / SUBSCRIBE
 
     def AddNewTopicToSubscribeTo(self, topic, callbackFunction) -> TopicCallback:
-        topicCallback = TopicCallback(topic,callbackFunction)
+        topicCallback = TopicCallback(topic, callbackFunction)
         self.topicCallbacks.append(topicCallback)
         if self.connected:
             topicCallback.SubscribeTopic(self.client)
@@ -109,19 +108,19 @@ class MQTTClient(LogObject):
             for topicCallback in self.topicCallbacks:
                 topicCallback.SubscribeTopic(self.client)
 
-    def UnsubscribeFromTopic(self,topic) -> None:
+    def UnsubscribeFromTopic(self, topic) -> None:
         try:
             topicCallback = self.GetTopicCallback(topic)
             topicCallback.UnsubscribeTopic(self.client)
             self.topicCallbacks.remove(topicCallback)
         except Exception as e:
-            self.Log(self.LOG_ERROR,"Error in topic unsubscription: " + str(e))
+            self.Log(self.LOG_ERROR, "Error in topic unsubscription: " + str(e))
 
     def GetTopicCallbacks(self) -> list:
         """ Return (safely) a list with topics to which the client should be subscribed when everything is working correctly"""
         return self.topicCallbacks.copy()
 
-    def GetTopicCallback(self,topic) -> TopicCallback:
+    def GetTopicCallback(self, topic) -> TopicCallback:
         for topicCallback in self.topicCallbacks:
             if topicCallback.CompareTopic(topic):
                 return topicCallback
@@ -134,4 +133,4 @@ class MQTTClient(LogObject):
     # NORMALIZE
     @staticmethod
     def NormalizeTopic(entityDataId) -> str:
-        return entityDataId.replace(".","/")
+        return entityDataId.replace(".", "/")

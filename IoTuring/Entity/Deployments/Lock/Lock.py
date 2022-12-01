@@ -21,15 +21,16 @@ commands = {
 
 class Lock(Entity):
     NAME = "Lock"
-    DEPENDENCIES = ["Os","DesktopEnvironment"]
+    DEPENDENCIES = ["Os", "DesktopEnvironment"]
 
     def Initialize(self):
-        self.RegisterEntityCommand(EntityCommand(self,KEY_LOCK,self.Callback_Lock))
+        self.RegisterEntityCommand(EntityCommand(
+            self, KEY_LOCK, self.Callback_Lock))
 
     def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os',"operating_system")
+        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
         self.de = self.GetDependentEntitySensorValue(
-            'DesktopEnvironment','desktop_environment')
+            'DesktopEnvironment', 'desktop_environment')
 
     def Callback_Lock(self, message):
         if self.os in commands:

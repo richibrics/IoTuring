@@ -3,30 +3,31 @@ from IoTuring.Logger.Logger import Logger
 from importlib_metadata import metadata
 import os
 
+
 class App():
     METADATA = metadata('IoTuring')
-    
+
     NAME = METADATA['Name']
     DESCRIPTION = METADATA['Summary']
     VENDOR = METADATA['Maintainer-email'].split(' <')[0]
     VERSION = METADATA['Version']
 
-    @staticmethod 
+    @staticmethod
     def getName() -> str:
         return App.NAME
-    
-    @staticmethod 
+
+    @staticmethod
     def getVendor() -> str:
         return App.VENDOR
-    
-    @staticmethod 
+
+    @staticmethod
     def getDescription() -> str:
         return App.DESCRIPTION
 
-    @staticmethod 
+    @staticmethod
     def getVersion() -> str:
         return App.VERSION
-   
+
     def __str__(self) -> str:
         msg = ""
         msg += "Name: " + App.getName() + "\n"

@@ -6,6 +6,8 @@ from datetime import datetime  # for logging purpose and filename
 import json  # to print a dict easily
 
 # Singleton pattern used
+
+
 class Logger():
 
     from IoTuring.Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
@@ -17,7 +19,8 @@ class Logger():
     def __init__(self) -> None:
         # Prepare the singleton
         if Logger.__instance != None:
-            raise Exception("This class is a singleton, use .getInstance() to access it!")
+            raise Exception(
+                "This class is a singleton, use .getInstance() to access it!")
         else:
             Logger.__instance = self
 
@@ -28,7 +31,7 @@ class Logger():
         """ Set filename with timestamp and also call setup folder """
         dateTimeObj = datetime.now()
         self.log_filename = os.path.join(
-            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT).replace(":","_"))
+            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT).replace(":", "_"))
         return self.log_filename
 
     def SetupFolder(self) -> str:
@@ -93,7 +96,7 @@ class Logger():
 
             prestring = (len(prestring)-consts.PRESTRING_MESSAGE_SEPARATOR_LEN) * \
                 consts.LONG_MESSAGE_PRESTRING_CHAR+consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '
-            
+
         # After log I close the file so the log is visible outside the script # TODO Better way to do this without closing always the file ?
         self.CloseFile()
 

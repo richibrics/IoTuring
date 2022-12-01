@@ -9,7 +9,7 @@ Subclasses of "Warehouse" must have this functions NOT SURE NOW
 @staticmethod
 def InstantiateWithConfiguration(configuration) -> None:
     """ Receive a configuration and instantiate the warehouse with the correct ordered parameters """
-    return 
+    return
 
 @staticmethod
 def ConfigurationPreset() -> MenuPreset:

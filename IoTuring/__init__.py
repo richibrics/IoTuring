@@ -12,34 +12,39 @@ from IoTuring.Warehouse.Warehouse import Warehouse
 import sys
 
 warehouses = []
-entities =  []
+entities = []
+
 
 def loop():
-    logger = Logger.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
-    
+    # I use .getInstance() to init/get this instance 'cause it's a singleton
+    logger = Logger.getInstance()
+
     configurator = Configurator()
 
-    if len(sys.argv)>1 and sys.argv[1]=="-c": # add -c to configure with the menu
+    # add -c to configure with the menu
+    if len(sys.argv) > 1 and sys.argv[1] == "-c":
         configurator.Menu()
 
-    logger.Log(Logger.LOG_INFO,"App",App()) # Print App info
-    logger.Log(Logger.LOG_INFO, "Configurator", "Run the script with -c to enter configuration mode")
+    logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
+    logger.Log(Logger.LOG_INFO, "Configurator",
+               "Run the script with -c to enter configuration mode")
 
-    eM = EntityManager.getInstance() # I use .getInstance() to init/get this instance 'cause it's a singleton
-    
+    # I use .getInstance() to init/get this instance 'cause it's a singleton
+    eM = EntityManager.getInstance()
+
     # These will be done from the configuration reader
-    entities =  ConfiguratorLoader(configurator).LoadEntities()
+    entities = ConfiguratorLoader(configurator).LoadEntities()
     warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
 
     # Add entites to the EntityManager
     for entity in entities:
         eM.AddActiveEntity(entity)
-    
+
     # Ready to start Entities loop
     eM.Start()
-    
+
     # Prepare warehouses -  # after entities, so entitites have already told to which EntityCommand I need to subscribe !
     for warehouse in warehouses:
         warehouse.Start()
-    
+
     logger.Log(Logger.LOG_DEBUG, "Main", "Main finished its work ;)")

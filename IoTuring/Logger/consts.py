@@ -18,7 +18,7 @@ STRINGS_LENGTH = [8, 30]
 # number of spaces to separe the message from the previuos part of the row
 PRESTRING_MESSAGE_SEPARATOR_LEN = 2
 # before those spaces I add this string
-LONG_MESSAGE_PRESTRING_CHAR = ' ' 
+LONG_MESSAGE_PRESTRING_CHAR = ' '
 
 CONSOLE_LOG_LEVEL = LOG_INFO
 FILE_LOG_LEVEL = LOG_WARNING

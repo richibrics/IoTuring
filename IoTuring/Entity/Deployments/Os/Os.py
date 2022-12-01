@@ -6,14 +6,15 @@ from IoTuring.Entity import consts
 
 KEY_OS = 'operating_system'
 
+
 class Os(Entity):
     NAME = "Os"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self,KEY_OS))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_OS))
         # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
-        self.SetEntitySensorValue(KEY_OS,self.GetOperatingSystem())
- 
+        self.SetEntitySensorValue(KEY_OS, self.GetOperatingSystem())
+
     def Update(self):
         pass
 
@@ -26,5 +27,5 @@ class Os(Entity):
         elif os == "Windows":
             return consts.OS_FIXED_VALUE_WINDOWS
         else:
-            self.Log(self.LOG_WARNING,"Operating system not in the fixed list. Please open a Git issue and warn about this: OS = \"" + os + "\"")
+            self.Log(self.LOG_WARNING, "Operating system not in the fixed list. Please open a Git issue and warn about this: OS = \"" + os + "\"")
         return os

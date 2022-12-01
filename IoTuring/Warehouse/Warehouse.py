@@ -7,10 +7,11 @@ import time
 
 DEFAULT_LOOP_TIMEOUT = 10
 
+
 class Warehouse(LogObject):
     NAME = "Unnamed"
-    
-    def __init__(self,configurations) -> None:
+
+    def __init__(self, configurations) -> None:
         self.loopTimeout = DEFAULT_LOOP_TIMEOUT
         self.configurations = configurations
 
@@ -25,11 +26,11 @@ class Warehouse(LogObject):
     def ShouldCallLoop(self) -> bool:
         """ Wait the timeout time and then tell it can run the Loop function """
         time.sleep(self.loopTimeout)
-        return True 
+        return True
 
     def LoopThread(self) -> None:
         """ Entry point of the warehouse thread, will run Loop() periodically """
-        self.Loop() # First call without sleep before
+        self.Loop()  # First call without sleep before
         while(True):
             if self.ShouldCallLoop():
                 self.Loop()
@@ -40,7 +41,8 @@ class Warehouse(LogObject):
     # Called by "LoopThread", with time constant defined in "ShouldCallLoop"
     def Loop(self) -> None:
         """ Must be implemented in subclasses, autorun at Warehouse __init__ """
-        raise NotImplementedError("Please implement Loop method for this Warehouse")
+        raise NotImplementedError(
+            "Please implement Loop method for this Warehouse")
 
     def GetWarehouseName(self) -> str:
         return self.NAME
@@ -55,14 +57,14 @@ class Warehouse(LogObject):
         """ Safe return configurations dict """
         return self.configurations.copy()
 
-    def GetFromConfigurations(self,key):
+    def GetFromConfigurations(self, key):
         """ Get value from confiugurations with key (if not present raise Exception) """
         if key in self.GetConfigurations():
             return self.GetConfigurations()[key]
         else:
             raise Exception("Can't find key " + key + " in configurations")
 
-    def GetTrueOrFalseFromConfigurations(self,key):
+    def GetTrueOrFalseFromConfigurations(self, key):
         """ Get boolean value from confiugurations with key (if not present raise Exception) """
         value = self.GetFromConfigurations(key).lower()
         if value in BooleanAnswers.TRUE_ANSWERS:
