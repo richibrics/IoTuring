@@ -1,8 +1,10 @@
 __pycache__
-Logger/Logs
+IoTuring/Logger/Logs
 nogit.*
 commands_topic.txt
 .vscode
 .DS_Store
-Configurator/configurations.json*
+IoTuring/Configurator/configurations.json*
 .venv
+build
+*.egg-info

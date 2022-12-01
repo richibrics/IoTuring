@@ -1,0 +1,54 @@
+[project]
+name = "IoTuring"
+version = "2022.11.1"
+description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "COPYING"}
+keywords = ["iot","mqtt","monitor"]
+authors = [
+  {name = "richibrics", email = "riccardo.briccola@mail.polimi.it"},
+  {name = "infeeeee", email = "gyetpet@mailbox.org"}
+]
+maintainers = [
+  {name = "richibrics", email = "riccardo.briccola@mail.polimi.it"}
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Programming Language :: Python",
+  "Topic :: System :: Monitoring"
+]
+dependencies = [
+  "paho-mqtt",
+  "psutil",
+  "notify2",
+  "PyYAML",
+  "importlib_metadata"
+]
+
+[project.optional-dependencies]
+linux = [
+  "dbus-python"
+]
+macos = [
+  "PyObjC"
+]
+win=[
+  "win10toast"
+]
+
+[project.urls]
+homepage = "https://github.com/richibrics/IoTuring"
+documentation = "https://github.com/richibrics/IoTuring"
+repository = "https://github.com/richibrics/IoTuring"
+changelog = "https://github.com/richibrics/IoTuring/commits/main"
+
+[project.scripts]
+IoTuring = "IoTuring:loop"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[tool.setuptools.package-data]
+"*" = ["entities.yaml"]
