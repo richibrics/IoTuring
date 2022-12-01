@@ -1,6 +1,8 @@
 # IoTuring
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://badge.fury.io/py/ioturing.svg)](https://pypi.org/project/IoTuring/)
+[![Build, release and publish](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml/badge.svg)](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml)
 
 Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like **HomeAssistant**.
 
@@ -11,6 +13,8 @@ Like his predecessor - **PyMonitorMQTT** - IoTuring allows you to choose which d
 But the most important thing: **works on all OSs and all architectures ! Windows, Linux, macOS, openBSD; x86, amd64, ARM and so on...**
 
 ## Install
+
+You can easily install IoTuring through pip. Although the version is os-specific, so follow the instructions below to install the right version for your operating system.
 
 ### Requirements
 
@@ -50,13 +54,13 @@ pip install --upgrade pip
 On Linux:
 
 ```shell
-pip install "IoTuring[linux] @ git+https://github.com/richibrics/IoTuring"
+pip install IoTuring[linux]
 ```
 
 On Windows:
 
 ```shell
-py -m pip install "IoTuring[win] @ git+https://github.com/richibrics/IoTuring"
+py -m pip install IoTuring[win]
 ```
 
 Note: on Windows you have to prefix every command with `py -m` as here.
@@ -64,7 +68,7 @@ Note: on Windows you have to prefix every command with `py -m` as here.
 On MacOs:
 
 ```shell
-pip install "IoTuring[macos] @ git+https://github.com/richibrics/IoTuring"
+pip install IoTuring[macos]
 ```
 
 ### Configure
@@ -148,6 +152,8 @@ git clone https://github.com/richibrics/IoTuring
 cd IoTuring
 pip install -e .
 ```
+
+Then run it like in the non-editable mode.
 
 ### Versioning
 
