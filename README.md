@@ -1,6 +1,8 @@
 # IoTuring
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://badge.fury.io/py/ioturing.svg)](https://pypi.org/project/IoTuring/)
+[![Build, release and publish](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml/badge.svg)](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml)
 
 Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like **HomeAssistant**.
 
@@ -12,36 +14,61 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ## Install
 
-### Install Python
+You can easily install IoTuring through pip. Although the version is os-specific, so follow the instructions below to install the right version for your operating system.
 
-IoTuring needs Python3.7 or later to run.
-You can install it [here](https://www.python.org/downloads/).
+### Requirements
 
-### Install PIP
+- [Git](https://git-scm.com/)
+- [Python 3.7+](https://www.python.org/downloads/)
+- [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
-To install required packages you need [pip](https://www.makeuseof.com/tag/install-pip-for-python/)
+Some platforms may need other software for some entities.
 
-### Install dependencies
+#### Install all requirements on ArchLinux
 
-To install dependencies all together, you only have to type in your terminal a PIP command.
-You need to install different packages depending on your operating system.
-
-If you're running a Linux distro, run 
-
-```
-pip install -r requirements_linux.txt
+```shell
+pacman -Syu base-devel git python python-pip
 ```
 
-If you're running Windows, run 
+#### Install and update all requirements on Debain
+
+```shell
+apt install git python3 python3-pip libdbus-glib-1-dev
+pip install --upgrade pip
+```
+
+#### Install and update all requirements on Ubuntu
 
 ```
-pip install -r requirements_win.txt
+apt install git python3 python3-pip libdbus-glib-1-dev meson patchelf
+pip install --upgrade pip
 ```
 
-If you're running macOS, run 
+#### Windows
 
+- [Python](https://www.python.org/downloads/), pip included
+- [Git](https://git-scm.com/download/win), just accept the defaults
+
+### Download and install with pip
+
+On Linux:
+
+```shell
+pip install IoTuring[linux]
 ```
-pip install -r requirements_macos.txt
+
+On Windows:
+
+```shell
+py -m pip install IoTuring[win]
+```
+
+Note: on Windows you have to prefix every command with `py -m` as here.
+
+On MacOs:
+
+```shell
+pip install IoTuring[macos]
 ```
 
 ### Configure
@@ -50,7 +77,7 @@ The first time you run IoTuring you need to specify which entities and warehouse
 To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
 
 ```
-python main.py -c
+IoTuring -c
 ```
 
 A simple menu will show and you will be able to configure your entities and warehouses !
@@ -63,12 +90,12 @@ You will be able to enter the configuration menu whenever you want (with the sam
 You can simply run IoTuring using this command
 
 ```
-python main.py
+IoTuring
 ```
 
 ### HomeAssistant demo
 
-Your computer will show in HomeAssistant as a single Device, so all your entities will be grouped together. 
+Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
 The device will also have some properties like connectivity and battery status.
 
 You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
@@ -112,3 +139,28 @@ Change **YOURUSERNAMEHERE** with the user that runs the script.
 - HomeAssistant: shares sensors and switches to HomeAssistant. The machine is shown as a Device and all the entites are grouped together. **recommended**
 - MQTT: sends data to MQTT broker and subscribes to commands topics.
 - Console: prints data to the console
+
+
+## Development
+
+### Editable install
+
+[Pip documentation](https://pip.pypa.io/en/stable/topics/local-project-installs/)
+
+```shell
+git clone https://github.com/richibrics/IoTuring
+cd IoTuring
+pip install -e .
+```
+
+Then run it like in the non-editable mode.
+
+### Versioning
+
+The project uses [calendar versioning](https://calver.org/):
+
+`YYYY.0M.n`:
+
+- `YYYY`: Full year: 2022, 2023 ...
+- `0M`: Zero-padded month: 01, 02 ... 11, 12
+- `n`: Build number in the month: 1, 2 ...
