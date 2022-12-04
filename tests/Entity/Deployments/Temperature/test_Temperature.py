@@ -40,3 +40,114 @@ class TestPsutilTemperatureSensor:
         assert sensor.hasCurrent()
         assert sensor.hasHighest()
         assert not sensor.hasCritical()
+        
+
+class TestPsutilTemperaturePackage:
+    def testHas(self):
+        # package p has attribute (result = True) iff at least a sensor of p has that attribute
+        packageData = []
+        packageData.append(["sensorLabel", 80, 101, True])
+        packageData.append(["sensorLabel", 90, 99, False])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert package.hasCurrent()
+        assert package.hasHighest()
+        assert package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, None, None])
+        packageData.append(["sensorLabel", 90, 99, False])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert package.hasCurrent()
+        assert package.hasHighest()
+        assert package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", 11, 99, True])
+        packageData.append(["sensorLabel", None, None, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert package.hasCurrent()
+        assert package.hasHighest()
+        assert package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", 11, None, True])
+        packageData.append(["sensorLabel", None, 156, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert package.hasCurrent()
+        assert package.hasHighest()
+        assert package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, None, None])
+        packageData.append(["sensorLabel", None, None, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert not package.hasCurrent()
+        assert not package.hasHighest()
+        assert not package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", 12, None, None])
+        packageData.append(["sensorLabel", None, None, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert package.hasCurrent()
+        assert not package.hasHighest()
+        assert not package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, None, None])
+        packageData.append(["sensorLabel", None, 35, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert not package.hasCurrent()
+        assert package.hasHighest()
+        assert not package.hasCritical()
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, None, False])
+        packageData.append(["sensorLabel", None, None, None])
+        package = psutilTemperaturePackage("pkg", packageData)
+        assert not package.hasCurrent()
+        assert not package.hasHighest()
+        assert package.hasCritical()
+        
+        
+    def testGetters(self):
+        packageName = "pkg"
+        
+        packageData = []
+        packageData.append(["sensorLabel1", 80, 101, True])
+        packageData.append(["sensorLabel2", 90, 99, False])
+        package = psutilTemperaturePackage(packageName, packageData)
+        assert package.getSensors()[0].getLabel() == "sensorLabel1"
+        assert package.getSensors()[0].getCurrent() == 80
+        assert package.getSensors()[0].getHighest() == 101
+        assert package.getSensors()[0].getCritical() == True
+        assert package.getSensors()[1].getLabel() == "sensorLabel2"
+        assert package.getSensors()[1].getCurrent() == 90
+        assert package.getSensors()[1].getHighest() == 99
+        assert package.getSensors()[1].getCritical() == False
+        assert package.getLabel() == packageName
+        assert package.getCurrent() == 90 # highest of the two sensors
+        assert package.getHighest() == 101 # highest of the two sensors
+        assert package.getCritical() == True # at least a critical sensor -> critical package
+        
+        packageData = []
+        packageData.append(["sensorLabel", 29, 101, False])
+        packageData.append(["sensorLabel", 10, 102, True])
+        package = psutilTemperaturePackage(packageName, packageData)
+        assert package.getCurrent() == 29 # highest of the two sensors
+        assert package.getHighest() == 102 # highest of the two sensors
+        assert package.getCritical() == True # at least a critical sensor -> critical package
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, 101, False])
+        packageData.append(["sensorLabel", 10, None, False])
+        package = psutilTemperaturePackage(packageName, packageData)
+        assert package.getCurrent() == 10 # highest of the two sensors
+        assert package.getHighest() == 101 # highest of the two sensors
+        assert package.getCritical() == False # no critical sensors -> no critical package
+        
+        packageData = []
+        packageData.append(["sensorLabel", None, None, True])
+        packageData.append(["sensorLabel", None, None, True])
+        package = psutilTemperaturePackage(packageName, packageData)
+        assert package.getCritical() == True # at least a critical sensor -> critical package
