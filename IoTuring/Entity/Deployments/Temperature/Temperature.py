@@ -57,7 +57,7 @@ class psutilTemperaturePackage():
     def getSensors(self) -> list:
         return self.sensors.copy()
 
-    # Package stats strategies here: my choose is to return always the highest among the temperatures, critical=True if a sensor has critical=True
+    # Package stats strategies here: my choice is to return always the highest among the temperatures, critical: here will return the lowest
     def getCurrent(self):
         """ Returns highest current temperature among this package sensors. None if any sensor has that data. """
         highest = None
@@ -67,7 +67,7 @@ class psutilTemperaturePackage():
         return highest
 
     def getHighest(self):
-        """ Returns highest current temperature among this package sensors. None if any sensor has that data. """
+        """ Returns highest highest temperature among this package sensors. None if any sensor has that data. """
         highest = None
         for sensor in self.getSensors():
             if sensor.hasHighest() and (highest == None or highest < sensor.getHighest()):
@@ -75,11 +75,12 @@ class psutilTemperaturePackage():
         return highest
 
     def getCritical(self):
-        """ Returns True if at least a package is critical. False otherwise """
+        """ Returns lower critical temperature among this package sensors. None if any sensor has that data. """
+        lowest = None
         for sensor in self.getSensors():
-            if sensor.hasCritical() and sensor.getCritical():
-                return True
-        return False
+            if sensor.hasCritical() and (lowest == None or lowest > sensor.getCritical()):
+                lowest = sensor.getCritical()
+        return lowest
 
     def hasCurrent(self):
         """ True if at least a sensor of the package has the current property """
@@ -116,7 +117,7 @@ class psutilTemperaturePackage():
                 attributes[label +
                            " - Highest"] = str(sensor.getHighest()) + "°C"
             if sensor.hasCritical():
-                attributes[label + " - Critical"] = str(sensor.getCritical())
+                attributes[label + " - Critical"] = str(sensor.getCritical()) + "°C"
         return attributes
 
 
