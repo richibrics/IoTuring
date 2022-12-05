@@ -56,3 +56,6 @@ Monitor - turn_all_off:
   icon: "mdi:monitor-off"
 AppInfo:
   icon: "mdi:information-outline"
+Temperature:
+  icon: "mdi:thermometer-lines"
+  unit_of_measurement: "°C"
