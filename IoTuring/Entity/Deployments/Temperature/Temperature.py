@@ -11,19 +11,37 @@ class Temperature(Entity):
     NAME = "Temperature"
     DEPENDENCIES = ["Os"]
 
+    def PostInitialize(self):
+        self.specificInitialize = None
+        self.specificUpdate = None
+        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
+        if(self.os == "Linux"):
+            self.specificInitialize = self.InitLinux
+            self.specificUpdate = self.UpdateLinux
+        else:
+            raise Exception("Unsupported operating system.")
+        self.specificInitialize()
+
+    def Update(self):
+        self.specificUpdate()
+        
     # I don't register packages that do not have Current temperature, so I store the registered in a list which is then checked during update
-    def Initialize(self):
+    def InitLinux(self):
         self.registeredPackages = []
         sensors = psutil.sensors_temperatures()
-        for device, data in sensors.items():
-            package = psutilTemperaturePackage(device, data)
+        index = 1
+        for pkgName, data in sensors.items():
+            if pkgName == None or pkgName == "":
+                pkgName = FALLBACK_PACKAGE_LABEL.format(index)
+            package = psutilTemperaturePackage(pkgName, data)
             if package.hasCurrent():
                 self.registeredPackages.append(package.getLabel())
                 # TODO supportsExtraAttributes only on Linux
                 self.RegisterEntitySensor(EntitySensor(
                     self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True))
-
-    def Update(self):
+            index += 1
+            
+    def UpdateLinux(self):
         sensors = psutil.sensors_temperatures()
         index = 1
         for pkgName, data in sensors.items():
