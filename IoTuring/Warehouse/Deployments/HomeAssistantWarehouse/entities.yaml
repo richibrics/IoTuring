@@ -44,7 +44,7 @@ Cpu .*percentage:
   unit_of_measurement: "%"
   icon: "mdi:calculator-variant"
 Cpu .*freq.*:
-  unit_of_measurement: "Hz"
+  unit_of_measurement: "MHz"
   icon: "mdi:calculator-variant"
 Cpu: # if no matches with above CPU patterns, set this
   icon: "mdi:calculator-variant"
