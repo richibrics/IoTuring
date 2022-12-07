@@ -3,6 +3,9 @@ from IoTuring.Entity.ValueFormatter import ValueFormatter
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 
+FREQUENCY_DECIMALS = 2
+
+MHZ = 1000000
 
 # Basic CPU info
 KEY_PERCENTAGE = 'cpu_used_percentage'
@@ -72,12 +75,12 @@ class Cpu(Entity):
         self.SetEntitySensorValue(KEY_STATS_INTERR, psutil.cpu_stats()[
                                   1], ValueFormatter.Options(ValueFormatter.TYPE_NONE, 2))
         # CPU freq
-        self.SetEntitySensorValue(KEY_FREQ_CURRENT, psutil.cpu_freq()[
-            0], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY))
-        self.SetEntitySensorValue(KEY_FREQ_MIN, psutil.cpu_freq()[
-            1], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY))
-        self.SetEntitySensorValue(KEY_FREQ_MAX, psutil.cpu_freq()[
-            2], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY))
+        self.SetEntitySensorValue(KEY_FREQ_CURRENT, MHZ * psutil.cpu_freq()[
+            0], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
+        self.SetEntitySensorValue(KEY_FREQ_MIN, MHZ * psutil.cpu_freq()[
+            1], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
+        self.SetEntitySensorValue(KEY_FREQ_MAX, MHZ * psutil.cpu_freq()[
+            2], ValueFormatter.Options(ValueFormatter.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
         if self.os != 'macOS':
             # CPU avg load
             self.SetEntitySensorValue(KEY_AVERAGE_LOAD_LAST_1,
