@@ -33,8 +33,8 @@ class Entity(LogObject):
         """ Must be implemented in sub-classes, may be useful here to use the configuration """
         pass
 
-    def CallInitialize(self):
-        """ Safe method to run the Initialize function """
+    def CallInitialize(self) -> bool:
+        """ Safe method to run the Initialize function. Returns True if no error occcured. """
         try:
             self.Initialize()
             self.initializeState = True
@@ -42,14 +42,15 @@ class Entity(LogObject):
         except Exception as e:
             self.Log(self.LOG_ERROR, "Initialization interrupted due to an error")
             self.Log(self.LOG_ERROR, e)
-            del(self)
+            return False
+        return True
 
     def PostInitialize(self):
         """ Must be implemented in sub-classes """
         pass
 
-    def CallPostInitialize(self):
-        """ Safe method to run the PostInitialize function """
+    def CallPostInitialize(self) -> bool:
+        """ Safe method to run the PostInitialize function. Returns True if no error occcured. """
         try:
             missingDependencies = self.GetMissingDependencies()
             if len(missingDependencies) == 0:
@@ -67,7 +68,8 @@ class Entity(LogObject):
             self.Log(self.LOG_ERROR,
                      "Post-initialization interrupted due to an error")
             self.Log(self.LOG_ERROR, e)
-            del(self)
+            return False
+        return True
 
     def CallUpdate(self):  # Call the Update method safely
         """ Safe method to run the Update function """
