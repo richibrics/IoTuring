@@ -10,7 +10,9 @@ import re
 
 # That stands for: App name, Client name, EntityData Id
 TOPIC_DATA_FORMAT = "{}/{}HomeAssistant/{}"
+TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX = "_extraattributes"
 # That stands for: Entity data type, App name, EntityData Id
+# to send configuration data
 TOPIC_AUTODISCOVERY_FORMAT = "homeassistant/{}/{}/{}/config"
 
 CONFIG_KEY_ADDRESS = "address"
@@ -34,7 +36,7 @@ class HomeAssistantWarehouse(Warehouse):
     NAME = "HomeAssistant"
 
     def Start(self):
-        # I configure my Warehouse with configurations
+        #  I configure my Warehouse with configurations
         self.clientName = self.GetFromConfigurations(CONFIG_KEY_NAME)
         self.client = MQTTClient(self.GetFromConfigurations(CONFIG_KEY_ADDRESS),
                                  self.GetFromConfigurations(CONFIG_KEY_PORT),
@@ -70,7 +72,7 @@ class HomeAssistantWarehouse(Warehouse):
         self.client.SendTopicData(self.MakeValuesTopic(
             LWT_TOPIC_SUFFIX), LWT_PAYLOAD_ONLINE)
 
-        while(not self.client.IsConnected()):
+        while (not self.client.IsConnected()):
             pass
 
         # Mechanism to call the function to send discovery data every CONFIGURATION_SEND_LOOP_SKIP_NUMBER loop
@@ -88,9 +90,12 @@ class HomeAssistantWarehouse(Warehouse):
         """ Here I send sensor's data (command callbacks are not managed here) """
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
-                if(entitySensor.HasValue()):
+                if (entitySensor.HasValue()):
                     self.client.SendTopicData(self.MakeEntityDataTopic(
                         entitySensor), entitySensor.GetValue())
+                if (entitySensor.HasExtraAttributes()):  # send as json
+                    self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
+                                              json.dumps(entitySensor.GetExtraAttributes()))
 
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()
@@ -125,6 +130,12 @@ class HomeAssistantWarehouse(Warehouse):
                     "." + entityData.GetId()
 
                 if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
+                    # If the sensor supports extra attributes, send them as JSON.
+                    # So here I have to specify also the topic for those attrbitues
+                    if entityData.DoesSupportExtraAttributes():
+                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
+                            entityData)
+
                     payload['expire_after'] = 600  # TODO Improve
                     payload['state_topic'] = self.MakeEntityDataTopic(
                         entityData)
@@ -185,6 +196,11 @@ class HomeAssistantWarehouse(Warehouse):
     def MakeEntityDataTopic(self, entityData):
         """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
         return self.MakeValuesTopic(entityData.GetId())
+
+    def MakeEntityDataExtraAttributesTopic(self, entityData):
+        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
+            the extra attrbiutes from the original value """
+        return self.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
 
     def MakeValuesTopic(self, topic_suffix):
         """ Prepares a topic, including the app name, the client name and finally a passed id """

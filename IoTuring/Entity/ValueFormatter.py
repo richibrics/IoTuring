@@ -9,6 +9,7 @@ import math
 # size: MB "means that will be used the specified size 2014Byte->0.001MB"
 # decimals: integer "the number of decimal for the value": -1 for untouched
 
+# TODO Configurable by each warehouse (hardcoded in warehouse and not here, like MQTT true, Hass false)
 ENABLE_UNIT = False
 
 VALUEFORMATTER_OPTIONS_TYPE_KEY = "type"
