@@ -5,17 +5,21 @@ from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.Deployments.Username.Username import Username
 from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Logger.Logger import Logger
+from IoTuring.Logger.Logger import Logger, Colors
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Warehouse.Deployments.ConsoleWarehouse.ConsoleWarehouse import ConsoleWarehouse
 from IoTuring.Warehouse.Warehouse import Warehouse
 import sys
+import signal
+import os
 
 warehouses = []
 entities = []
 
 
 def loop():
+    signal.signal(signal.SIGINT, signal_handler)
+    
     # I use .getInstance() to init/get this instance 'cause it's a singleton
     logger = Logger.getInstance()
 
@@ -48,3 +52,9 @@ def loop():
         warehouse.Start()
 
     logger.Log(Logger.LOG_DEBUG, "Main", "Main finished its work ;)")
+
+def signal_handler(sig, frame):
+    print("") # New line
+    Logger.getInstance().Log(Logger.LOG_INFO, "Main", Colors.cyan + 'Exiting...' + Colors.reset)
+    Logger.getInstance().Log(Logger.LOG_INFO, "Main", Colors.cyan + 'Thanks for using IoTuring !' + Colors.reset)
+    os._exit(0)
