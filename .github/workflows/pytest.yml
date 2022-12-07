@@ -14,9 +14,12 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.8'
-    - name: Install pytest
+    - name: Install linux dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install .[linux]
+    - name: Install pytest
+      run: |
         pip install pytest
     - name: Test
       run: python -m pytest
