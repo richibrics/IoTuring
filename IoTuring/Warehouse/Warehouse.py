@@ -17,7 +17,9 @@ class Warehouse(LogObject):
 
     def Start(self) -> None:
         """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
-        Thread(target=self.LoopThread).start()
+        thread = Thread(target=self.LoopThread)
+        thread.daemon = True
+        thread.start()
 
     def SetLoopTimeout(self, timeout) -> None:
         """ Set a timeout between 2 loops """
