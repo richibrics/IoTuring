@@ -1,11 +1,12 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
+from IoTuring.Entity.ValueFormatter import ValueFormatter
 
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
 FALLBACK_SENSOR_LABEL = "sensor_{}"
-
+CURRENT_TEMPERATURE_DECIMALS = 1
 
 class Temperature(Entity):
     NAME = "Temperature"
@@ -52,7 +53,7 @@ class Temperature(Entity):
                 # Set main value = current of the package
                 # TODO Temperature in ValueFormatter
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
-                    package.getLabel()), package.getCurrent())
+                    package.getLabel()), package.getCurrent(), value_formatter_options=ValueFormatter.Options(decimals=CURRENT_TEMPERATURE_DECIMALS))
                 self.SetEntitySensorExtraAttributes(self.packageNameToEntitySensorKey(
                     package.getLabel()), package.getAttributesDict())
             index += 1

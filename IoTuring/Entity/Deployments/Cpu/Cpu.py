@@ -3,7 +3,7 @@ from IoTuring.Entity.ValueFormatter import ValueFormatter
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 
-FREQUENCY_DECIMALS = 2
+FREQUENCY_DECIMALS = 0
 
 MHZ = 1000000
 
