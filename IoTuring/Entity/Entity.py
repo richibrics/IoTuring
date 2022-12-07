@@ -40,7 +40,7 @@ class Entity(LogObject):
             self.initializeState = True
             self.Log(self.LOG_INFO, "Initialization successfully completed")
         except Exception as e:
-            self.Log(self.LOG_ERROR, "Initialization interrupted due to an error")
+            self.Log(self.LOG_ERROR, "Initialization interrupted due to an error:")
             self.Log(self.LOG_ERROR, e)
             return False
         return True
@@ -66,7 +66,7 @@ class Entity(LogObject):
 
         except Exception as e:
             self.Log(self.LOG_ERROR,
-                     "Post-initialization interrupted due to an error")
+                     "Post-initialization interrupted due to an error:")
             self.Log(self.LOG_ERROR, e)
             return False
         return True

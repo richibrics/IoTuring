@@ -1,10 +1,11 @@
 from io import TextIOWrapper
 import IoTuring.Logger.consts as consts
+from IoTuring.Logger.Colors import Colors
+import sys
 import os  # to access directory functions
 import inspect  # to get this file path
 from datetime import datetime  # for logging purpose and filename
 import json  # to print a dict easily
-
 # Singleton pattern used
 
 
@@ -24,6 +25,8 @@ class Logger():
         else:
             Logger.__instance = self
 
+        self.terminalSupportsColors = Logger.checkTerminalSupportsColors()
+        
         # Prepare the log
         self.SetLogFilename()
 
@@ -127,9 +130,23 @@ class Logger():
 
     def PrintAndSave(self, string, level) -> None:
         if level <= consts.CONSOLE_LOG_LEVEL:
-            print(string)
+            self.ColoredPrint(string, level)
         if level <= consts.FILE_LOG_LEVEL:
             self.GetLogFileDescriptor().write(string+' \n')
+
+    def ColoredPrint(self, string, level) -> None:
+        if not self.terminalSupportsColors:
+            print(string)
+        elif level == self.LOG_INFO:
+            print(string)
+        elif level == self.LOG_WARNING:
+            print(Colors.yellow + string + Colors.reset)
+        elif level == self.LOG_ERROR:
+            print(Colors.red + string + Colors.reset)
+        elif level == self.LOG_MESSAGE:
+            print(Colors.green + string + Colors.reset)
+        else:
+            print(string)
 
     def GetLogFileDescriptor(self) -> TextIOWrapper:
         if self.log_file_descriptor is None:
@@ -149,3 +166,16 @@ class Logger():
         if Logger.__instance == None:
             Logger()
         return Logger.__instance
+
+    @staticmethod
+    def checkTerminalSupportsColors():
+        """
+        Returns True if the running system's terminal supports color, and False
+        otherwise.
+        """
+        plat = sys.platform
+        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                    'ANSICON' in os.environ)
+        # isatty is not always implemented, #6223.
+        is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        return supported_platform and is_a_tty
