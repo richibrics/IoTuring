@@ -73,7 +73,9 @@ class EntityManager(LogObject):
     def ManageUpdates(self):
         """ Start a thread for each entity in which it will update periodically """
         for entity in self.GetEntities(includePassive=True):
-            Thread(target=entity.LoopThread).start()
+            thread = Thread(target=entity.LoopThread)
+            thread.daemon = True
+            thread.start()
 
     def GetDependentEntitySensorValue(self, callerEntity, entityToFind: str, dataKeyToFind: str):
         """ Called by "callerEntity", return the value of "entityToFind"."dataKeyToFind" if it has value and if the callerEntity has the permission to access that entity.
