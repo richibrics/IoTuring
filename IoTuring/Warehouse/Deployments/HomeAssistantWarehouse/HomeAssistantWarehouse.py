@@ -7,6 +7,9 @@ from IoTuring.MyApp.App import App
 import json
 import yaml
 import re
+import time 
+
+SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
 # That stands for: App name, Client name, EntityData Id
 TOPIC_DATA_FORMAT = "{}/{}HomeAssistant/{}"
@@ -73,7 +76,7 @@ class HomeAssistantWarehouse(Warehouse):
             LWT_TOPIC_SUFFIX), LWT_PAYLOAD_ONLINE)
 
         while (not self.client.IsConnected()):
-            pass
+            time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
 
         # Mechanism to call the function to send discovery data every CONFIGURATION_SEND_LOOP_SKIP_NUMBER loop
         if self.loopCounter == 0:

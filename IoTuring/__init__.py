@@ -5,17 +5,22 @@ from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.Deployments.Username.Username import Username
 from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Logger.Logger import Logger
+from IoTuring.Logger.Logger import Logger, Colors
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Warehouse.Deployments.ConsoleWarehouse.ConsoleWarehouse import ConsoleWarehouse
 from IoTuring.Warehouse.Warehouse import Warehouse
 import sys
+import signal
+import os
+import time
 
 warehouses = []
 entities = []
 
 
 def loop():
+    signal.signal(signal.SIGINT, Exit_SIGINT_handler)
+    
     # I use .getInstance() to init/get this instance 'cause it's a singleton
     logger = Logger.getInstance()
 
@@ -48,3 +53,24 @@ def loop():
         warehouse.Start()
 
     logger.Log(Logger.LOG_DEBUG, "Main", "Main finished its work ;)")
+
+    # Threads are in daemon mode (entities and warehouses) because
+    # on Windows a SIGINT signal can't be catched otherwise.
+    # Daemon mode involves thread exit when main ends. So
+    # I need main to never end
+    while(True):
+        time.sleep(1)
+
+def Exit_SIGINT_handler(sig, frame):
+    messages = ["Exiting...",
+                "Thanks for using IoTuring !"]
+    print("") # New line
+    for message in messages:
+        text = ""
+        if(Logger.checkTerminalSupportsColors()):
+            text += Colors.cyan
+        text += message 
+        if(Logger.checkTerminalSupportsColors()):
+            text += Colors.reset
+        Logger.getInstance().Log(Logger.LOG_INFO, "Main", text)
+    os._exit(0)

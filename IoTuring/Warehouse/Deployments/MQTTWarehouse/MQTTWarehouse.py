@@ -5,6 +5,9 @@ from IoTuring.MyApp.App import App
 
 import inspect  # To get this folder path
 import os  # To get this folder path
+import time
+
+SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
 TOPIC_FORMAT = "{}/{}/{}"  # That stands for: App name, Client name, EntityData Id
 
@@ -46,7 +49,8 @@ class MQTTWarehouse(Warehouse):
 
     def Loop(self):
         while(not self.client.IsConnected()):
-            pass
+            time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
+            
         # Here in Loop I send sensor's data (command callbacks are not managed here)
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():

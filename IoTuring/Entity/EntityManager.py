@@ -1,9 +1,9 @@
 from threading import Thread
-
+from IoTuring.Logger.LogObject import LogObject
 # Singleton pattern used
 
 
-class EntityManager():
+class EntityManager(LogObject):
 
     __instance = None
 
@@ -50,18 +50,32 @@ class EntityManager():
         else:
             return self.activeEntities + self.passiveEntities
 
+    def UnloadEntity(self, entity):
+        """ Unloads the passed entity """
+        if entity in self.activeEntities:
+            self.activeEntities.remove(entity)
+        elif entity in self.passiveEntities:
+            self.passiveEntities.remove(entity)
+        else:
+            raise Exception("Can't unload the requested entity: not found among loaded entities.")
+        self.Log(self.LOG_INFO, entity.GetEntityId() + " unloaded")
+
     def InitializeEntities(self):
         for entity in self.GetEntities(includePassive=True):
-            entity.CallInitialize()
+            if not entity.CallInitialize():
+                self.UnloadEntity(entity) # if errors, unload
 
     def PostInitializeEntities(self):
         for entity in self.GetEntities(includePassive=True):
-            entity.CallPostInitialize()
+            if not entity.CallPostInitialize():
+                self.UnloadEntity(entity) # if errors, unload
 
     def ManageUpdates(self):
         """ Start a thread for each entity in which it will update periodically """
         for entity in self.GetEntities(includePassive=True):
-            Thread(target=entity.LoopThread).start()
+            thread = Thread(target=entity.LoopThread)
+            thread.daemon = True
+            thread.start()
 
     def GetDependentEntitySensorValue(self, callerEntity, entityToFind: str, dataKeyToFind: str):
         """ Called by "callerEntity", return the value of "entityToFind"."dataKeyToFind" if it has value and if the callerEntity has the permission to access that entity.

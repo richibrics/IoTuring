@@ -19,6 +19,7 @@ VALUEFORMATTER_OPTIONS_SIZE_KEY = "size"
 # Lists of measure units
 BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 TIME_SIZES = ['s', 'm', 'h', 'd']
+FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 
 DO_NOT_TOUCH_DECIMALS = -1
@@ -35,11 +36,10 @@ class ValueFormatter():
     @staticmethod
     def GetFormattedValue(value, options):
         valueType = options[VALUEFORMATTER_OPTIONS_TYPE_KEY]
+        
+        # specific type formatting
         if valueType == ValueFormatter.TYPE_NONE:  # edit needed only if decimals
-            if options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY] == DO_NOT_TOUCH_DECIMALS:
-                return value
-            else:
-                return round(value, options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY])
+            return ValueFormatter.roundValue(value, options)
         elif valueType == ValueFormatter.TYPE_BYTE:
             return ValueFormatter.ByteFormatter(value, options)
         elif valueType == ValueFormatter.TYPE_MILLISECONDS:
@@ -60,7 +60,6 @@ class ValueFormatter():
     def TimeFormatter(value, options):
         # Get value in seconds, and adjustable
         asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
-        decimals = options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY]
 
         if asked_size and asked_size in TIME_SIZES:
             index = TIME_SIZES.index(asked_size)
@@ -68,13 +67,12 @@ class ValueFormatter():
             for i in range(0, index+1):
                 divider = divider*TIME_SIZES_DIVIDERS[i]
 
-            if decimals != DO_NOT_TOUCH_DECIMALS:
-                result = str(round(value/divider, decimals))
-            else:
-                result = str(value/divider)
+            value = value/divider
         else:
-            result = str(result)
             index = 0
+
+        value = ValueFormatter.roundValue(value, options)
+        result = str(value)
 
         if ENABLE_UNIT:
             result = result + TIME_SIZES[index]
@@ -84,6 +82,9 @@ class ValueFormatter():
     @staticmethod
     def MillisecondsFormatter(value, options):
         # Get value in milliseconds: adjust not implemented
+        
+        value = ValueFormatter.roundValue(value, options)
+        
         if ENABLE_UNIT:
             return str(value) + 'ms'
         else:
@@ -104,10 +105,11 @@ class ValueFormatter():
         else:
             powOf1024 = math.floor(math.log(value, 1024))
 
-        if decimals != DO_NOT_TOUCH_DECIMALS:
-            result = str(round(value/(math.pow(1024, powOf1024)), decimals))
-        else:
-            result = str(value/(math.pow(1024, powOf1024)))
+        value = value/(math.pow(1024, powOf1024))
+
+        value = ValueFormatter.roundValue(value, options)
+
+        result = str(value)
 
         if ENABLE_UNIT:
             result = result + BYTE_SIZES[powOf1024]
@@ -116,11 +118,29 @@ class ValueFormatter():
 
     @staticmethod
     def FrequencyFormatter(value, options):
-        # Get value in hertz
-        if ENABLE_UNIT:
-            return str(value) + 'Hz'
+        # Get value in hertz, and adjustable
+        asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
+
+        if asked_size and asked_size in FREQUENCY_SIZES:
+            index = FREQUENCY_SIZES.index(asked_size)
+            value = value/pow(1000,index)
         else:
-            return str(value)
+            index = 0
+
+        # decimals
+        value = ValueFormatter.roundValue(value, options)
+
+        result = str(value)
+        
+        if ENABLE_UNIT:
+            result = result + FREQUENCY_SIZES[index]
+        return result
+
+    @staticmethod
+    def roundValue(value, options):
+        if options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY] != DO_NOT_TOUCH_DECIMALS:
+            return round(value, options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY])
+        return value
 
     @staticmethod
     def Options(value_type=TYPE_NONE, decimals=DO_NOT_TOUCH_DECIMALS, adjust_size=None):
