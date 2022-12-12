@@ -8,12 +8,18 @@ FALLBACK_PACKAGE_LABEL = "package_{}"
 FALLBACK_SENSOR_LABEL = "sensor_{}"
 CURRENT_TEMPERATURE_DECIMALS = 1
 
-
+INVALID_SMC_VALUE_HIGH = 120 # skip sensors if when initialized they return a value higher than this
 MACOS_SMC_TEMPERATURE_KEYS = {
-    "CPU die temperature": "TC0D", # Intel
-    "CPU PECI die filtered temperature": "TC0E", # Intel
-    "CPU PECI die temperature filtered then adjusted": "TC0F", # Intel
-    "CPU proximity temperature": "TC0P", # Intel
+    "CPU core A": "TC0c",
+    "CPU core B": "TC1c",
+    "CPU core C": "TC2c",
+    "CPU core D": "TC3c",
+    "CPU core E": "TC4c",
+    "CPU core F": "TC5c",
+    "CPU core G": "TC6c",
+    "CPU core H": "TC7c",
+    "CPU core I": "TC8c",
+    "CPU core J": "TC9c",
     "CPU performance core 1 temperature": "Tp01", # ARM
     "CPU performance core 2 temperature": "Tp05", # ARM
     "CPU performance core 3 temperature": "Tp0D", # ARM
@@ -56,7 +62,7 @@ class Temperature(Entity):
         ioturing_applesmc.open_smc()
         for key, value in MACOS_SMC_TEMPERATURE_KEYS.items():
             smc_value = ioturing_applesmc.get_temperature(value)
-            if smc_value != 0.0:
+            if smc_value != 0.0 and smc_value < INVALID_SMC_VALUE_HIGH:
                 self.valid_keys.append(value)
         if len(self.valid_keys) == 0:
             raise Exception("No valid sensor found for cpu temperature.")
