@@ -10,20 +10,20 @@ CURRENT_TEMPERATURE_DECIMALS = 1
 
 
 MACOS_SMC_TEMPERATURE_KEYS = {
-    "CPU die temperature": "TC0D",
-    "CPU PECI die filtered temperature": "TC0E",
-    "CPU PECI die temperature filtered then adjusted": "TC0F",
-    "CPU proximity temperature": "TC0P",
-    "CPU performance core 1 temperature": "Tp01",
-    "CPU performance core 2 temperature": "Tp05",
-    "CPU performance core 3 temperature": "Tp0D",
-    "CPU performance core 4 temperature": "Tp0H",
-    "CPU performance core 5 temperature": "Tp0L",
-    "CPU performance core 6 temperature": "Tp0P",
-    "CPU performance core 7 temperature": "Tp0X",
-    "CPU performance core 8 temperature": "Tp0b",
-    "CPU efficient core 1 temperature": "Tp09",
-    "CPU efficient core 2 temperature": "Tp0T"
+    "CPU die temperature": "TC0D", # Intel
+    "CPU PECI die filtered temperature": "TC0E", # Intel
+    "CPU PECI die temperature filtered then adjusted": "TC0F", # Intel
+    "CPU proximity temperature": "TC0P", # Intel
+    "CPU performance core 1 temperature": "Tp01", # ARM
+    "CPU performance core 2 temperature": "Tp05", # ARM
+    "CPU performance core 3 temperature": "Tp0D", # ARM
+    "CPU performance core 4 temperature": "Tp0H", # ARM
+    "CPU performance core 5 temperature": "Tp0L", # ARM
+    "CPU performance core 6 temperature": "Tp0P", # ARM
+    "CPU performance core 7 temperature": "Tp0X", # ARM
+    "CPU performance core 8 temperature": "Tp0b", # ARM
+    "CPU efficient core 1 temperature": "Tp09", # ARM
+    "CPU efficient core 2 temperature": "Tp0T" # ARM
 }
 
 class Temperature(Entity):
