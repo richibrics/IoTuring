@@ -46,7 +46,11 @@ class ConfiguratorIO:
         except:
             pass # default folder path will be used
         
-        return os.path.join(folderPath, self.directoryName)
+        # add slash if missing (for log reasons)
+        path = os.path.join(folderPath, self.directoryName)
+        if not path.endswith(os.sep):
+            path += os.sep
+        return path
 
     def defaultFolderPath(self):
         return os.path.dirname(inspect.getfile(ConfiguratorIO))
