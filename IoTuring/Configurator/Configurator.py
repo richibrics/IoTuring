@@ -1,12 +1,15 @@
 import inspect  # To get this folder path and reach the configurations file
-import os  # Configurations file path manipulation
 import json
+import os
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Logger.Logger import Colors
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
+
+from IoTuring.Configurator.ConfiguratorIO import ConfiguratorIO
 
 BLANK_CONFIGURATION = {'active_entities': [
     {"type": "AppInfo"}], 'active_warehouses': []}
@@ -23,11 +26,10 @@ SEPARATOR_CHAR_NUMBER = 120
 
 
 class Configurator(LogObject):
-    # Must be in the same folder of this file
-    configurations_filename = "configurations.json"
 
     def __init__(self) -> None:
         self.config = None
+        self.configuratorIO = ConfiguratorIO()
         self.LoadConfigurations()
 
     def GetConfigurations(self):
@@ -148,14 +150,14 @@ class Configurator(LogObject):
                                  "Error in Warehouse select menu: " + str(e))
 
     def LoadConfigurations(self) -> None:
-        """ Load into a dict in self the configurations file in this script's folder """
-        thisFolder = os.path.dirname(inspect.getfile(Configurator))
-        path = os.path.join(thisFolder, self.configurations_filename)
+        """ Load into a dict in self the configurations file (if exists, otherwise blank configurations) """
         try:
-            with open(path, "r") as f:
+            with open(self.configuratorIO.getFilePath(), "r") as f:
                 self.config = json.loads(f.read())
+            self.Log(self.LOG_MESSAGE, "Loaded \"" + self.configuratorIO.getFilePath() + "\"")
         except:
-            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.")
+            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.\
+                     \nConfigurations will be saved in \"" + self.configuratorIO.getFolderPath() + "\"")
             self.config = BLANK_CONFIGURATION
 
         # check valid keys
@@ -166,9 +168,7 @@ class Configurator(LogObject):
 
     def WriteConfigurations(self) -> None:
         """ Save to configurations file in this script's folder the dict in self"""
-        thisFolder = os.path.dirname(inspect.getfile(Configurator))
-        path = os.path.join(thisFolder, self.configurations_filename)
-        with open(path, "w") as f:
+        with open(self.configuratorIO.getFilePath(), "w") as f:
             f.write(json.dumps(self.config))
 
     def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):

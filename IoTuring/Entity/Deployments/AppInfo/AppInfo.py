@@ -1,4 +1,3 @@
-import imp
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.App import App
