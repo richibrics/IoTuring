@@ -1,12 +1,10 @@
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.App import App
-
 from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Entity import consts
 
 import os
-
-from IoTuring.Entity import consts
 
 supports_win = True
 try:
@@ -22,10 +20,6 @@ except:
     supports_unix = False
 
 KEY = 'notify'
-
-# To send notification data through message payload use these two
-PAYLOAD_KEY_TITLE = "title"
-PAYLOAD_KEY_MESSAGE = "message"
 
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
@@ -45,6 +39,10 @@ class Notify(Entity):
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
+        # Check if they have some value:
+        if not (self.config_title and self.config_message):
+            raise Exception("Configuration error: Title or message empty!")
+
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     # I need it here cause I have to check the right import for my OS (and I may not know the OS in Init function)
@@ -62,24 +60,13 @@ class Notify(Entity):
                 raise Exception(
                     'Notify not available, have you installed \'notify2\' on pip ?')
 
+    def PrepareMessage(self, message):
+        self.notification_title = self.config_title
+        self.notification_message = self.config_message
+
     def Callback(self, message):
 
-        # Priority for configuration content and title. If not set there, will try to find them in the payload
-        if self.config_title and self.config_message:
-            self.notification_title = self.config_title
-            self.notification_message = self.config_message
-
-        else:
-            # Convert the payload to a dict:
-            messageDict = ''
-            try:
-                messageDict = eval(message.payload.decode('utf-8'))
-                self.notification_title = messageDict[PAYLOAD_KEY_TITLE]
-                self.notification_message = messageDict[PAYLOAD_KEY_MESSAGE]
-            except:
-                raise Exception(
-                    'Incorrect payload and no title and message set in configuration!'
-                )
+        self.PrepareMessage(message)
 
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
@@ -102,8 +89,6 @@ class Notify(Entity):
     @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
-        preset.AddEntry(
-            "Notification title (Leave empty if you want to define it in the payload)", CONFIG_KEY_TITLE)
-        preset.AddEntry(
-            "Notification message (Leave empty if you want to define it in the payload)", CONFIG_KEY_MESSAGE)
+        preset.AddEntry("Notification title", CONFIG_KEY_TITLE, mandatory=True)
+        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, mandatory=True)
         return preset
