@@ -168,6 +168,7 @@ class Configurator(LogObject):
 
     def WriteConfigurations(self) -> None:
         """ Save to configurations file in this script's folder the dict in self"""
+        self.configuratorIO.createFolderPathIfDoesNotExist()
         with open(self.configuratorIO.getFilePath(), "w") as f:
             f.write(json.dumps(self.config))
 
