@@ -32,7 +32,8 @@ linux = [
   "dbus-python"
 ]
 macos = [
-  "PyObjC"
+  "PyObjC",
+  "ioturing_applesmc @ git+https://github.com/richibrics/IoTuring_applesmc.git"
 ]
 win=[
   "win10toast"

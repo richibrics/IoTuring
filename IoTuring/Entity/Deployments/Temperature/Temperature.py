@@ -8,6 +8,30 @@ FALLBACK_PACKAGE_LABEL = "package_{}"
 FALLBACK_SENSOR_LABEL = "sensor_{}"
 CURRENT_TEMPERATURE_DECIMALS = 1
 
+INVALID_SMC_VALUE_HIGH = 120 # skip sensors if when initialized they return a value higher than this
+MACOS_SMC_TEMPERATURE_KEYS = {
+    "CPU core A": "TC0c",
+    "CPU core B": "TC1c",
+    "CPU core C": "TC2c",
+    "CPU core D": "TC3c",
+    "CPU core E": "TC4c",
+    "CPU core F": "TC5c",
+    "CPU core G": "TC6c",
+    "CPU core H": "TC7c",
+    "CPU core I": "TC8c",
+    "CPU core J": "TC9c",
+    "CPU performance core 1 temperature": "Tp01", # ARM
+    "CPU performance core 2 temperature": "Tp05", # ARM
+    "CPU performance core 3 temperature": "Tp0D", # ARM
+    "CPU performance core 4 temperature": "Tp0H", # ARM
+    "CPU performance core 5 temperature": "Tp0L", # ARM
+    "CPU performance core 6 temperature": "Tp0P", # ARM
+    "CPU performance core 7 temperature": "Tp0X", # ARM
+    "CPU performance core 8 temperature": "Tp0b", # ARM
+    "CPU efficient core 1 temperature": "Tp09", # ARM
+    "CPU efficient core 2 temperature": "Tp0T" # ARM
+}
+
 class Temperature(Entity):
     NAME = "Temperature"
     DEPENDENCIES = ["Os"]
@@ -19,12 +43,43 @@ class Temperature(Entity):
         if(self.os == "Linux"):
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
+        elif(self.os == "macOS"):
+            self.specificInitialize = self.InitmacOS
+            self.specificUpdate = self.UpdatemacOS
         else:
             raise Exception("Unsupported operating system.")
         self.specificInitialize()
 
     def Update(self):
         self.specificUpdate()
+        
+    def InitmacOS(self):
+        import ioturing_applesmc
+        self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True))
+        self.valid_keys = []
+        # get smc values for all the keys I have in the dictionary and remember
+        # the keys that do not return a 0.0 value
+        ioturing_applesmc.open_smc()
+        for key, value in MACOS_SMC_TEMPERATURE_KEYS.items():
+            smc_value = ioturing_applesmc.get_temperature(value)
+            if smc_value != 0.0 and smc_value < INVALID_SMC_VALUE_HIGH:
+                self.valid_keys.append(value)
+        if len(self.valid_keys) == 0:
+            raise Exception("No valid sensor found for cpu temperature.")
+        
+    # get smc values for all valid keys previously found, then set the sensor value 
+    # to the highest value found. Save also the other values in the extra attributes.
+    def UpdatemacOS(self):
+        import ioturing_applesmc
+        values = {}
+        # key = description, value = smc key
+        for key, value in MACOS_SMC_TEMPERATURE_KEYS.items():
+            if value in self.valid_keys: # in valid_keys I have only the smc keys that returned a value != 0.0
+                # save temperature in the dictionary with key = description
+                values[key] = ioturing_applesmc.get_temperature(value)
+        self.SetEntitySensorValue("cpu", max(values.values()), value_formatter_options=ValueFormatter.Options(decimals=CURRENT_TEMPERATURE_DECIMALS))
+        self.SetEntitySensorExtraAttributes("cpu", values)
+        
         
     # I don't register packages that do not have Current temperature, so I store the registered in a list which is then checked during update
     def InitLinux(self):
