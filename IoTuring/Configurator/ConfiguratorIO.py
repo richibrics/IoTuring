@@ -63,7 +63,7 @@ class ConfiguratorIO:
     
     # https://docs.microsoft.com/en-us/windows/win32/shell/knownfolderid
     def windowsFolderPath(self):
-        return os.environ["PROGRAMDATA"] if platform.release() == "Server" else os.environ["APPDATA"]
+        return os.environ["APPDATA"]
     
     # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     def linuxFolderPath(self):
