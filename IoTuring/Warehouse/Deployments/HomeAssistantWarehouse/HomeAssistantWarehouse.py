@@ -191,9 +191,8 @@ class HomeAssistantWarehouse(Warehouse):
             data = yaml.safe_load(yaml_data.read())
             
             # Try exact match:
-            try:
-                if data[entityDataName]:
-                    return {**payload, **data[entityDataName]}
+            try:            
+                return {**payload, **data[entityDataName]}
             except KeyError:
                 # No exact match, try regex:
                 for entityData, entityDataConfiguration in data.items():
