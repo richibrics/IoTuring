@@ -189,11 +189,18 @@ class HomeAssistantWarehouse(Warehouse):
         """ Add custom info to the entity data, reading it from external file and accessing the information using the entity data name """
         with open(os.path.join(os.path.dirname(inspect.getfile(HomeAssistantWarehouse)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)) as yaml_data:
             data = yaml.safe_load(yaml_data.read())
-            for entityData, entityDataConfiguration in data.items():
-                # entityData may be the correct name, or a regex expression that should return something applied to the real name
-                if re.search(entityData, entityDataName):
-                    # merge payload and additional configurations
-                    return {**payload, **entityDataConfiguration}
+            
+            # Try exact match:
+            try:
+                if data[entityDataName]:
+                    return {**payload, **data[entityDataName]}
+            except KeyError:
+                # No exact match, try regex:
+                for entityData, entityDataConfiguration in data.items():
+                    # entityData may be the correct name, or a regex expression that should return something applied to the real name
+                    if re.search(entityData, entityDataName):
+                        # merge payload and additional configurations
+                        return {**payload, **entityDataConfiguration}
         return payload  # if nothing found
 
     def MakeEntityDataTopic(self, entityData):

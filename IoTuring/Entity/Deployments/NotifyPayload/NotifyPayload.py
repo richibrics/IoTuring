@@ -4,6 +4,7 @@ from IoTuring.Entity import consts
 from IoTuring.Entity.Deployments.Notify.Notify import Notify
 
 import os
+import json
 
 supports_win = True
 try:
@@ -23,6 +24,7 @@ KEY = 'notify'
 # To send notification data through message payload use these two
 PAYLOAD_KEY_TITLE = "title"
 PAYLOAD_KEY_MESSAGE = "message"
+PAYLOAD_SEPARATOR = "|"
 
 DEFAULT_DURATION = 10  # Seconds
 
@@ -36,15 +38,20 @@ class NotifyPayload(Notify):
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     def PrepareMessage(self, message):
-        messageDict = ''
-        try:
-            messageDict = eval(message.payload.decode('utf-8'))
-            self.notification_title = messageDict[PAYLOAD_KEY_TITLE]
-            self.notification_message = messageDict[PAYLOAD_KEY_MESSAGE]
+        payloadString = message.payload.decode('utf-8')
+
+        try:    
+            payloadMessage = json.loads(payloadString)
+            self.notification_title = payloadMessage[PAYLOAD_KEY_TITLE]
+            self.notification_message = payloadMessage[PAYLOAD_KEY_MESSAGE]            
+        
+        except json.JSONDecodeError:
+            payloadMessage = payloadString.split(PAYLOAD_SEPARATOR)
+            self.notification_title = payloadMessage[0]
+            self.notification_message = PAYLOAD_SEPARATOR.join(payloadMessage[1:])
+        
         except:
-            raise Exception(
-                'Incorrect payload and no title and message set in configuration!'
-            )
+            raise Exception('Incorrect payload!')
 
     @classmethod
     def ConfigurationPreset(self):

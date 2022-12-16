@@ -23,6 +23,9 @@ Lock - lock:
   icon: "mdi:lock"
 Notify:
   icon: "mdi:forum"
+NotifyPayload - notify:
+  icon: "mdi:forum"
+  custom_type: text
 Hostname:
   icon: "mdi:form-textbox"
 Power - shutdown:

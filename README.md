@@ -118,6 +118,7 @@ All sensors and switches will be available to be added to your dashboard in your
 - Lock: permits a remote lock command to lock the machine
 - Monitor: permits remote monitors control commands
 - Notify: permits remote notify show on your machine
+- NotifyPayload: permits remote notify custom text
 - Os: shares the operating system of your machine
 - Power*: permits remote poweroff, reboot and sleep commands
 - Ram: shares useful information about ram usage
