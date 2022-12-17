@@ -1,5 +1,4 @@
 import inspect  # To get this folder path and reach the configurations file
-import json
 import os
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Logger.Logger import Colors
@@ -23,7 +22,6 @@ KEY_ENTITY_TYPE = "type"
 KEY_ENTITY_TAG = "tag"
 
 SEPARATOR_CHAR_NUMBER = 120
-
 
 class Configurator(LogObject):
 
@@ -150,27 +148,15 @@ class Configurator(LogObject):
                                  "Error in Warehouse select menu: " + str(e))
 
     def LoadConfigurations(self) -> None:
-        """ Load into a dict in self the configurations file (if exists, otherwise blank configurations) """
-        try:
-            with open(self.configuratorIO.getFilePath(), "r") as f:
-                self.config = json.loads(f.read())
-            self.Log(self.LOG_MESSAGE, "Loaded \"" + self.configuratorIO.getFilePath() + "\"")
-        except:
-            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.\
-                     \nConfigurations will be saved in \"" + self.configuratorIO.getFolderPath() + "\"")
+        """ Reads the configuration file and returns configuration dictionary.
+            If not available, returns the blank configuration  """
+        self.config = self.configuratorIO.readConfigurations()
+        if self.config is None:
             self.config = BLANK_CONFIGURATION
 
-        # check valid keys
-        if not KEY_ACTIVE_ENTITIES in self.config or not KEY_ACTIVE_WAREHOUSES in self.config:
-            self.Log(self.LOG_ERROR, "Invalid configurations, you may have broken them manually. Check you have a dict like this in your configurations file (or delete it to generate a new one) : ")
-            self.Log(self.LOG_ERROR, BLANK_CONFIGURATION)
-            exit(1)
-
     def WriteConfigurations(self) -> None:
-        """ Save to configurations file in this script's folder the dict in self"""
-        self.configuratorIO.createFolderPathIfDoesNotExist()
-        with open(self.configuratorIO.getFilePath(), "w") as f:
-            f.write(json.dumps(self.config))
+        """ Save to configurations file """
+        self.configuratorIO.writeConfigurations(self.config)
 
     def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
         """ UI for single Warehouse settings """

@@ -28,6 +28,7 @@ def loop():
 
     # add -c to configure with the menu
     if len(sys.argv) > 1 and sys.argv[1] == "-c":
+        configurator.configuratorIO.checkConfigurationFileInOldLocation()
         configurator.Menu()
 
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
