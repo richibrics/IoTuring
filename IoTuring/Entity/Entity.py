@@ -96,6 +96,16 @@ class Entity(LogObject):
 
         self.GetEntitySensorByKey(key).SetValue(value)
 
+    def SetEntityCommandState(self, key, value, value_formatter_options=None) -> None:
+        """ Set the value of an entitycommand state """
+        if value_formatter_options is not None:
+            value = ValueFormatter.GetFormattedValue(
+                value, value_formatter_options)
+
+        value = str(value)
+
+        self.GetEntityCommandByKey(key).SetState(value)
+
     def GetEntitySensorValue(self, key) -> str:
         """ Get value using its entity sensor key if the value is present (else raise an exception) """
         if not self.GetEntitySensorByKey(key).HasValue():
@@ -157,6 +167,12 @@ class Entity(LogObject):
         for sensor in self.entitySensors:
             if sensor.GetKey() == key:
                 return sensor
+        raise UnknownEntityKeyException
+    
+    def GetEntityCommandByKey(self, key) -> EntityCommand:
+        for command in self.entityCommands:
+            if command.GetKey() == key:
+                return command
         raise UnknownEntityKeyException
 
     def GetEntityName(self) -> str:

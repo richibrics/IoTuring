@@ -62,9 +62,11 @@ class EntitySensor(EntityData):
 
 class EntityCommand(EntityData):
 
-    def __init__(self, entity, key, callbackFunction):
+    def __init__(self, entity, key, callbackFunction, supportsState = False):
         EntityData.__init__(self, entity, key)
         self.callbackFunction = callbackFunction
+        self.supportsState = supportsState
+        self.state = None
 
     def CallCallback(self, message):
         """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """
@@ -78,3 +80,19 @@ class EntityCommand(EntityData):
         """ Called only by CallCallback. 
             Run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """
         self.callbackFunction(message)
+
+    def DoesSupportState(self):
+        return self.supportsState
+
+    def GetState(self):
+        return self.state
+
+    def SetState(self, state):
+        state = str(state)
+        self.Log(self.LOG_DEBUG, "Set to " + state)
+        self.state = state
+        return self.state
+
+    def HasState(self):
+        """ True if self.state isn't empty """
+        return self.state is not None

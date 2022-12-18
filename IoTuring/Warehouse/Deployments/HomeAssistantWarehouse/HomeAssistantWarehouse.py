@@ -4,6 +4,8 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
 from IoTuring.Warehouse.Warehouse import Warehouse
 from IoTuring.MyApp.App import App
+from IoTuring.Logger import consts
+
 import json
 import yaml
 import re
@@ -17,6 +19,7 @@ TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX = "_extraattributes"
 # That stands for: Entity data type, App name, EntityData Id
 # to send configuration data
 TOPIC_AUTODISCOVERY_FORMAT = "homeassistant/{}/{}/{}/config"
+TOPIC_DATA_STATE_SUFFIX = "state"
 
 CONFIG_KEY_ADDRESS = "address"
 CONFIG_KEY_PORT = "port"
@@ -31,8 +34,10 @@ EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
 EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE = "custom_type"
 
 LWT_TOPIC_SUFFIX = "LWT"
-LWT_PAYLOAD_ONLINE = "ON"
-LWT_PAYLOAD_OFFLINE = "OFF"
+LWT_PAYLOAD_ONLINE = "ONLINE"
+LWT_PAYLOAD_OFFLINE = "OFFLINE"
+PAYLOAD_ON = consts.STATE_ON
+PAYLOAD_OFF = consts.STATE_OFF
 
 
 class HomeAssistantWarehouse(Warehouse):
@@ -90,15 +95,20 @@ class HomeAssistantWarehouse(Warehouse):
         self.SendSensorsValues()
 
     def SendSensorsValues(self):
-        """ Here I send sensor's data (command callbacks are not managed here) """
+        """ Here I send sensor's data and commands's states (command callbacks are not managed here) """
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
-                if (entitySensor.HasValue()):
+                if entitySensor.HasValue():
                     self.client.SendTopicData(self.MakeEntityDataTopic(
                         entitySensor), entitySensor.GetValue())
-                if (entitySensor.HasExtraAttributes()):  # send as json
+                if entitySensor.HasExtraAttributes():  # send as json
                     self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
                                               json.dumps(entitySensor.GetExtraAttributes()))
+            for entityCommand in entity.GetEntityCommands():
+                if entityCommand.HasState():
+                    self.client.SendTopicData(
+                        self.MakeEntityCommandStateTopic(entityCommand), 
+                        entityCommand.GetState())
 
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()
@@ -145,6 +155,10 @@ class HomeAssistantWarehouse(Warehouse):
                     autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
                         data_type, App.getName(), payload['unique_id'].replace(".", "_"))
                 else:  # it's a EntityCommandData
+                    if entityData.DoesSupportState():
+                        payload['state_topic'] = self.MakeEntityCommandStateTopic(entityData)
+                        payload['payload_on'] = PAYLOAD_ON
+                        payload['payload_off'] = PAYLOAD_OFF
                     payload['command_topic'] = self.MakeEntityDataTopic(
                         entityData)
                     autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
@@ -204,6 +218,11 @@ class HomeAssistantWarehouse(Warehouse):
         """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
             the extra attrbiutes from the original value """
         return self.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
+
+    def MakeEntityCommandStateTopic(self, entityData):
+        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id,
+            returns state topic"""
+        return self.MakeValuesTopic(f"{entityData.GetId()}/{TOPIC_DATA_STATE_SUFFIX}")
 
     def MakeValuesTopic(self, topic_suffix):
         """ Prepares a topic, including the app name, the client name and finally a passed id """

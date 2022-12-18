@@ -12,6 +12,8 @@ SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 TOPIC_FORMAT = "{}/{}/{}"  # That stands for: App name, Client name, EntityData Id
 
 OUTPUT_TOPICS_FILENAME = "commands_topic.txt"
+TOPIC_DATA_STATE_SUFFIX = "state"
+
 
 CONFIG_KEY_ADDRESS = "address"
 CONFIG_KEY_PORT = "port"
@@ -51,15 +53,23 @@ class MQTTWarehouse(Warehouse):
         while(not self.client.IsConnected()):
             time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
             
-        # Here in Loop I send sensor's data (command callbacks are not managed here)
+        # Here in Loop I send sensor's data, and command's states (command callbacks are not managed here)
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
-                if(entitySensor.HasValue()):
+                if entitySensor.HasValue():
                     self.client.SendTopicData(self.MakeTopic(
                         entitySensor), entitySensor.GetValue())
+            for entityCommand in entity.GetEntityCommands():
+                if entityCommand.HasState():
+                    self.client.SendTopicData(
+                        self.MakeEntityCommandStateTopic(entityCommand), 
+                        entityCommand.GetState())
 
     def MakeTopic(self, entityData):
         return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, entityData.GetId()))
+
+    def MakeEntityCommandStateTopic(self, entityData):
+        return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, f"{entityData.GetId()}/{TOPIC_DATA_STATE_SUFFIX}"))
 
     def ExportCommandsTopics(self):
         """ Create a file on which I write the Entity command Id and the topic """
