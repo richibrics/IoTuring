@@ -26,6 +26,8 @@ CONFIG_KEY_MESSAGE = "message"
 
 DEFAULT_DURATION = 10  # Seconds
 
+MODE_DATA_VIA_CONFIG = "data_via_config"
+MODE_DATA_VIA_PAYLOAD = "data_via_payload"
 
 class Notify(Entity):
     NAME = "Notify"
@@ -36,12 +38,21 @@ class Notify(Entity):
         try:
             self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
             self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
+            self.data_mode = MODE_DATA_VIA_CONFIG
         except Exception as e:
-            raise Exception("Configuration error: " + str(e))
+            self.data_mode = MODE_DATA_VIA_PAYLOAD
 
-        # Check if they have some value:
-        if not (self.config_title and self.config_message):
-            raise Exception("Configuration error: Title or message empty!")
+        if self.data_mode == MODE_DATA_VIA_CONFIG:
+            if not self.config_title or not self.config_message:
+                self.data_mode = MODE_DATA_VIA_PAYLOAD
+
+        if self.data_mode == MODE_DATA_VIA_CONFIG:
+            self.Log(self.LOG_INFO, "Using data from configuration")
+        else:
+            self.Log(self.LOG_INFO, "Using data from payload")
+            
+        # In addition, if data is from payload, we add this info to entity name
+        self.NAME = self.NAME + " (payload)" if self.data_mode == MODE_DATA_VIA_PAYLOAD else self.NAME
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
@@ -89,6 +100,7 @@ class Notify(Entity):
     @classmethod
     def ConfigurationPreset(self):
         preset = MenuPreset()
-        preset.AddEntry("Notification title", CONFIG_KEY_TITLE, mandatory=True)
-        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, mandatory=True)
+        preset.AddEntry("Notification title - leave empty to send this data via remote message", CONFIG_KEY_TITLE, mandatory=False)
+        # ask for the message only if the title is provided, otherwise don't ask (use display_if_value_for_following_key_provided)
+        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, display_if_value_for_following_key_provided=CONFIG_KEY_TITLE, mandatory=True)
         return preset
