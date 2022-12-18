@@ -1,6 +1,7 @@
 import subprocess
 import ctypes
 import os
+import re
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
@@ -48,6 +49,7 @@ class Monitor(Entity):
             elif self.os == consts.OS_FIXED_VALUE_LINUX:
                 command = 'xset dpms force on'
                 subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                self.SetEntityCommandState(KEY, STATE_ON)
 
         elif payloadString == STATE_OFF:
             if self.os == consts.OS_FIXED_VALUE_WINDOWS:
@@ -55,6 +57,7 @@ class Monitor(Entity):
             elif self.os == consts.OS_FIXED_VALUE_LINUX:
                 command = 'xset dpms force off'
                 subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                self.SetEntityCommandState(KEY, STATE_OFF)
         else:
             raise Exception('Incorrect payload!')
 
