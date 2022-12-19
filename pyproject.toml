@@ -22,15 +22,11 @@ classifiers = [
 dependencies = [
   "paho-mqtt",
   "psutil",
-  "notify2",
   "PyYAML",
   "importlib_metadata"
 ]
 
 [project.optional-dependencies]
-linux = [
-  "dbus-python"
-]
 macos = [
   "PyObjC",
   "ioturing_applesmc @ git+https://github.com/richibrics/IoTuring_applesmc.git"
