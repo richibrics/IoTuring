@@ -57,19 +57,17 @@ class MQTTWarehouse(Warehouse):
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
                 if entitySensor.HasValue():
-                    self.client.SendTopicData(self.MakeTopic(
-                        entitySensor), entitySensor.GetValue())
+                    self.client.SendTopicData(
+                        self.MakeTopic(entitySensor), 
+                        entitySensor.GetValue())
             for entityCommand in entity.GetEntityCommands():
                 if entityCommand.HasState():
                     self.client.SendTopicData(
-                        self.MakeEntityCommandStateTopic(entityCommand), 
+                        self.MakeTopic(entityCommand), 
                         entityCommand.GetState())
 
     def MakeTopic(self, entityData):
         return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, entityData.GetId()))
-
-    def MakeEntityCommandStateTopic(self, entityData):
-        return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, f"{entityData.GetId()}/{TOPIC_DATA_STATE_SUFFIX}"))
 
     def ExportCommandsTopics(self):
         """ Create a file on which I write the Entity command Id and the topic """

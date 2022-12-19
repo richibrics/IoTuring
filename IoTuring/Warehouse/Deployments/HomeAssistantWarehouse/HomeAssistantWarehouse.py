@@ -19,7 +19,6 @@ TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX = "_extraattributes"
 # That stands for: Entity data type, App name, EntityData Id
 # to send configuration data
 TOPIC_AUTODISCOVERY_FORMAT = "homeassistant/{}/{}/{}/config"
-TOPIC_DATA_STATE_SUFFIX = "state"
 
 CONFIG_KEY_ADDRESS = "address"
 CONFIG_KEY_PORT = "port"
@@ -107,7 +106,7 @@ class HomeAssistantWarehouse(Warehouse):
             for entityCommand in entity.GetEntityCommands():
                 if entityCommand.HasState():
                     self.client.SendTopicData(
-                        self.MakeEntityCommandStateTopic(entityCommand), 
+                        self.MakeEntityDataTopic(entityCommand), 
                         entityCommand.GetState())
 
     def SendEntityDataConfigurations(self):
@@ -156,7 +155,7 @@ class HomeAssistantWarehouse(Warehouse):
                         data_type, App.getName(), payload['unique_id'].replace(".", "_"))
                 else:  # it's a EntityCommandData
                     if entityData.DoesSupportState():
-                        payload['state_topic'] = self.MakeEntityCommandStateTopic(entityData)
+                        payload['state_topic'] = self.MakeEntityDataTopic(entityData)
                         payload['payload_on'] = PAYLOAD_ON
                         payload['payload_off'] = PAYLOAD_OFF
                     payload['command_topic'] = self.MakeEntityDataTopic(
@@ -218,11 +217,6 @@ class HomeAssistantWarehouse(Warehouse):
         """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
             the extra attrbiutes from the original value """
         return self.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
-
-    def MakeEntityCommandStateTopic(self, entityData):
-        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id,
-            returns state topic"""
-        return self.MakeValuesTopic(f"{entityData.GetId()}/{TOPIC_DATA_STATE_SUFFIX}")
 
     def MakeValuesTopic(self, topic_suffix):
         """ Prepares a topic, including the app name, the client name and finally a passed id """
