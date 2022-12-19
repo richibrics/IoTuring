@@ -8,7 +8,7 @@ import os
 
 supports_win = True
 try:
-    import win10toast
+    import tinyWinToast.tinyWinToast as twt
 except:
     supports_win = False
 
@@ -25,6 +25,8 @@ CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
 
 DEFAULT_DURATION = 10  # Seconds
+
+ICON_FILENAME = "icon.png"
 
 
 class Notify(Entity):
@@ -71,17 +73,29 @@ class Notify(Entity):
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
         if self.os == consts.OS_FIXED_VALUE_WINDOWS:
-            toaster = win10toast.ToastNotifier()
-            toaster.show_toast(
-                self.notification_title, self.notification_message, duration=DEFAULT_DURATION, threaded=False)
+            if DEFAULT_DURATION > 10:
+                toast_duration = "long"
+            else:
+                toast_duration = "short"
+            toast_icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ICON_FILENAME)
+            twt.getToast(
+                title=self.notification_title, 
+                message=self.notification_message,
+                icon=toast_icon_path,
+                duration=toast_duration,
+                appId='IoTuring',
+                isMute=False).show()
+
         elif self.os == consts.OS_FIXED_VALUE_LINUX:
             notification = notify2.Notification(
                 self.notification_title, self.notification_message)
             notification.show()
+
         elif self.os == consts.OS_FIXED_VALUE_MACOS:
             command = 'osascript -e \'display notification "{}" with title "{}"\''.format(
                 self.notification_message, self.notification_title,)
             os.system(command)
+            
         else:
             self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
                      str(self.os) + ")... Aborting")

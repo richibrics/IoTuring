@@ -36,7 +36,7 @@ macos = [
   "ioturing_applesmc @ git+https://github.com/richibrics/IoTuring_applesmc.git"
 ]
 win=[
-  "win10toast"
+  "tinyWinToast"
 ]
 
 [project.urls]
@@ -52,4 +52,4 @@ IoTuring = "IoTuring:loop"
 requires = ["setuptools", "wheel"]
 
 [tool.setuptools.package-data]
-"*" = ["entities.yaml"]
+"*" = ["entities.yaml", "icon.png"]
