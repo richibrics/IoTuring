@@ -15,6 +15,7 @@ try:
 except:
     macos_support = False
 
+CONFIG_PATH_ENV_VAR = "IOTURING_CONFIG_DIR"
 
 CONFIGURATION_FILE_NAME = "configurations.json"
 
@@ -61,22 +62,28 @@ class ConfiguratorIO(LogObject):
             
         folderPath = self.defaultFolderPath()
         try:
-            _os = platform.system()
-            if _os == 'Darwin' and macos_support:
-                folderPath = self.macOSFolderPath()
-                folderPath = os.path.join(folderPath, self.directoryName)
-            elif _os == "Windows":
-                folderPath = self.windowsFolderPath()        
-                folderPath = os.path.join(folderPath, self.directoryName)
-            elif _os == "Linux":
-                folderPath = self.linuxFolderPath()
-                folderPath = os.path.join(folderPath, self.directoryName)
+            # Use path from environment variable if present, otherwise os specific folders, otherwise use default path
+            envvarPath = self.envvarFolderPath()
+            if envvarPath is not None:
+                folderPath = envvarPath
+            else:
+                _os = platform.system()
+                if _os == 'Darwin' and macos_support:
+                    folderPath = self.macOSFolderPath()
+                    folderPath = os.path.join(folderPath, self.directoryName)
+                elif _os == "Windows":
+                    folderPath = self.windowsFolderPath()        
+                    folderPath = os.path.join(folderPath, self.directoryName)
+                elif _os == "Linux":
+                    folderPath = self.linuxFolderPath()
+                    folderPath = os.path.join(folderPath, self.directoryName)
         except:
             pass # default folder path will be used
         
         # add slash if missing (for log reasons)
         if not folderPath.endswith(os.sep):
             folderPath += os.sep
+            
         return folderPath
 
     def defaultFolderPath(self):
@@ -95,6 +102,9 @@ class ConfiguratorIO(LogObject):
     # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     def linuxFolderPath(self):
         return os.environ["XDG_CONFIG_HOME"] if "XDG_CONFIG_HOME" in os.environ else os.path.join(os.environ["HOME"], ".config")
+    
+    def envvarFolderPath(self):
+        return os.environ[CONFIG_PATH_ENV_VAR] if CONFIG_PATH_ENV_VAR in os.environ else None
     
     # In versions prior to 2022.12.2, the configurations file was stored in the same folder as this file
     def oldFolderPath(self):

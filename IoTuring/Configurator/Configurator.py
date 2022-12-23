@@ -8,10 +8,10 @@ from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
-from IoTuring.Configurator.ConfiguratorIO import ConfiguratorIO
+import IoTuring.Configurator.ConfiguratorIO as ConfiguratorIO
 
 # TODO Find new location for this message
-HELP_MESSAGE = "\nYou can find the configuration file in the following path: \n\tmacOS\t~/Application Support/IoTuring/configurations.json \n\tLinux\t~/.config/IoTuring/configurations.json \n\tWindows\t%APPDATA%/IoTuring/configurations.json \n\nYou can also set you preferred path that will contain the configuration file by setting the environment variable IOTURING_CONFIG_PATH (file will be stored in $IOTURING_CONFIG_PATH/configurations.json).\n"
+HELP_MESSAGE = "\nYou can find the configuration file in the following path: \n\tmacOS\t\t~/Library/Application Support/IoTuring/configurations.json \n\tLinux\t\t~/.config/IoTuring/configurations.json \n\tWindows\t\t%APPDATA%/IoTuring/configurations.json\n\tFallback\t[ioturing_install_path]/Configurator/configurations.json \n\nYou can also set you preferred path that will contain the configuration file by setting the environment variable " + ConfiguratorIO.CONFIG_PATH_ENV_VAR + " (file will be stored in $" + ConfiguratorIO.CONFIG_PATH_ENV_VAR + "/configurations.json).\n"
 
 
 BLANK_CONFIGURATION = {'active_entities': [
@@ -31,7 +31,7 @@ class Configurator(LogObject):
 
     def __init__(self) -> None:
         self.config = None
-        self.configuratorIO = ConfiguratorIO()
+        self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.LoadConfigurations()
 
     def GetConfigurations(self):

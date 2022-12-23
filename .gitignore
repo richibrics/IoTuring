@@ -5,6 +5,7 @@ commands_topic.txt
 .vscode
 .DS_Store
 IoTuring/Configurator/configurations.json*
+IoTuring/Configurator/dontmoveconf.itg*
 .venv
 build
 *.egg-info
