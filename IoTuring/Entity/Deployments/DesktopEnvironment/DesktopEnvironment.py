@@ -1,6 +1,7 @@
 import os
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
+from IoTuring.SystemConsts.SystemConsts import DesktopEnvironment as De
 
 KEY_DE = 'desktop_environment'
 
@@ -13,13 +14,6 @@ class DesktopEnvironment(Entity):
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_DE))
         # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
-        self.SetEntitySensorValue(KEY_DE, self.GetDesktopEnvironment())
+        self.SetEntitySensorValue(KEY_DE, De.GetDesktopEnvironment())
 
-    # If value passed use it else get it from the system
-    def GetDesktopEnvironment(self):
 
-        de = os.environ.get('DESKTOP_SESSION')
-        if de == None:
-            de = "base"
-
-        return de

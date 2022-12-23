@@ -2,6 +2,8 @@ import subprocess
 import os as sys_os
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
+from IoTuring.SystemConsts.SystemConsts import Os
+
 
 KEY_SHUTDOWN = 'shutdown'
 KEY_REBOOT = 'reboot'
@@ -27,13 +29,12 @@ commands_sleep = {
 
 class Power(Entity):
     NAME = "Power"
-    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         self.sleep_command = ""
 
     def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
+        self.os = Os.GetOs()
         # Check if commands are available for this OS/DE combo, then register them
 
         # Shutdown
@@ -50,7 +51,7 @@ class Power(Entity):
         # TODO Update TurnOffMonitors, TurnOnMonitors, LockCommand to use prefix lookup below
         # Additional linux checking to find Window Manager: check running X11 for linux
         prefix = ''
-        if self.os == 'Linux' and sys_os.environ.get('DISPLAY'):
+        if Os.IsLinux() and sys_os.environ.get('DISPLAY'):
             prefix = '_X11'
         lookup_key = self.os + prefix
         if lookup_key in commands_sleep:
