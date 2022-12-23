@@ -2,6 +2,7 @@ import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
+from IoTuring.SystemConsts.SystemConsts import Os
 
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
@@ -34,7 +35,6 @@ MACOS_SMC_TEMPERATURE_KEYS = {
 
 class Temperature(Entity):
     NAME = "Temperature"
-    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         self.temperatureFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_TEMPERATURE, decimals=TEMPERATURE_DECIMALS)
@@ -42,11 +42,11 @@ class Temperature(Entity):
     def PostInitialize(self):
         self.specificInitialize = None
         self.specificUpdate = None
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-        if(self.os == "Linux"):
+        
+        if Os.IsLinux():
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
-        elif(self.os == "macOS"):
+        elif Os.IsMacos():
             self.specificInitialize = self.InitmacOS
             self.specificUpdate = self.UpdatemacOS
         else:
