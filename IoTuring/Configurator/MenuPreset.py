@@ -1,3 +1,5 @@
+import readline #input() conflicts TerminalMenu without this
+
 class MenuPreset():
 
     def __init__(self) -> None:
