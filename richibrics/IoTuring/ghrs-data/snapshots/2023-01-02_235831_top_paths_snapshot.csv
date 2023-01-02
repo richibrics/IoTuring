@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/richibrics/IoTuring,40,19
+/richibrics/IoTuring/issues,4,2
+/richibrics/IoTuring/tree/main/IoTuring,3,3
+/richibrics/IoTuring/blob/main/IoTuring/__init__.py,2,2
+/richibrics/IoTuring/blob/main/IoTuring/__main__.py,2,2
+/richibrics/IoTuring/pulls,2,2
+/richibrics/IoTuring/tree/main/IoTuring/Entity,2,2
+/richibrics/IoTuring/blob/main/IoTuring/Entity/EntityManager.py,2,1
+/richibrics/IoTuring/blob/main/IoTuring/Entity/consts.py,1,1
+/richibrics/IoTuring/blob/main/IoTuring/Protocols/MQTTClient/MQTTClient.py,1,1
