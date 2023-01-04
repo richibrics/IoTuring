@@ -12,6 +12,7 @@ KEY_TURN_ALL_ON = 'turn_all_on'
 
 class Monitor(Entity):
     NAME = "Monitor"
+    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         pass
