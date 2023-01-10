@@ -21,11 +21,11 @@ Username - username:
   icon: "mdi:account-supervisor-circle"
 Lock - lock:
   icon: "mdi:lock"
-Notify:
-  icon: "mdi:forum"
-NotifyPayload - notify:
+NotifyPayload:
   icon: "mdi:forum"
   custom_type: text
+Notify:
+  icon: "mdi:forum"
 Hostname:
   icon: "mdi:form-textbox"
 Power - shutdown:

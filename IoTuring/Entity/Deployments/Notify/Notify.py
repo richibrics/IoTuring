@@ -60,7 +60,9 @@ class Notify(Entity):
             self.Log(self.LOG_INFO, "Using data from payload")
             
         # In addition, if data is from payload, we add this info to entity name
-        self.NAME = self.NAME + " (payload)" if self.data_mode == MODE_DATA_VIA_PAYLOAD else self.NAME
+        # ! Changing the name we recognize the difference in warehouses only using the name 
+        # e.g HomeAssistant warehouse can use the regex syntax with NotifyPaylaod to identify that the component needs the text message
+        self.NAME = self.NAME + ("Payload" if self.data_mode == MODE_DATA_VIA_PAYLOAD else "")
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
