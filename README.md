@@ -27,20 +27,13 @@ Some platforms may need other software for some entities.
 #### Install all requirements on ArchLinux
 
 ```shell
-pacman -Syu base-devel git python python-pip
+pacman -Syu git python python-pip
 ```
 
-#### Install and update all requirements on Debain
+#### Install and update all requirements on Debain or Ubuntu
 
 ```shell
-apt install git python3 python3-pip libdbus-glib-1-dev
-pip install --upgrade pip
-```
-
-#### Install and update all requirements on Ubuntu
-
-```
-apt install git python3 python3-pip libdbus-glib-1-dev meson patchelf
+apt install git python3 python3-pip -y
 pip install --upgrade pip
 ```
 
@@ -54,7 +47,7 @@ pip install --upgrade pip
 On Linux:
 
 ```shell
-pip install IoTuring[linux]
+pip install IoTuring
 ```
 
 On Windows:

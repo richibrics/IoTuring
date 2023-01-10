@@ -22,21 +22,17 @@ classifiers = [
 dependencies = [
   "paho-mqtt",
   "psutil",
-  "notify2",
   "PyYAML",
   "importlib_metadata"
 ]
 
 [project.optional-dependencies]
-linux = [
-  "dbus-python"
-]
 macos = [
   "PyObjC",
   "ioturing_applesmc @ git+https://github.com/richibrics/IoTuring_applesmc.git"
 ]
 win=[
-  "win10toast"
+  "tinyWinToast"
 ]
 
 [project.urls]
@@ -52,4 +48,4 @@ IoTuring = "IoTuring:loop"
 requires = ["setuptools", "wheel"]
 
 [tool.setuptools.package-data]
-"*" = ["entities.yaml"]
+"*" = ["entities.yaml", "icon.png"]

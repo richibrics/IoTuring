@@ -10,16 +10,15 @@ import os
 
 supports_win = True
 try:
-    import win10toast
+    import tinyWinToast.tinyWinToast as twt
 except:
     supports_win = False
 
+commands = {
+    consts.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
+    consts.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+}
 
-supports_unix = True
-try:
-    import notify2
-except:
-    supports_unix = False
 
 KEY = 'notify'
 
@@ -31,7 +30,7 @@ PAYLOAD_SEPARATOR = "|"
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
 
-DEFAULT_DURATION = 10  # Seconds
+ICON_FILENAME = "icon.png"
 
 MODE_DATA_VIA_CONFIG = "data_via_config"
 MODE_DATA_VIA_PAYLOAD = "data_via_payload"
@@ -71,14 +70,19 @@ class Notify(Entity):
         if self.os == consts.OS_FIXED_VALUE_WINDOWS:
             if not supports_win:
                 raise Exception(
-                    'Notify not available, have you installed \'win10toast\' on pip ?')
-        elif self.os == consts.OS_FIXED_VALUE_LINUX:
-            if supports_unix:
-                # Init notify2
-                notify2.init(App.getName())
-            else:
+                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+
+        elif self.os == consts.OS_FIXED_VALUE_LINUX \
+            or self.os == consts.OS_FIXED_VALUE_MACOS:
+            # Use 'command -v' to test if comman exists:
+            if os.system(f'command -v {commands[self.os].split(" ")[0]}') != 0:
                 raise Exception(
-                    'Notify not available, have you installed \'notify2\' on pip ?')
+                    f'Command not found {commands[self.os].split(" ")[0]}!'
+                )
+                
+        else:
+            raise Exception(
+                'Notify not available for this platorm!')
 
     def PrepareMessage(self, message):
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:
@@ -102,17 +106,22 @@ class Notify(Entity):
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
         if self.os == consts.OS_FIXED_VALUE_WINDOWS:
-            toaster = win10toast.ToastNotifier()
-            toaster.show_toast(
-                self.notification_title, self.notification_message, duration=DEFAULT_DURATION, threaded=False)
+            toast_icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ICON_FILENAME)
+            twt.getToast(
+                title=self.notification_title, 
+                message=self.notification_message,
+                icon=toast_icon_path,
+                appId=App.getName(),
+                isMute=False).show()
+
         elif self.os == consts.OS_FIXED_VALUE_LINUX:
-            notification = notify2.Notification(
-                self.notification_title, self.notification_message)
-            notification.show()
+            os.system(commands[self.os]
+                .format(self.notification_title,self.notification_message))
+
         elif self.os == consts.OS_FIXED_VALUE_MACOS:
-            command = 'osascript -e \'display notification "{}" with title "{}"\''.format(
-                self.notification_message, self.notification_title,)
-            os.system(command)
+            os.system(commands[self.os]
+                .format(self.notification_message,self.notification_title))
+
         else:
             self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
                      str(self.os) + ")... Aborting")

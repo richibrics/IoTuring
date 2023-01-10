@@ -1,23 +1,8 @@
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.Entity import consts
 from IoTuring.Entity.Deployments.Notify.Notify import Notify
 
-import os
 import json
-
-supports_win = True
-try:
-    import win10toast
-except:
-    supports_win = False
-
-
-supports_unix = True
-try:
-    import notify2
-except:
-    supports_unix = False
 
 KEY = 'notify'
 
@@ -25,8 +10,6 @@ KEY = 'notify'
 PAYLOAD_KEY_TITLE = "title"
 PAYLOAD_KEY_MESSAGE = "message"
 PAYLOAD_SEPARATOR = "|"
-
-DEFAULT_DURATION = 10  # Seconds
 
 
 class NotifyPayload(Notify):
