@@ -4,6 +4,8 @@ from IoTuring.MyApp.App import App
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity import consts
 
+import json
+
 import os
 
 supports_win = True
@@ -21,6 +23,11 @@ except:
 
 KEY = 'notify'
 
+# To send notification data through message payload use these two
+PAYLOAD_KEY_TITLE = "title"
+PAYLOAD_KEY_MESSAGE = "message"
+PAYLOAD_SEPARATOR = "|"
+
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
 
@@ -34,6 +41,8 @@ class Notify(Entity):
     DEPENDENCIES = ["Os"]
     ALLOW_MULTI_INSTANCE = True
 
+    # Data is set from configurations if configurations contain both title and message
+    # Otherwise, data is set from payload (even if only one of title or message is set)
     def Initialize(self):
         try:
             self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
@@ -72,8 +81,19 @@ class Notify(Entity):
                     'Notify not available, have you installed \'notify2\' on pip ?')
 
     def PrepareMessage(self, message):
-        self.notification_title = self.config_title
-        self.notification_message = self.config_message
+        if self.data_mode == MODE_DATA_VIA_PAYLOAD:
+            payloadString = message.payload.decode('utf-8')
+            try:    
+                payloadMessage = json.loads(payloadString)
+                self.notification_title = payloadMessage[PAYLOAD_KEY_TITLE]
+                self.notification_message = payloadMessage[PAYLOAD_KEY_MESSAGE]            
+            except json.JSONDecodeError:
+                payloadMessage = payloadString.split(PAYLOAD_SEPARATOR)
+                self.notification_title = payloadMessage[0]
+                self.notification_message = PAYLOAD_SEPARATOR.join(payloadMessage[1:])
+        else: # self.data_mode = MODE_DATA_VIA_CONFIG
+            self.notification_title = self.config_title
+            self.notification_message = self.config_message
 
     def Callback(self, message):
 

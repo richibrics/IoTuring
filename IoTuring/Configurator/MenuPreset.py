@@ -11,9 +11,10 @@ class MenuPreset():
         - default: the default value to use if the user doesn't provide one (works only if mandatory=False)
         - mandatory: if the user must provide a value for this entry
         - display_if_value_for_following_key_provided: key of an entry (that must preceed this) that will enable this one, if the user has provided a value for that.
-          If it's None, the entry will always be displayed
-          If it has a key, the entry won't be displayed if menu[provided_key] has value (and a default value will be used if provided; otherwise won't set this key in the dict)
-          Caution: if this entry has mandatory = True, that works only if this entry is displayed !
+          * If it's None, the entry will always be displayed
+          * If it has a key, the entry won't be displayed if menu[provided_key] has value.
+          * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
+        ! Caution: if the entry is not displayed, the mandatory property will be ignored !
         """
         self.preset.append(
             {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_value_for_following_key_provided, "value": None})
