@@ -85,25 +85,26 @@ class Notify(Entity):
         else:
             raise Exception(
                 'Notify not available for this platorm!')
-
-    def PrepareMessage(self, message):
-        if self.data_mode == MODE_DATA_VIA_PAYLOAD:
-            payloadString = message.payload.decode('utf-8')
-            try:    
-                payloadMessage = json.loads(payloadString)
-                self.notification_title = payloadMessage[PAYLOAD_KEY_TITLE]
-                self.notification_message = payloadMessage[PAYLOAD_KEY_MESSAGE]            
-            except json.JSONDecodeError:
-                payloadMessage = payloadString.split(PAYLOAD_SEPARATOR)
-                self.notification_title = payloadMessage[0]
-                self.notification_message = PAYLOAD_SEPARATOR.join(payloadMessage[1:])
-        else: # self.data_mode = MODE_DATA_VIA_CONFIG
-            self.notification_title = self.config_title
-            self.notification_message = self.config_message
+      
 
     def Callback(self, message):
 
-        self.PrepareMessage(message)
+        if self.data_mode == MODE_DATA_VIA_PAYLOAD:
+            # Get data from payload:
+            payloadString = message.payload.decode('utf-8')
+            try:
+                payloadMessage = json.loads(payloadString)
+                self.notification_title = payloadMessage[PAYLOAD_KEY_TITLE]
+                self.notification_message = payloadMessage[PAYLOAD_KEY_MESSAGE]
+            except json.JSONDecodeError:
+                payloadMessage = payloadString.split(PAYLOAD_SEPARATOR)
+                self.notification_title = payloadMessage[0]
+                self.notification_message = PAYLOAD_SEPARATOR.join(
+                    payloadMessage[1:])
+
+        else:  # self.data_mode = MODE_DATA_VIA_CONFIG
+            self.notification_title = self.config_title
+            self.notification_message = self.config_message
 
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
