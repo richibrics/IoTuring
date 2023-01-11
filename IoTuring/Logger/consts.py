@@ -11,6 +11,10 @@ LOG_DEBUG = 4
 LOG_DEVELOPMENT = 5
 
 
+# On/off states as strings:
+STATE_ON = "ON"
+STATE_OFF = "OFF"
+
 # Fill start of string with spaces to jusitfy the message (0: no padding)
 # First for type, second for source
 STRINGS_LENGTH = [8, 30]

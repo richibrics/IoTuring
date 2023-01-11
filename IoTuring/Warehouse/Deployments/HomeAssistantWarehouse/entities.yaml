@@ -50,10 +50,8 @@ Cpu: # if no matches with above CPU patterns, set this
   icon: "mdi:calculator-variant"
 Time:
   icon: "mdi:clock"
-Monitor - turn_all_on:
-  icon: "mdi:monitor-star"
-Monitor - turn_all_off:
-  icon: "mdi:monitor-off"
+Monitor:
+  icon: "mdi:monitor-shimmer"
 AppInfo:
   icon: "mdi:information-outline"
 Temperature:

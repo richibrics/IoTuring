@@ -4,6 +4,8 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
 from IoTuring.Warehouse.Warehouse import Warehouse
 from IoTuring.MyApp.App import App
+from IoTuring.Logger import consts
+
 import json
 import yaml
 import re
@@ -31,8 +33,10 @@ EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
 EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE = "custom_type"
 
 LWT_TOPIC_SUFFIX = "LWT"
-LWT_PAYLOAD_ONLINE = "ON"
-LWT_PAYLOAD_OFFLINE = "OFF"
+LWT_PAYLOAD_ONLINE = "ONLINE"
+LWT_PAYLOAD_OFFLINE = "OFFLINE"
+PAYLOAD_ON = consts.STATE_ON
+PAYLOAD_OFF = consts.STATE_OFF
 
 
 class HomeAssistantWarehouse(Warehouse):
@@ -103,7 +107,20 @@ class HomeAssistantWarehouse(Warehouse):
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()
         for entity in self.GetEntities():
+            
+            # Get entity data keys for checking links:
+            entityDataKeys = [ed.GetKey() for ed in entity.GetAllEntityData()]
+
             for entityData in entity.GetAllEntityData():
+
+                # Check if it has linked command:
+                has_linked_command = False
+                if entityDataKeys.count(entityData.GetKey()) > 1:
+                    if entityData in entity.GetEntitySensors():
+                        has_linked_command = True
+                    else: # it's a linked command, so skip
+                        continue
+
                 data_type = ""
                 autoDiscoverySendTopic = ""
                 payload = {}
@@ -111,7 +128,9 @@ class HomeAssistantWarehouse(Warehouse):
                     entityData.GetKey()
 
                 # check the data type: can be edited from custom configurations
-                if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
+                if has_linked_command: # it's a sensor with a linked command
+                    data_type = "switch"
+                elif entityData in entity.GetEntitySensors():  # it's an EntitySensorData
                     data_type = "sensor"
                 else:  # it's a EntityCommandData
                     data_type = "button"
@@ -142,13 +161,22 @@ class HomeAssistantWarehouse(Warehouse):
                     payload['expire_after'] = 600  # TODO Improve
                     payload['state_topic'] = self.MakeEntityDataTopic(
                         entityData)
-                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
-                        data_type, App.getName(), payload['unique_id'].replace(".", "_"))
-                else:  # it's a EntityCommandData
+
+                    # Add default payloads
+                    if data_type in ["binary_sensor", "switch"]:
+                        if not 'payload_on' in payload:
+                            payload['payload_on'] = PAYLOAD_ON
+                        if not 'payload_off' in payload:
+                            payload['payload_off'] = PAYLOAD_OFF
+
+                
+                if entityData in entity.GetEntityCommands() \
+                    or has_linked_command: # it's a EntityCommandData or a linked sensor
                     payload['command_topic'] = self.MakeEntityDataTopic(
                         entityData)
-                    autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
-                        data_type, App.getName(), payload['unique_id'].replace(".", "_"))
+                
+                autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
+                    data_type, App.getName(), payload['unique_id'].replace(".", "_"))
 
                 # Add availability configuration
                 payload["availability_topic"] = self.MakeValuesTopic(
