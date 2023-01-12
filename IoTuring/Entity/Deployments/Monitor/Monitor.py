@@ -9,7 +9,8 @@ from IoTuring.Entity import consts
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 
 
-KEY = 'monitor'
+KEY_STATE = 'monitor_state'
+KEY_CMD = 'monitor'
 
 
 class Monitor(Entity):
@@ -35,12 +36,12 @@ class Monitor(Entity):
 
         if self.os == consts.OS_FIXED_VALUE_WINDOWS:
             self.RegisterEntityCommand(EntityCommand(
-                self, KEY, self.Callback))
+                self, KEY_CMD, self.Callback))
         elif supports_linux:
             # Support for sending state on linux
+            self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
             self.RegisterEntityCommand(EntityCommand(
-                self, KEY, self.Callback))
-            self.RegisterEntitySensor(EntitySensor(self, KEY))
+                self, KEY_CMD, self.Callback, KEY_STATE))
 
     def Callback(self, message):
         payloadString = message.payload.decode('utf-8')

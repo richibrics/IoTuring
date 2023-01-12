@@ -62,9 +62,25 @@ class EntitySensor(EntityData):
 
 class EntityCommand(EntityData):
 
-    def __init__(self, entity, key, callbackFunction):
+    def __init__(self, entity, key, callbackFunction, connectedEntitySensorKey = None):
+        """
+        If a key for the entity sensor is passed, warehouses that support it use this command as a switch with state.
+        Better to register the sensor before this command to avoud unexpected behaviours.
+        """
         EntityData.__init__(self, entity, key)
         self.callbackFunction = callbackFunction
+        self.connectedEntitySensorKey = connectedEntitySensorKey
+
+    def SupportsState(self):
+        return self.connectedEntitySensorKey is not None
+    
+    def GetConnectedEntitySensorKey(self):
+        # if this support state, return the key of the entity sensor that is connected to this command
+        # otherwise return None
+        if self.SupportsState():
+            return self.connectedEntitySensorKey
+        else:
+            return None
 
     def CallCallback(self, message):
         """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """

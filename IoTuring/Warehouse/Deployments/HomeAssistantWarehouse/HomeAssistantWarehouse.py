@@ -108,18 +108,16 @@ class HomeAssistantWarehouse(Warehouse):
         self.SendLwtSensorConfiguration()
         for entity in self.GetEntities():
             
-            # Get entity data keys for checking links:
-            entityDataKeys = [ed.GetKey() for ed in entity.GetAllEntityData()]
-
+            # Get sensors entity data linked to commands so they are not configured as sensor but
+            # will be set in command state which will be a switch
+            keys_of_sensors_connected_to_commands = [command.GetConnectedEntitySensorKey() for command in entity.GetEntityCommands() if command.SupportsState()]
+            
             for entityData in entity.GetAllEntityData():
 
-                # Check if it has linked command:
-                has_linked_command = False
-                if entityDataKeys.count(entityData.GetKey()) > 1:
-                    if entityData in entity.GetEntitySensors():
-                        has_linked_command = True
-                    else: # it's a linked command, so skip
-                        continue
+                # if I found a sensor data that will be configured only after, together with
+                # its command (as a switch)
+                if entityData.GetKey() in keys_of_sensors_connected_to_commands:
+                    continue # it's a sensor linked to a command, so skip
 
                 data_type = ""
                 autoDiscoverySendTopic = ""
@@ -127,12 +125,11 @@ class HomeAssistantWarehouse(Warehouse):
                 payload['name'] = entity.GetEntityNameWithTag() + " - " + \
                     entityData.GetKey()
 
-                # check the data type: can be edited from custom configurations
-                if has_linked_command: # it's a sensor with a linked command
-                    data_type = "switch"
-                elif entityData in entity.GetEntitySensors():  # it's an EntitySensorData
+                if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
                     data_type = "sensor"
-                else:  # it's a EntityCommandData
+                elif entityData.SupportsState():  # it's a EntityCommandData: has it a state ?
+                    data_type = "switch"
+                else:
                     data_type = "button"
 
                 # add custom info to the entity data, reading it from external file and accessing the information using the entity data name
@@ -151,27 +148,33 @@ class HomeAssistantWarehouse(Warehouse):
                 payload['unique_id'] = self.clientName + \
                     "." + entityData.GetId()
 
-                if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
+                # add configurations about sensors or switches (both have a state)
+                if entityData in entity.GetEntitySensors() or data_type=='switch':  # it's an EntitySensorData
                     # If the sensor supports extra attributes, send them as JSON.
-                    # So here I have to specify also the topic for those attrbitues
-                    if entityData.DoesSupportExtraAttributes():
+                    # So here I have to specify also the topic for those attributes
+                    # (not supported by switches)
+                    if data_type!='switch' and entityData.DoesSupportExtraAttributes():
                         payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
                             entityData)
 
                     payload['expire_after'] = 600  # TODO Improve
-                    payload['state_topic'] = self.MakeEntityDataTopic(
-                        entityData)
+                    
+                    
+                    if data_type!='switch':
+                        payload['state_topic'] = self.MakeEntityDataTopic(
+                            entityData)
+                    else: # it's a switch, so the state is the state of the connected sensor
+                        payload['state_topic'] = self.MakeEntityDataTopic(entity.GetEntitySensorByKey(entityData.GetConnectedEntitySensorKey()))
 
-                    # Add default payloads
+                    # Add default payloads (only for ON/OFF entities)
                     if data_type in ["binary_sensor", "switch"]:
                         if not 'payload_on' in payload:
                             payload['payload_on'] = PAYLOAD_ON
                         if not 'payload_off' in payload:
                             payload['payload_off'] = PAYLOAD_OFF
 
-                
-                if entityData in entity.GetEntityCommands() \
-                    or has_linked_command: # it's a EntityCommandData or a linked sensor
+                # if it's a command (so button or switch), configure the topic where the command will be called
+                if entityData in entity.GetEntityCommands():
                     payload['command_topic'] = self.MakeEntityDataTopic(
                         entityData)
                 
