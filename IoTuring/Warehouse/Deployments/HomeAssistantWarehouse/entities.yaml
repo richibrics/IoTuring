@@ -57,3 +57,7 @@ AppInfo:
 Temperature:
   icon: "mdi:thermometer-lines"
   unit_of_measurement: "°C"
+FileSwitch:
+  icon: mdi:file-star
+  payload_on: "True"
+  payload_off: "False"
