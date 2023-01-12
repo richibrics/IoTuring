@@ -2,8 +2,6 @@ from pathlib import Path
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
-from IoTuring.Entity import consts
-from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
 KEY_STATE = 'fileswitch_state'
@@ -43,7 +41,6 @@ class FileSwitch(Entity):
             raise Exception('Incorrect payload!')
 
     def Update(self):
-
         self.SetEntitySensorValue(KEY_STATE,
                                   str(Path(self.config_path).exists()))
 

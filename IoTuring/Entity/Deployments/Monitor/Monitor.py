@@ -70,6 +70,6 @@ class Monitor(Entity):
             monitorState = re.findall(
                 'Monitor is (.{2,3})', outputString)[0].upper()
             if monitorState in [STATE_OFF, STATE_ON]:
-                self.SetEntitySensorValue(KEY, monitorState)
+                self.SetEntitySensorValue(KEY_STATE, monitorState)
             else:
                 raise Exception(f'Incorrect monitor state: {monitorState}')
