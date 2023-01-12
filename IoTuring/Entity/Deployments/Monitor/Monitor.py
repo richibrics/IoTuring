@@ -22,7 +22,8 @@ class Monitor(Entity):
 
     def PostInitialize(self):
         self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-
+        
+        supports_linux = False
         if self.os == consts.OS_FIXED_VALUE_LINUX:
             # Check if xset is working:
             p = subprocess.run(
