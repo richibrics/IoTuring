@@ -95,11 +95,26 @@ class HomeAssistantWarehouse(Warehouse):
 
     def SendSensorsValues(self):
         """ Here I send sensor's data (command callbacks are not managed here) """
+        
         for entity in self.GetEntities():
+            
+            # switches are commands with state, their state comes from a sensor.
+            # To work correctly we need to send sensor data on command topic (to avoid status blinking on HA)
+            # so we get sensors that will be switches (and their commands to get the correct 
+            # topic where to send data)
+            switch_sensors = {} # key: sensor key, value: command (for topic)
+            for possible_switch in entity.GetEntityCommands():
+                if possible_switch.SupportsState():
+                    switch_sensors[possible_switch.GetConnectedEntitySensorKey()] = possible_switch
+            
             for entitySensor in entity.GetEntitySensors():
                 if (entitySensor.HasValue()):
-                    self.client.SendTopicData(self.MakeEntityDataTopic(
-                        entitySensor), entitySensor.GetValue())
+                    # topic: get from sensor data if sensor, get from its command data if sensor belongs to a switch
+                    if not entitySensor.GetKey() in switch_sensors:
+                        topic = self.MakeEntityDataTopic(entitySensor)
+                    else:
+                        topic = self.MakeEntityDataTopic(switch_sensors[entitySensor.GetKey()])
+                    self.client.SendTopicData(topic, entitySensor.GetValue()) # send
                 if (entitySensor.HasExtraAttributes()):  # send as json
                     self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
                                               json.dumps(entitySensor.GetExtraAttributes()))
@@ -163,8 +178,8 @@ class HomeAssistantWarehouse(Warehouse):
                     if data_type!='switch':
                         payload['state_topic'] = self.MakeEntityDataTopic(
                             entityData)
-                    else: # it's a switch, so the state is the state of the connected sensor
-                        payload['state_topic'] = self.MakeEntityDataTopic(entity.GetEntitySensorByKey(entityData.GetConnectedEntitySensorKey()))
+                    else: # it's a switch, so the state is at the same topic of the command
+                        payload['state_topic'] = self.MakeEntityDataTopic(entityData)
 
                     # Add default payloads (only for ON/OFF entities)
                     if data_type in ["binary_sensor", "switch"]:
