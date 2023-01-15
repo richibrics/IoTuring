@@ -115,7 +115,7 @@ class HomeAssistantWarehouse(Warehouse):
                     else:
                         topic = self.MakeEntityDataTopic(switch_sensors[entitySensor.GetKey()])
                     self.client.SendTopicData(topic, entitySensor.GetValue()) # send
-                if (entitySensor.HasExtraAttributes()):  # send as json
+                if (entitySensor.HasExtraAttributes()):  # send as json - even if it's a switch, that topic is okay
                     self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
                                               json.dumps(entitySensor.GetExtraAttributes()))
 
@@ -167,10 +167,14 @@ class HomeAssistantWarehouse(Warehouse):
                 if entityData in entity.GetEntitySensors() or data_type=='switch':  # it's an EntitySensorData
                     # If the sensor supports extra attributes, send them as JSON.
                     # So here I have to specify also the topic for those attributes
-                    # (not supported by switches)
+                    # - for real sensors - 
                     if data_type!='switch' and entityData.DoesSupportExtraAttributes():
                         payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
                             entityData)
+                    # - for sensors that became switches: entityData is the command so I need to retrieve the sensor and do upper operations -
+                    elif data_type=='switch' and entity.GetEntitySensorByKey(entityData.GetConnectedEntitySensorKey()).DoesSupportExtraAttributes():
+                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
+                            entity.GetEntitySensorByKey(entityData.GetConnectedEntitySensorKey()))
 
                     payload['expire_after'] = 600  # TODO Improve
                     

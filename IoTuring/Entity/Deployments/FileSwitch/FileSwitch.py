@@ -21,7 +21,7 @@ class FileSwitch(Entity):
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
-        self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, True))
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_CMD, self.Callback, KEY_STATE))
 
@@ -43,6 +43,10 @@ class FileSwitch(Entity):
     def Update(self):
         self.SetEntitySensorValue(KEY_STATE,
                                   str(Path(self.config_path).exists()))
+        
+        extra = {}
+        extra["exists"] = str(Path(self.config_path).exists())
+        self.SetEntitySensorExtraAttributes(KEY_STATE, extra)
 
     @classmethod
     def ConfigurationPreset(self):
