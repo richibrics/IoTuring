@@ -70,9 +70,23 @@ class HomeAssistantWarehouse(Warehouse):
         for entity in self.GetEntities():
             for entityCommand in entity.GetEntityCommands():
                 self.client.AddNewTopicToSubscribeTo(
-                    self.MakeEntityDataTopic(entityCommand), entityCommand.CallCallback)
+                    self.MakeEntityDataTopic(entityCommand), self.GenerateCommandCallback(entityCommand))
                 self.Log(self.LOG_DEBUG, entityCommand.GetId(
                 ) + " subscribed to " + self.MakeEntityDataTopic(entityCommand))
+
+
+    def GenerateCommandCallback(self, entityCommand):
+        """ Generates a lambda function that will become the command callback.
+            Obviously this lamda will call the default callback of the command.
+            But will also send the state to the state topic of the sensor relative to the command,
+            in case the command has a sensor connected to it (= is a switch).
+            This is needed to avoid status blinking on HA."""
+        def CommandCallback(message):
+            status = entityCommand.CallCallback(message) # True: success, False: error
+            if status and self.client.IsConnected():
+                if entityCommand.SupportsState():
+                    self.client.SendTopicData(entityCommand.GetConnectedEntitySensorKey(), message.payload.decode('utf-8'))
+        return CommandCallback
 
     def Loop(self):
         # Send online state
