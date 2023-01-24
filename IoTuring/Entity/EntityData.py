@@ -8,6 +8,10 @@ class EntityData(LogObject):
         self.entityId = entity.GetEntityId()
         self.id = self.entityId + "." + key
         self.key = key
+        self.entity = entity
+
+    def GetEntity(self):
+        return self.entity
 
     def GetId(self):
         return self.id
@@ -74,13 +78,10 @@ class EntityCommand(EntityData):
     def SupportsState(self):
         return self.connectedEntitySensorKey is not None
     
-    def GetConnectedEntitySensorKey(self):
-        # if this support state, return the key of the entity sensor that is connected to this command
-        # otherwise return None
-        if self.SupportsState():
-            return self.connectedEntitySensorKey
-        else:
-            return None
+    def GetConnectedEntitySensor(self):
+        """ Returns the entity sensor connected to this command, if this command supports state.
+            Otherwise returns None. """
+        return self.GetEntity().GetEntitySensorByKey(self.connectedEntitySensorKey)
 
     def CallCallback(self, message):
         """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage).
