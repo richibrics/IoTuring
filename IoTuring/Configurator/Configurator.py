@@ -8,7 +8,7 @@ from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
-import IoTuring.Configurator.ConfiguratorIO as ConfiguratorIO
+from IoTuring.Configurator import ConfiguratorIO
 
 # TODO Find new location for this message
 HELP_MESSAGE = f"""
