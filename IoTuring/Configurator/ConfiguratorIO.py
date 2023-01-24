@@ -34,7 +34,7 @@ class ConfiguratorIO(LogObject):
                 config = json.loads(f.read())
             self.Log(self.LOG_MESSAGE, "Loaded \"" + self.getFilePath() + "\"")
         except:
-            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.\
+            self.Log(self.LOG_WARNING, "It seems you don't have a configuration yet. Use configuration mode (-c) to enable your favourite entities and warehouses.\
                      \nConfigurations will be saved in \"" + self.getFolderPath() + "\"")
         return config
     
