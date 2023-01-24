@@ -104,7 +104,7 @@ class ConfiguratorIO(LogObject):
         return os.environ["XDG_CONFIG_HOME"] if "XDG_CONFIG_HOME" in os.environ else os.path.join(os.environ["HOME"], ".config")
     
     def envvarFolderPath(self):
-        return os.environ[CONFIG_PATH_ENV_VAR] if CONFIG_PATH_ENV_VAR in os.environ else None
+        return os.getenv(CONFIG_PATH_ENV_VAR)
     
     # In versions prior to 2022.12.2, the configurations file was stored in the same folder as this file
     def oldFolderPath(self):
