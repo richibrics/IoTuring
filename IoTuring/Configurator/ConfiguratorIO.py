@@ -129,10 +129,12 @@ class ConfiguratorIO(LogObject):
         if not configuration_file_exists or (configuration_file_exists and dont_move_file_exists):
             return
         
-        response = input("A configuration file has been found in the old location. Do you want to move it to the new location? (y/n): ")
+        response = input("A configuration file has been found in the old location. Do you want to move it to the new location or to use a new blank configuration ? (y/n): ")
         response = bool( response.lower() == "y")
         # Then ask to move it
         if response:
+            # create folder if not exists
+            self.createFolderPathIfDoesNotExist()
             # copy file from old to new location
             os.rename(os.path.join(self.oldFolderPath(), CONFIGURATION_FILE_NAME), os.path.join(self.getFolderPath(), CONFIGURATION_FILE_NAME))
             self.Log(self.LOG_MESSAGE, "Copied into \"" + os.path.join(self.getFolderPath(), CONFIGURATION_FILE_NAME) + "\"")
@@ -141,4 +143,4 @@ class ConfiguratorIO(LogObject):
             with open(os.path.join(self.oldFolderPath(), DONT_MOVE_FILE_FILENAME), "w") as f:
                 f.write("This file is here to remember you that you don't want to move the configuration file into the new location. If you want to move it, delete this file and \
                     run the script in -c mode.")
-            self.Log(self.LOG_MESSAGE, "You won't be asked again. If you want to move the configuration file, delete \"" + os.path.join(self.oldFolderPath(), DONT_MOVE_FILE_FILENAME) + "\" and run the script in -c mode.")
+            self.Log(self.LOG_MESSAGE, "You won't be asked again. A new blank configuration will be used; if you want to move the existing configuration file, delete \"" + os.path.join(self.oldFolderPath(), DONT_MOVE_FILE_FILENAME) + "\" and run the script in -c mode.")
