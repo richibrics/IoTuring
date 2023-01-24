@@ -11,7 +11,16 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 import IoTuring.Configurator.ConfiguratorIO as ConfiguratorIO
 
 # TODO Find new location for this message
-HELP_MESSAGE = "\nYou can find the configuration file in the following path: \n\tmacOS\t\t~/Library/Application Support/IoTuring/configurations.json \n\tLinux\t\t~/.config/IoTuring/configurations.json \n\tWindows\t\t%APPDATA%/IoTuring/configurations.json\n\tFallback\t[ioturing_install_path]/Configurator/configurations.json \n\nYou can also set you preferred path that will contain the configuration file by setting the environment variable " + ConfiguratorIO.CONFIG_PATH_ENV_VAR + " (file will be stored in $" + ConfiguratorIO.CONFIG_PATH_ENV_VAR + "/configurations.json).\n"
+HELP_MESSAGE = f"""
+You can find the configuration file in the following path: 
+\tmacOS\t\t~/Library/Application Support/IoTuring/configurations.json 
+\tLinux\t\t~/.config/IoTuring/configurations.json 
+\tWindows\t\t%APPDATA%/IoTuring/configurations.json
+\tFallback\t[ioturing_install_path]/Configurator/configurations.json
+
+You can also set your preferred directory by setting the environment variable {ConfiguratorIO.CONFIG_PATH_ENV_VAR} 
+Configuration will be stored there in the file configurations.json.
+"""```
 
 
 BLANK_CONFIGURATION = {'active_entities': [
