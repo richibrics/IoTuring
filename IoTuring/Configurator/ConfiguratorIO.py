@@ -45,6 +45,9 @@ class ConfiguratorIO(LogObject):
             f.write(json.dumps(data))
         self.Log(self.LOG_MESSAGE, "Saved \"" + self.getFilePath() + "\"")
         
+    def checkConfigurationFileExists(self):
+        """ Returns True if the configuration file exists in the correct folder, False otherwise. """
+        return os.path.exists(self.getFilePath()) and os.path.isfile(self.getFilePath())
     
     def getFilePath(self):
         """ Returns the path to the configurations file. """
