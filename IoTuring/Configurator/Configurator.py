@@ -20,7 +20,7 @@ You can find the configuration file in the following path:
 
 You can also set your preferred directory by setting the environment variable {ConfiguratorIO.CONFIG_PATH_ENV_VAR} 
 Configuration will be stored there in the file configurations.json.
-"""```
+"""
 
 
 BLANK_CONFIGURATION = {'active_entities': [
