@@ -130,7 +130,7 @@ class ConfiguratorIO(LogObject):
             return
         
         response = input("A configuration file has been found in the old location. Do you want to move it to the new location? (y/n): ")
-        response = True if response=="y" or response=="Y" else False
+        response = bool( response.lower() == "y")
         # Then ask to move it
         if response:
             # copy file from old to new location
