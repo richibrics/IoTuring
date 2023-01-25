@@ -59,3 +59,10 @@ AppInfo:
 Temperature:
   icon: "mdi:thermometer-lines"
   unit_of_measurement: "°C"
+DisplayMode:
+  custom_type: select
+  options:
+    - internal
+    - external
+    - clone
+    - extend
