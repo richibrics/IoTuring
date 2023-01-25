@@ -24,7 +24,8 @@ dependencies = [
   "psutil",
   "notify2",
   "PyYAML",
-  "importlib_metadata"
+  "importlib_metadata",
+  "autostarter @ git+https://github.com/richibrics/autostarter.git"
 ]
 
 [project.optional-dependencies]
