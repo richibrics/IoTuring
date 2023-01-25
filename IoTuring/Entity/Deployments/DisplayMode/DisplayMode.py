@@ -30,7 +30,7 @@ class DisplayMode(Entity):
                 self.Log(self.LOG_ERROR, "Error log:\nOperating system: {}, sr: {}, path exists: {}".format(self.os, sr, sys_os.path.exists('{}\System32\DisplaySwitch.exe'.format(sr))))
                 raise Exception("Unsupported software, report this log to the developer")
         else:
-            pass #raise Exception("Unsupported operating system for this entity")
+            raise Exception("Unsupported operating system for this entity")
             
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_MODE, callback))
