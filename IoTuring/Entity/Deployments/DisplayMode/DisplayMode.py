@@ -5,10 +5,10 @@ from ctypes import *
 
 from IoTuring.Entity.EntityData import EntityCommand
 
-SELECT_INTERNAL_MONITOR = "internal"
-SELECT_EXTERNAL_MONITOR = "external"
-SELECT_EXTEND_MONITOR = "extend"
-SELECT_CLONE_MONITOR = "clone"
+SELECT_INTERNAL_MONITOR = "Only internal display"
+SELECT_EXTERNAL_MONITOR = "Only external display"
+SELECT_EXTEND_MONITOR = "Extend displays"
+SELECT_CLONE_MONITOR = "Clone displays"
 KEY_MODE = "mode"
 
 class DisplayMode(Entity):
@@ -30,7 +30,7 @@ class DisplayMode(Entity):
                 self.Log(self.LOG_ERROR, "Error log:\nOperating system: {}, sr: {}, path exists: {}".format(self.os, sr, sys_os.path.exists('{}\System32\DisplaySwitch.exe'.format(sr))))
                 raise Exception("Unsupported software, report this log to the developer")
         else:
-            raise Exception("Unsupported operating system for this entity")
+            pass #raise Exception("Unsupported operating system for this entity")
             
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_MODE, callback))

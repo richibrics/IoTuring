@@ -60,9 +60,10 @@ Temperature:
   icon: "mdi:thermometer-lines"
   unit_of_measurement: "°C"
 DisplayMode:
+  icon: "mdi:monitor-multiple"
   custom_type: select
   options:
-    - internal
-    - external
-    - clone
-    - extend
+    - Only internal display
+    - Only external display
+    - Clone displays
+    - Extend displays
