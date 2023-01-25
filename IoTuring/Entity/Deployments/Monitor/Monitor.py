@@ -16,6 +16,7 @@ KEY_CLONE_MONITOR = "clone"
 
 class Monitor(Entity):
     NAME = "Monitor"
+    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         pass
