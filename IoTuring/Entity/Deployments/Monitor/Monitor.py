@@ -6,6 +6,8 @@ from ctypes import *
 
 from IoTuring.Entity.EntityData import EntityCommand
 
+
+
 KEY_TURN_ALL_OFF = 'turn_all_off'
 KEY_TURN_ALL_ON = 'turn_all_on'
 

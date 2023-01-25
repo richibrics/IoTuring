@@ -8,6 +8,8 @@ from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
+from IoTuring.Configurator.AutostartConfigurator import AutostartConfigurator
+
 BLANK_CONFIGURATION = {'active_entities': [
     {"type": "AppInfo"}], 'active_warehouses': []}
 
@@ -41,6 +43,7 @@ class Configurator(LogObject):
             self.PrintSeparator()
             print("1 - Manage entities")
             print("2 - Manage warehouses")
+            print("A - Configure autostart")
             print("C - Start IoTuring")
             print("Q - Quit\n")
 
@@ -58,6 +61,8 @@ class Configurator(LogObject):
                     run_app = True  # Will start the program exiting from here
                     print("")  #  Blank line
                     self.WriteConfigurations()
+                elif choice == "a" or choice == "A":
+                    AutostartConfigurator.run()
                 elif choice == "q" or choice == "Q":
                     self.WriteConfigurations()
                     exit(0)
