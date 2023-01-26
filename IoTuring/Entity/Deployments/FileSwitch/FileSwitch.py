@@ -45,7 +45,7 @@ class FileSwitch(Entity):
                                   str(Path(self.config_path).exists()))
         
         extra = {}
-        extra["exists"] = str(Path(self.config_path).exists())
+        extra["Path"] = str(self.config_path)
         self.SetEntitySensorExtraAttributes(KEY_STATE, extra)
 
     @classmethod
