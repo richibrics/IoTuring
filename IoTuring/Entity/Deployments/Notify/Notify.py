@@ -43,6 +43,11 @@ class Notify(Entity):
     # Data is set from configurations if configurations contain both title and message
     # Otherwise, data is set from payload (even if only one of title or message is set)
     def Initialize(self):
+        
+        # Check if both config is defined or both is empty:
+        if not bool(self.GetConfigurations()[CONFIG_KEY_TITLE]) == bool(self.GetConfigurations()[CONFIG_KEY_MESSAGE]):
+            raise Exception("Configuration error: Both title and message should be defined, or both should be empty!")
+        
         try:
             self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
             self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
