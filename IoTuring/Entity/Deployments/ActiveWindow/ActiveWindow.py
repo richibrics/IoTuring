@@ -20,7 +20,7 @@ try:
 except:
     windows_support = False
 
-# macOS dep
+# macOS dep (in PyObjC)
 try:
     from AppKit import NSWorkspace
     macos_support = True
