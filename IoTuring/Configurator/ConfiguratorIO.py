@@ -132,7 +132,7 @@ class ConfiguratorIO(LogObject):
         if not configuration_file_exists or (configuration_file_exists and dont_move_file_exists):
             return
         
-        response = input("A configuration file has been found in the old location. Do you want to move it to the new location or to use a new blank configuration ? (y/n): ")
+        response = input("A configuration file was found in the old location. Do you want to move it to the new location ? if not, a new blank configuration will be used (y/n): ")
         response = bool( response.lower() == "y")
         # Then ask to move it
         if response:
