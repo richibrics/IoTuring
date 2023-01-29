@@ -158,7 +158,7 @@ The project uses [calendar versioning](https://calver.org/):
 `YYYY.0M.n`:
 
 - `YYYY`: Full year: 2022, 2023 ...
-- `0M`: Zero-padded month: 01, 02 ... 11, 12
+- `M`: Month: 1, 2 ... 11, 12
 - `n`: Build number in the month: 1, 2 ...
 
 ## Acknowledgement
