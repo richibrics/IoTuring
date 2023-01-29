@@ -1,6 +1,6 @@
 [project]
 name = "IoTuring"
-version = "2022.12.2"
+version = "2023.1.1"
 description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -22,21 +22,17 @@ classifiers = [
 dependencies = [
   "paho-mqtt",
   "psutil",
-  "notify2",
   "PyYAML",
   "importlib_metadata"
 ]
 
 [project.optional-dependencies]
-linux = [
-  "dbus-python"
-]
 macos = [
   "PyObjC",
-  "ioturing_applesmc @ git+https://github.com/richibrics/IoTuring_applesmc.git"
+  "IoTuring-applesmc"
 ]
 win=[
-  "win10toast"
+  "tinyWinToast"
 ]
 
 [project.urls]
@@ -52,4 +48,4 @@ IoTuring = "IoTuring:loop"
 requires = ["setuptools", "wheel"]
 
 [tool.setuptools.package-data]
-"*" = ["entities.yaml"]
+"*" = ["entities.yaml", "icon.png"]

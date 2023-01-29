@@ -21,6 +21,9 @@ Username - username:
   icon: "mdi:account-supervisor-circle"
 Lock - lock:
   icon: "mdi:lock"
+NotifyPayload:
+  icon: "mdi:forum"
+  custom_type: text
 Notify:
   icon: "mdi:forum"
 Hostname:
@@ -50,10 +53,8 @@ Cpu: # if no matches with above CPU patterns, set this
   icon: "mdi:calculator-variant"
 Time:
   icon: "mdi:clock"
-Monitor - turn_all_on:
-  icon: "mdi:monitor-star"
-Monitor - turn_all_off:
-  icon: "mdi:monitor-off"
+Monitor:
+  icon: "mdi:monitor-shimmer"
 AppInfo:
   icon: "mdi:information-outline"
 Temperature:
@@ -67,3 +68,7 @@ DisplayMode:
     - Only external display
     - Clone displays
     - Extend displays
+FileSwitch:
+  icon: mdi:file-star
+  payload_on: "True"
+  payload_off: "False"

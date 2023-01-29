@@ -12,7 +12,11 @@ class Battery(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_PERCENTAGE))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_CHARGING_STATUS))
+        
+        # Check if charging state working:
+        batteryInfo = self.GetBatteryInformation()
+        if isinstance(batteryInfo['charging'], bool):
+            self.RegisterEntitySensor(EntitySensor(self, KEY_CHARGING_STATUS))
 
     def PostInitialize(self):
         # Check if battery infomration are present
@@ -23,8 +27,9 @@ class Battery(Entity):
         batteryInfo = self.GetBatteryInformation()
         self.SetEntitySensorValue(KEY_PERCENTAGE, int(
             batteryInfo['level']), ValueFormatter.Options(ValueFormatter.TYPE_PERCENTAGE))
-        self.SetEntitySensorValue(
-            KEY_CHARGING_STATUS, str(batteryInfo['charging']))
+        if isinstance(batteryInfo['charging'], bool):
+            self.SetEntitySensorValue(
+                KEY_CHARGING_STATUS, str(batteryInfo['charging']))
 
     def GetBatteryInformation(self):
         battery = psutil.sensors_battery()

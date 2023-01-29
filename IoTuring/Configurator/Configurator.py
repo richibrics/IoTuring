@@ -1,12 +1,27 @@
 import inspect  # To get this folder path and reach the configurations file
-import os  # Configurations file path manipulation
-import json
+import os
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Logger.Logger import Colors
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
+
+from IoTuring.Configurator import ConfiguratorIO
+
+# TODO Find new location for this message
+HELP_MESSAGE = f"""
+You can find the configuration file in the following path: 
+\tmacOS\t\t~/Library/Application Support/IoTuring/configurations.json 
+\tLinux\t\t~/.config/IoTuring/configurations.json 
+\tWindows\t\t%APPDATA%/IoTuring/configurations.json
+\tFallback\t[ioturing_install_path]/Configurator/configurations.json
+
+You can also set your preferred directory by setting the environment variable {ConfiguratorIO.CONFIG_PATH_ENV_VAR} 
+Configuration will be stored there in the file configurations.json.
+"""
+
 
 BLANK_CONFIGURATION = {'active_entities': [
     {"type": "AppInfo"}], 'active_warehouses': []}
@@ -21,13 +36,11 @@ KEY_ENTITY_TAG = "tag"
 
 SEPARATOR_CHAR_NUMBER = 120
 
-
 class Configurator(LogObject):
-    # Must be in the same folder of this file
-    configurations_filename = "configurations.json"
 
     def __init__(self) -> None:
         self.config = None
+        self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.LoadConfigurations()
 
     def GetConfigurations(self):
@@ -42,6 +55,7 @@ class Configurator(LogObject):
             print("1 - Manage entities")
             print("2 - Manage warehouses")
             print("C - Start IoTuring")
+            print("H - Help")
             print("Q - Quit\n")
 
             choice = False
@@ -61,6 +75,9 @@ class Configurator(LogObject):
                 elif choice == "q" or choice == "Q":
                     self.WriteConfigurations()
                     exit(0)
+                elif choice == "h" or choice == "H":
+                    print(HELP_MESSAGE)
+                    choice = False
                 else:
                     print("Invalid choice")
                     choice = False
@@ -148,28 +165,15 @@ class Configurator(LogObject):
                                  "Error in Warehouse select menu: " + str(e))
 
     def LoadConfigurations(self) -> None:
-        """ Load into a dict in self the configurations file in this script's folder """
-        thisFolder = os.path.dirname(inspect.getfile(Configurator))
-        path = os.path.join(thisFolder, self.configurations_filename)
-        try:
-            with open(path, "r") as f:
-                self.config = json.loads(f.read())
-        except:
-            self.Log(self.LOG_WARNING, "It seems you haven't a configuration yet. Ensure you're using the configuration mode (-c) to enable your favourite entites and warehouses.")
+        """ Reads the configuration file and returns configuration dictionary.
+            If not available, returns the blank configuration  """
+        self.config = self.configuratorIO.readConfigurations()
+        if self.config is None:
             self.config = BLANK_CONFIGURATION
 
-        # check valid keys
-        if not KEY_ACTIVE_ENTITIES in self.config or not KEY_ACTIVE_WAREHOUSES in self.config:
-            self.Log(self.LOG_ERROR, "Invalid configurations, you may have broken them manually. Check you have a dict like this in your configurations file (or delete it to generate a new one) : ")
-            self.Log(self.LOG_ERROR, BLANK_CONFIGURATION)
-            exit(1)
-
     def WriteConfigurations(self) -> None:
-        """ Save to configurations file in this script's folder the dict in self"""
-        thisFolder = os.path.dirname(inspect.getfile(Configurator))
-        path = os.path.join(thisFolder, self.configurations_filename)
-        with open(path, "w") as f:
-            f.write(json.dumps(self.config))
+        """ Save to configurations file """
+        self.configuratorIO.writeConfigurations(self.config)
 
     def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
         """ UI for single Warehouse settings """
