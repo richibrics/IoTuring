@@ -19,20 +19,15 @@ classifiers = [
   "Programming Language :: Python",
   "Topic :: System :: Monitoring"
 ]
+
 dependencies = [
   "paho-mqtt",
   "psutil",
   "PyYAML",
-  "importlib_metadata"
-]
-
-[project.optional-dependencies]
-macos = [
-  "PyObjC",
-  "IoTuring-applesmc"
-]
-win=[
-  "tinyWinToast"
+  "importlib_metadata",
+  "PyObjC; sys_platform == 'darwin'",
+  "IoTuring-applesmc; sys_platform == 'darwin'",
+  "tinyWinToast; sys_platform == 'win32'"
 ]
 
 [project.urls]
