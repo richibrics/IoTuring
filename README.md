@@ -63,7 +63,7 @@ pip install IoTuring
 On Windows:
 
 ```shell
-py -m pip install IoTuring[win]
+py -m pip install IoTuring
 ```
 
 Note: on Windows you have to prefix every command with `py -m` as here.
