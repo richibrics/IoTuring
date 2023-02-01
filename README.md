@@ -14,7 +14,7 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ## Install
 
-## Who knows how it works
+### Who knows how it works
 
 Using pip (on Python >= 3.7) install the IoTuring package
 
@@ -26,33 +26,33 @@ Run with `IoTuring` or `python -m IoTuring`
 
 Configure with `IoTuring -c` or `python -m IoTuring -c`
 
-## Who doesn't know how it works
+### Who doesn't know how it works
 
-### Requirements
+#### Requirements
 
 - [Python 3.7+](https://www.python.org/downloads/)
 - [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
 Some platforms may need other software for some entities.
 
-#### Install all requirements on ArchLinux
+##### Install all requirements on ArchLinux
 
 ```shell
 pacman -Syu python python-pip
 ```
 
-#### Install and update all requirements on Debian or Ubuntu
+##### Install and update all requirements on Debian or Ubuntu
 
 ```shell
 apt install python3 python3-pip -y
 pip install --upgrade pip
 ```
 
-#### Windows
+##### Windows
 
 - [Python](https://www.python.org/downloads/), pip included
 
-### Download and install with pip
+#### Download and install with pip
 
 On Linux and macOS:
 
@@ -68,7 +68,7 @@ py -m pip install IoTuring[win]
 
 Note: on Windows you have to prefix every command with `py -m` as here.
 
-### Configure
+#### Configure
 
 The first time you run IoTuring you need to specify which entities and warehouses you want to enable.
 To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
@@ -82,7 +82,7 @@ Once you have selected your preferred settings, you're ready to run IoTuring.
 
 You will be able to enter the configuration menu whenever you want (with the same command as above) to edit your choises.
 
-### Run 
+#### Run 
 
 You can simply run IoTuring using this command
 
@@ -97,7 +97,7 @@ python -m IoTuring
 ```
 
 
-### HomeAssistant demo
+## HomeAssistant demo
 
 Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
 The device will also have some properties like connectivity and battery status.
@@ -108,6 +108,8 @@ You can see how your device will appear under the Devices section in Home Assist
 ![device](docs/images/homeassistant-demo.gif)
 
 All sensors and switches will be available to be added to your dashboard in your favourite cards !
+
+## Features
 
 ### Available entities
 
