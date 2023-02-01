@@ -14,11 +14,22 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ## Install
 
-You can easily install IoTuring through pip. Although the version is os-specific, so follow the instructions below to install the right version for your operating system.
+## Who knows how it works
+
+Using pip (on Python >= 3.7) install the IoTuring package
+
+```shell
+pip install IoTuring
+```
+
+Run with `IoTuring` or `python -m IoTuring`
+
+Configure with `IoTuring -c` or `python -m IoTuring -c`
+
+## Who doesn't know how it works
 
 ### Requirements
 
-- [Git](https://git-scm.com/)
 - [Python 3.7+](https://www.python.org/downloads/)
 - [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
@@ -27,24 +38,23 @@ Some platforms may need other software for some entities.
 #### Install all requirements on ArchLinux
 
 ```shell
-pacman -Syu git python python-pip
+pacman -Syu python python-pip
 ```
 
-#### Install and update all requirements on Debain or Ubuntu
+#### Install and update all requirements on Debian or Ubuntu
 
 ```shell
-apt install git python3 python3-pip -y
+apt install python3 python3-pip -y
 pip install --upgrade pip
 ```
 
 #### Windows
 
 - [Python](https://www.python.org/downloads/), pip included
-- [Git](https://git-scm.com/download/win), just accept the defaults
 
 ### Download and install with pip
 
-On Linux:
+On Linux and macOS:
 
 ```shell
 pip install IoTuring
@@ -58,19 +68,13 @@ py -m pip install IoTuring[win]
 
 Note: on Windows you have to prefix every command with `py -m` as here.
 
-On MacOs:
-
-```shell
-pip install IoTuring[macos]
-```
-
 ### Configure
 
 The first time you run IoTuring you need to specify which entities and warehouses you want to enable.
 To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
 
 ```
-IoTuring -c
+python -m IoTuring -c
 ```
 
 A simple menu will show and you will be able to configure your entities and warehouses !
@@ -85,6 +89,13 @@ You can simply run IoTuring using this command
 ```
 IoTuring
 ```
+
+or this one
+
+```
+python -m IoTuring
+```
+
 
 ### HomeAssistant demo
 
@@ -150,6 +161,8 @@ pip install -e .
 ```
 
 Then run it like in the non-editable mode.
+
+Warning: sometimes to run the module in editable mode you need to cd into the upper IoTuring folder.
 
 ### Versioning
 
