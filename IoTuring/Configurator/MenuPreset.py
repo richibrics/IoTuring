@@ -3,7 +3,7 @@ class MenuPreset():
     def __init__(self) -> None:
         self.preset = []
 
-    def AddEntry(self, name, key, default=None, mandatory=False, display_if_value_for_following_key_provided=None):
+    def AddEntry(self, name, key, default=None, mandatory=False, display_if_value_for_following_key_provided=None, modify_value_callback=None):
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
@@ -15,9 +15,10 @@ class MenuPreset():
           * If it has a key, the entry won't be displayed if menu[provided_key] has value.
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
+        - modify_value_callback: a callback to modify the value before it's set in the dict (called also for a default value). The callback must have the following signature: NAME(value) -> value
         """
         self.preset.append(
-            {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_value_for_following_key_provided, "value": None})
+            {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_value_for_following_key_provided, "modify_value_callback": modify_value_callback, "value": None})
 
     def ListEntries(self):
         return self.preset
@@ -25,6 +26,7 @@ class MenuPreset():
     def Question(self, id):
         try:
             question = ""
+            value = None
             if id < len(self.preset):
                 # if the display of this does not depend on a previous entry, or if the previous entry (this depends on) has a value: ask for a value
                 if self.preset[id]["dependsOn"] is None or self.RetrievePresetAnswerByKey(self.preset[id]["dependsOn"]): 
@@ -46,22 +48,23 @@ class MenuPreset():
                     if value == "":
                         if self.preset[id]["default"] is not None:
                             # Set in the preset
-                            self.preset[id]['value'] = self.preset[id]["default"]
-                            return self.preset[id]["default"]  # Also return it
+                            value = self.preset[id]["default"]
                         else:
-                            self.preset[id]['value'] = None  # Set in the preset
-                            return None  # Also return it
-                    else:
-                        self.preset[id]['value'] = value  # Set in the preset
-                        return value  # Also return it
+                            value = None 
+                    # else value already in value
                 else: 
                     # If the entry is not displayed, set the default value if provided
                     if self.preset[id]["default"]: # if I have a default
                         # Set in the preset
-                        self.preset[id]['value'] = self.preset[id]["default"]
-                        return self.preset[id]["default"]  # Also return it
+                        value = self.preset[id]["default"]
                     else:
                         return None # don't set anything
+                    
+                # if a callback is provided, use it to modify the value
+                if value is not None and "modify_value_callback" in self.preset[id] and self.preset[id]["modify_value_callback"]:
+                    value = self.preset[id]["modify_value_callback"](value) 
+                self.preset[id]['value'] = value
+                return value
                     
         except Exception as e:
             print("Error while making the question:", e)
@@ -91,8 +94,11 @@ class MenuPreset():
     def AddTagQuestion(self):
         """ Add a Tag question (compulsory, no default) to the preset.
             Useful for entities that must have a tag because of their multi-instance possibility """
-        self.AddEntry("Tag", "tag", mandatory=True)
+        self.AddEntry("Tag", "tag", mandatory=True, modify_value_callback=normalize_tag)
 
+def normalize_tag(tag):
+    """ Normalize a tag to be used safely"""
+    return tag.lower().replace(" ", "_")
 
 class BooleanAnswers:
     TRUE_ANSWERS = ["y", "yes", "t", "true", "ok", "okay"]  # all lower !
