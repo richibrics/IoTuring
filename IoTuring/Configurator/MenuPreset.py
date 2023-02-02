@@ -89,6 +89,8 @@ class MenuPreset():
         print("\t\tIf you see {!} then the value is complusory")
         print(
             "\t\tIf you see [ ] then the value in the brackets is the default one: leave blank the input to use that value")
+        print(
+            "\t\tIf a tag is asked, it is an alias for the entity to recognize it in configurations and warehouses")
         print("\t-- End of rules --\n")
 
     def AddTagQuestion(self):
