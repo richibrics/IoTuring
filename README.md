@@ -14,37 +14,47 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ## Install
 
-You can easily install IoTuring through pip. Although the version is os-specific, so follow the instructions below to install the right version for your operating system.
+### Who knows how it works
 
-### Requirements
+Using pip (on Python >= 3.7) install the IoTuring package
 
-- [Git](https://git-scm.com/)
+```shell
+pip install IoTuring
+```
+
+Run with `IoTuring` or `python -m IoTuring`
+
+Configure with `IoTuring -c` or `python -m IoTuring -c`
+
+### Who doesn't know how it works
+
+#### Requirements
+
 - [Python 3.7+](https://www.python.org/downloads/)
 - [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
 Some platforms may need other software for some entities.
 
-#### Install all requirements on ArchLinux
+##### Install all requirements on ArchLinux
 
 ```shell
-pacman -Syu git python python-pip
+pacman -Syu python python-pip
 ```
 
-#### Install and update all requirements on Debain or Ubuntu
+##### Install and update all requirements on Debian or Ubuntu
 
 ```shell
-apt install git python3 python3-pip -y
+apt install python3 python3-pip -y
 pip install --upgrade pip
 ```
 
-#### Windows
+##### Windows
 
 - [Python](https://www.python.org/downloads/), pip included
-- [Git](https://git-scm.com/download/win), just accept the defaults
 
-### Download and install with pip
+#### Download and install with pip
 
-On Linux:
+On Linux and macOS:
 
 ```shell
 pip install IoTuring
@@ -53,24 +63,18 @@ pip install IoTuring
 On Windows:
 
 ```shell
-py -m pip install IoTuring[win]
+py -m pip install IoTuring
 ```
 
 Note: on Windows you have to prefix every command with `py -m` as here.
 
-On MacOs:
-
-```shell
-pip install IoTuring[macos]
-```
-
-### Configure
+#### Configure
 
 The first time you run IoTuring you need to specify which entities and warehouses you want to enable.
 To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
 
 ```
-IoTuring -c
+python -m IoTuring -c
 ```
 
 A simple menu will show and you will be able to configure your entities and warehouses !
@@ -78,7 +82,7 @@ Once you have selected your preferred settings, you're ready to run IoTuring.
 
 You will be able to enter the configuration menu whenever you want (with the same command as above) to edit your choises.
 
-### Run 
+#### Run 
 
 You can simply run IoTuring using this command
 
@@ -86,7 +90,14 @@ You can simply run IoTuring using this command
 IoTuring
 ```
 
-### HomeAssistant demo
+or this one
+
+```
+python -m IoTuring
+```
+
+
+## HomeAssistant demo
 
 Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
 The device will also have some properties like connectivity and battery status.
@@ -97,6 +108,8 @@ You can see how your device will appear under the Devices section in Home Assist
 ![device](docs/images/homeassistant-demo.gif)
 
 All sensors and switches will be available to be added to your dashboard in your favourite cards !
+
+## Features
 
 ### Available entities
 
@@ -150,6 +163,8 @@ pip install -e .
 ```
 
 Then run it like in the non-editable mode.
+
+Warning: sometimes to run the module in editable mode you need to cd into the upper IoTuring folder.
 
 ### Versioning
 

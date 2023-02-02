@@ -7,11 +7,11 @@ requires-python = ">=3.7"
 license = {file = "COPYING"}
 keywords = ["iot","mqtt","monitor"]
 authors = [
-  {name = "richibrics", email = "riccardo.briccola@mail.polimi.it"},
+  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"},
   {name = "infeeeee", email = "gyetpet@mailbox.org"}
 ]
 maintainers = [
-  {name = "richibrics", email = "riccardo.briccola@mail.polimi.it"}
+  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"}
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -19,20 +19,15 @@ classifiers = [
   "Programming Language :: Python",
   "Topic :: System :: Monitoring"
 ]
+
 dependencies = [
   "paho-mqtt",
   "psutil",
   "PyYAML",
-  "importlib_metadata"
-]
-
-[project.optional-dependencies]
-macos = [
-  "PyObjC",
-  "IoTuring-applesmc"
-]
-win=[
-  "tinyWinToast"
+  "importlib_metadata",
+  "PyObjC; sys_platform == 'darwin'",
+  "IoTuring-applesmc; sys_platform == 'darwin'",
+  "tinyWinToast; sys_platform == 'win32'"
 ]
 
 [project.urls]
