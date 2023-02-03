@@ -183,7 +183,7 @@ class HomeAssistantWarehouse(Warehouse):
                             entityData.GetConnectedEntitySensor())
                     
                     # - for real sensors -
-                    elif entityData.DoesSupportExtraAttributes():
+                    elif not entitycommand_supports_state and entityData.DoesSupportExtraAttributes():
                         payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
                             entityData)
 
