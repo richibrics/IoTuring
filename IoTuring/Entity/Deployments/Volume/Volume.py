@@ -2,7 +2,6 @@ import subprocess
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
-from IoTuring.Configurator.MenuPreset import MenuPreset
 
 KEY_STATE = 'volume_state'
 KEY_CMD = 'volume'
