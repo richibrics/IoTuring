@@ -39,7 +39,7 @@ class DisplayMode(Entity):
         parse_select_command = {SELECT_INTERNAL_MONITOR: "internal",
                      SELECT_EXTERNAL_MONITOR: "external",
                      SELECT_CLONE_MONITOR: "clone",
-                     SELECT_EXTERNAL_MONITOR: "external"}   
+                     SELECT_EXTEND_MONITOR: "extend"}   
                          
         if message.payload.decode('utf-8') not in parse_select_command:
             self.LOG_WARNING("Invalid command: {}".format(message.payload.decode('utf-8')))
