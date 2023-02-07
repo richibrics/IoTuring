@@ -55,6 +55,12 @@ Time:
   icon: "mdi:clock"
 Monitor:
   icon: "mdi:monitor-shimmer"
+AppInfo - update:
+  custom_type: binary_sensor
+  icon: "mdi:package-up"
+  device_class: "update"
+  payload_on: "True"
+  payload_off: "False"
 AppInfo:
   icon: "mdi:information-outline"
 Temperature:
