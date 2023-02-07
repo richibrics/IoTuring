@@ -8,7 +8,10 @@ KEY_VERSION = 'version'
 KEY_UPDATE = 'update'
 PYPI_URL = 'https://pypi.org/pypi/ioturing/json'
 
-EXTRA_ATTRIBUTE_LATEST = 'Latest version'
+GET_UPDATE_ERROR_MESSAGE = "Error while checking, try to update to solve this problem. Alert the developers if the problem persists."
+
+EXTRA_ATTRIBUTE_UPDATE_LATEST = 'Latest version'
+EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
 
 class AppInfo(Entity):
     NAME = "AppInfo"
@@ -25,15 +28,24 @@ class AppInfo(Entity):
 
     def Update(self):
         # VERSION UPDATE CHECK
-        new_version = self.GetUpdateInformation()
-        if not new_version:
+        try:
+            new_version = self.GetUpdateInformation()
+            
+            if not new_version: # signal no update and current version (as its the latest)
+                self.SetEntitySensorValue(
+                    KEY_UPDATE, False)
+                self.SetEntitySensorExtraAttributes(KEY_UPDATE, {EXTRA_ATTRIBUTE_UPDATE_LATEST: App.getVersion()})
+            else: # signal update and latest version
+                self.SetEntitySensorValue(
+                    KEY_UPDATE, True)
+                self.SetEntitySensorExtraAttributes(KEY_UPDATE, {EXTRA_ATTRIBUTE_UPDATE_LATEST: new_version})
+        except Exception as e:
+            # connection error or pypi name changed or something else
             self.SetEntitySensorValue(
                 KEY_UPDATE, False)
-            self.SetEntitySensorExtraAttributes(KEY_UPDATE, {EXTRA_ATTRIBUTE_LATEST: App.getVersion()})
-        else:
-            self.SetEntitySensorValue(
-                KEY_UPDATE, True)
-            self.SetEntitySensorExtraAttributes(KEY_UPDATE, {EXTRA_ATTRIBUTE_LATEST: new_version})
+            # add extra attribute to show error message
+            self.SetEntitySensorExtraAttributes(KEY_UPDATE, {EXTRA_ATTRIBUTE_UPDATE_ERROR: GET_UPDATE_ERROR_MESSAGE})
+            
 
     def GetUpdateInformation(self):
         """
@@ -47,11 +59,20 @@ class AppInfo(Entity):
             info = res.json().get("info", "")
             if len(info) >= 1:
                 latest = info.get("version", "")
+            else:
+                raise UpdateCheckException()
+        else: 
+            raise UpdateCheckException()
         if len(latest) >= 1:
             if versionToInt(latest) > versionToInt(App.getVersion()):
                 return latest
-        return False
+            else:
+                return False
+        else:
+            raise UpdateCheckException()
     
 def versionToInt(version: str):
     return int(''.join([i for i in version if i.isdigit()]))
     
+class UpdateCheckException(Exception):
+    pass
