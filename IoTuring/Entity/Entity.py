@@ -119,7 +119,7 @@ class Entity(LogObject):
         self.GetEntitySensorByKey(key).SetExtraAttributes(_dict)
         
     def SetUpdateTimeout(self, timeout) -> None:
-        """ Set a timeout between 2 updates """
+        """ Set how much time to wait between 2 updates """
         self.updateTimeout = timeout
 
     def ShouldUpdate(self) -> bool:
@@ -130,6 +130,7 @@ class Entity(LogObject):
     def LoopThread(self) -> None:
         """ Entry point of Entity thread, will run the Update function periodically """
         while(True):
+            self.CallUpdate() # first call
             if self.ShouldUpdate():
                 self.CallUpdate()
 
