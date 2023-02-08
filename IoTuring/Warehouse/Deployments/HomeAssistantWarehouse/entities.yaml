@@ -78,3 +78,6 @@ FileSwitch:
   icon: mdi:file-star
   payload_on: "True"
   payload_off: "False"
+Volume:
+  icon: mdi:volume-high
+  custom_type: number
