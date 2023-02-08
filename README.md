@@ -12,6 +12,8 @@ Like his predecessor - **PyMonitorMQTT** - IoTuring allows you to choose which d
 
 But the most important thing: **works on all OSs and all architectures ! Windows, Linux, macOS, openBSD; x86, amd64, ARM and so on...**
 
+**CHANGELOG**: available in [Releases](https://github.com/richibrics/IoTuring/releases) page
+
 ## Install
 
 ### Who knows how it works
