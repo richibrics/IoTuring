@@ -66,6 +66,14 @@ AppInfo:
 Temperature:
   icon: "mdi:thermometer-lines"
   unit_of_measurement: "°C"
+DisplayMode:
+  icon: "mdi:monitor-multiple"
+  custom_type: select
+  options:
+    - Only internal display
+    - Only external display
+    - Clone displays
+    - Extend displays
 FileSwitch:
   icon: mdi:file-star
   payload_on: "True"
