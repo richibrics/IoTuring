@@ -1,7 +1,7 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 # Virtual memory
 KEY_MEMORY_TOTAL = 'physical_memory_total'
@@ -37,23 +37,23 @@ class Ram(Entity):
     def Update(self):
 
         self.SetEntitySensorValue(KEY_MEMORY_PERCENTAGE, psutil.virtual_memory()[
-            2], ValueFormatter.Options(ValueFormatter.TYPE_PERCENTAGE))
+            2], ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
         self.SetEntitySensorValue(KEY_SWAP_PERCENTAGE, psutil.swap_memory()[
-            3], ValueFormatter.Options(ValueFormatter.TYPE_PERCENTAGE))
+            3], ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
 
         # Virtual memory
         self.SetEntitySensorValue(KEY_MEMORY_TOTAL,
-                                  psutil.virtual_memory()[0], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+                                  psutil.virtual_memory()[0], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         self.SetEntitySensorValue(KEY_MEMORY_AVAILABLE,
-                                  psutil.virtual_memory()[1], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+                                  psutil.virtual_memory()[1], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         self.SetEntitySensorValue(KEY_MEMORY_USED,
-                                  psutil.virtual_memory()[3], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+                                  psutil.virtual_memory()[3], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         self.SetEntitySensorValue(KEY_MEMORY_FREE,
-                                  psutil.virtual_memory()[4], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+                                  psutil.virtual_memory()[4], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         # Swap memory
         self.SetEntitySensorValue(
-            KEY_SWAP_TOTAL, psutil.swap_memory()[0], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+            KEY_SWAP_TOTAL, psutil.swap_memory()[0], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         self.SetEntitySensorValue(
-            KEY_SWAP_USED,  psutil.swap_memory()[1], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+            KEY_SWAP_USED,  psutil.swap_memory()[1], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))
         self.SetEntitySensorValue(
-            KEY_SWAP_FREE, psutil.swap_memory()[2], ValueFormatter.Options(ValueFormatter.TYPE_BYTE, 0, "MB"))
+            KEY_SWAP_FREE, psutil.swap_memory()[2], ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE, 0, "MB"))

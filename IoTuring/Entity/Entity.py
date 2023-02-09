@@ -1,5 +1,5 @@
 from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntitySensor, EntityCommand
@@ -86,7 +86,7 @@ class Entity(LogObject):
         pass
 
     def SetEntitySensorValue(self, key, value, value_formatter_options=None) -> None:
-        """ Set the value for an entity sensor. A value_formatter_options (got from ValueFormatter) can be passed to format the value """
+        """ Set the value for an entity sensor. A value_formatter_options (got from ValueFormatterOptions) can be passed to format the value """
 
         if value_formatter_options is not None:
             value = ValueFormatter.GetFormattedValue(

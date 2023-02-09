@@ -1,7 +1,7 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 KEY_USED_PERCENTAGE = 'space_used_percentage'
 
@@ -18,7 +18,7 @@ class Disk(Entity):
 
     def Update(self):
         self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage(
-        ), ValueFormatter.Options(ValueFormatter.TYPE_PERCENTAGE))
+        ), ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
 
     def GetDiskUsedPercentage(self):
         if self.os == 'macOS':

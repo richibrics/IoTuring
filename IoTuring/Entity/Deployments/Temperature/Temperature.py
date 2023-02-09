@@ -1,7 +1,7 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
@@ -77,7 +77,7 @@ class Temperature(Entity):
             if value in self.valid_keys: # in valid_keys I have only the smc keys that returned a value != 0.0
                 # save temperature in the dictionary with key = description
                 values[key] = ioturing_applesmc.get_temperature(value)
-        self.SetEntitySensorValue("cpu", max(values.values()), value_formatter_options=ValueFormatter.Options(decimals=CURRENT_TEMPERATURE_DECIMALS))
+        self.SetEntitySensorValue("cpu", max(values.values()), value_formatter_options=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS))
         self.SetEntitySensorExtraAttributes("cpu", values)
         
         
@@ -108,7 +108,7 @@ class Temperature(Entity):
                 # Set main value = current of the package
                 # TODO Temperature in ValueFormatter
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
-                    package.getLabel()), package.getCurrent(), value_formatter_options=ValueFormatter.Options(decimals=CURRENT_TEMPERATURE_DECIMALS))
+                    package.getLabel()), package.getCurrent(), value_formatter_options=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS))
                 self.SetEntitySensorExtraAttributes(self.packageNameToEntitySensorKey(
                     package.getLabel()), package.getAttributesDict())
             index += 1

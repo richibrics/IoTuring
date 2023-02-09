@@ -1,7 +1,7 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 KEY_PERCENTAGE = 'percentage'
 KEY_CHARGING_STATUS = 'charging'
@@ -19,14 +19,14 @@ class Battery(Entity):
             self.RegisterEntitySensor(EntitySensor(self, KEY_CHARGING_STATUS))
 
     def PostInitialize(self):
-        # Check if battery infomration are present
+        # Check if battery information are present
         if not psutil.sensors_battery():
             raise("No battery sensor for this host")
 
     def Update(self):
         batteryInfo = self.GetBatteryInformation()
         self.SetEntitySensorValue(KEY_PERCENTAGE, int(
-            batteryInfo['level']), ValueFormatter.Options(ValueFormatter.TYPE_PERCENTAGE))
+            batteryInfo['level']), ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
         if isinstance(batteryInfo['charging'], bool):
             self.SetEntitySensorValue(
                 KEY_CHARGING_STATUS, str(batteryInfo['charging']))
