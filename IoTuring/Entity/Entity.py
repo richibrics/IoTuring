@@ -129,8 +129,8 @@ class Entity(LogObject):
 
     def LoopThread(self) -> None:
         """ Entry point of Entity thread, will run the Update function periodically """
+        self.CallUpdate() # first call
         while(True):
-            self.CallUpdate() # first call
             if self.ShouldUpdate():
                 self.CallUpdate()
 
