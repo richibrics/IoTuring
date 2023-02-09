@@ -11,7 +11,7 @@ class Battery(Entity):
     NAME = "Battery"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_PERCENTAGE, ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_PERCENTAGE, valueFormatterOptions=ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
         
         # Check if charging state working:
         batteryInfo = self.GetBatteryInformation()

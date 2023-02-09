@@ -21,7 +21,7 @@ class FileSwitch(Entity):
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
-        self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, True))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, supportsExtraAttributes=True))
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_CMD, self.Callback, KEY_STATE))
 

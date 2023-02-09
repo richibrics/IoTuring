@@ -11,7 +11,7 @@ class Disk(Entity):
     DEPENDENCIES = ["Os"]
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_USED_PERCENTAGE, ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_USED_PERCENTAGE, valueFormatterOptions=ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
 
     def PostInitialize(self):
         self.os = self.GetDependentEntitySensorValue('Os', "operating_system")

@@ -87,7 +87,7 @@ class Entity(LogObject):
 
     def SetEntitySensorValue(self, key, value) -> None:
         """ Set the value for an entity sensor """
-        self.GetEntitySensorByKey(key).SetValue(str(value))
+        self.GetEntitySensorByKey(key).SetValue(value)
 
     def GetEntitySensorValue(self, key) -> str:
         """ Get value using its entity sensor key if the value is present (else raise an exception) """

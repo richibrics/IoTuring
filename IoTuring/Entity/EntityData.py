@@ -46,8 +46,7 @@ class EntitySensor(EntityData):
         return self.value
 
     def SetValue(self, value):
-        value = str(value)
-        self.Log(self.LOG_DEBUG, "Set to " + value)
+        self.Log(self.LOG_DEBUG, "Set to " + str(value))
         self.value = value
         return self.value
 
