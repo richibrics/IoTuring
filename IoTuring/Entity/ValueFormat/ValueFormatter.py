@@ -1,4 +1,5 @@
 import math
+from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 
 # Value formatter
 # If I have to return value not in byte but with MB/GB/KB; same for time
@@ -12,43 +13,34 @@ import math
 # TODO Configurable by each warehouse (hardcoded in warehouse and not here, like MQTT true, Hass false)
 ENABLE_UNIT = False
 
-VALUEFORMATTER_OPTIONS_TYPE_KEY = "type"
-VALUEFORMATTER_OPTIONS_DECIMALS_KEY = "decimals"
-VALUEFORMATTER_OPTIONS_SIZE_KEY = "size"
-
 # Lists of measure units
 BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 
-DO_NOT_TOUCH_DECIMALS = -1
-
 
 class ValueFormatter():
-    TYPE_NONE = 0
-    TYPE_BYTE = 1
-    TYPE_TIME = 2
-    TYPE_PERCENTAGE = 3
-    TYPE_FREQUENCY = 4
-    TYPE_MILLISECONDS = 5
-
+    
     @staticmethod
-    def GetFormattedValue(value, options):
-        valueType = options[VALUEFORMATTER_OPTIONS_TYPE_KEY]
+    def GetFormattedValue(value, options: ValueFormatterOptions):
+        if options is None:
+            return str(value)
+        
+        valueType = options.get_value_type()
         
         # specific type formatting
-        if valueType == ValueFormatter.TYPE_NONE:  # edit needed only if decimals
+        if valueType == ValueFormatterOptions.TYPE_NONE:  # edit needed only if decimals
             return ValueFormatter.roundValue(value, options)
-        elif valueType == ValueFormatter.TYPE_BYTE:
+        elif valueType == ValueFormatterOptions.TYPE_BYTE:
             return ValueFormatter.ByteFormatter(value, options)
-        elif valueType == ValueFormatter.TYPE_MILLISECONDS:
+        elif valueType == ValueFormatterOptions.TYPE_MILLISECONDS:
             return ValueFormatter.MillisecondsFormatter(value, options)
-        elif valueType == ValueFormatter.TYPE_TIME:
+        elif valueType == ValueFormatterOptions.TYPE_TIME:
             return ValueFormatter.TimeFormatter(value, options)
-        elif valueType == ValueFormatter.TYPE_FREQUENCY:
+        elif valueType == ValueFormatterOptions.TYPE_FREQUENCY:
             return ValueFormatter.FrequencyFormatter(value, options)
-        elif valueType == ValueFormatter.TYPE_PERCENTAGE:
+        elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if ENABLE_UNIT:
                 return str(value) + '%'
             else:
@@ -57,9 +49,9 @@ class ValueFormatter():
             return str(value)
 
     @staticmethod
-    def TimeFormatter(value, options):
+    def TimeFormatter(value, options: ValueFormatterOptions):
         # Get value in seconds, and adjustable
-        asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
+        asked_size = options.get_adjust_size()
 
         if asked_size and asked_size in TIME_SIZES:
             index = TIME_SIZES.index(asked_size)
@@ -80,7 +72,7 @@ class ValueFormatter():
         return result
 
     @staticmethod
-    def MillisecondsFormatter(value, options):
+    def MillisecondsFormatter(value, options: ValueFormatterOptions):
         # Get value in milliseconds: adjust not implemented
         
         value = ValueFormatter.roundValue(value, options)
@@ -92,10 +84,10 @@ class ValueFormatter():
 
     # Get from number of bytes the correct byte size: 1045B is 1KB. If size_wanted passed and is SIZE_MEGABYTE, if I have 10^9B, I won't diplay 1GB but c.a. 1000MB
     @staticmethod
-    def ByteFormatter(value, options):
+    def ByteFormatter(value, options: ValueFormatterOptions):
         # Get value in bytes
-        asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
-        decimals = options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY]
+        asked_size = options.get_adjust_size()
+        decimals = options.get_decimals()
 
         if asked_size and asked_size in BYTE_SIZES:
             powOf1024 = BYTE_SIZES.index(asked_size)
@@ -117,9 +109,9 @@ class ValueFormatter():
         return result
 
     @staticmethod
-    def FrequencyFormatter(value, options):
+    def FrequencyFormatter(value, options: ValueFormatterOptions):
         # Get value in hertz, and adjustable
-        asked_size = options[VALUEFORMATTER_OPTIONS_SIZE_KEY]
+        asked_size = options.get_adjust_size()
 
         if asked_size and asked_size in FREQUENCY_SIZES:
             index = FREQUENCY_SIZES.index(asked_size)
@@ -137,11 +129,7 @@ class ValueFormatter():
         return result
 
     @staticmethod
-    def roundValue(value, options):
-        if options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY] != DO_NOT_TOUCH_DECIMALS:
-            return round(value, options[VALUEFORMATTER_OPTIONS_DECIMALS_KEY])
+    def roundValue(value, options: ValueFormatterOptions):
+        if options.get_decimals() != ValueFormatterOptions.DO_NOT_TOUCH_DECIMALS:
+            return round(value, options.get_decimals())
         return value
-
-    @staticmethod
-    def Options(value_type=TYPE_NONE, decimals=DO_NOT_TOUCH_DECIMALS, adjust_size=None):
-        return {VALUEFORMATTER_OPTIONS_TYPE_KEY: value_type, VALUEFORMATTER_OPTIONS_DECIMALS_KEY: decimals, VALUEFORMATTER_OPTIONS_SIZE_KEY: adjust_size}
