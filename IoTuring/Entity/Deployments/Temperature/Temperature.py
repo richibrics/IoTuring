@@ -55,7 +55,7 @@ class Temperature(Entity):
         
     def InitmacOS(self):
         import ioturing_applesmc
-        self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True))
+        self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True, valueFormatterOptions=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS)))
         self.valid_keys = []
         # get smc values for all the keys I have in the dictionary and remember
         # the keys that do not return a 0.0 value
@@ -77,7 +77,7 @@ class Temperature(Entity):
             if value in self.valid_keys: # in valid_keys I have only the smc keys that returned a value != 0.0
                 # save temperature in the dictionary with key = description
                 values[key] = ioturing_applesmc.get_temperature(value)
-        self.SetEntitySensorValue("cpu", max(values.values()), value_formatter_options=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS))
+        self.SetEntitySensorValue("cpu", max(values.values()))
         self.SetEntitySensorExtraAttributes("cpu", values)
         
         
@@ -92,9 +92,8 @@ class Temperature(Entity):
             package = psutilTemperaturePackage(pkgName, data)
             if package.hasCurrent():
                 self.registeredPackages.append(package.getLabel())
-                # TODO supportsExtraAttributes only on Linux
                 self.RegisterEntitySensor(EntitySensor(
-                    self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True))
+                    self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True, valueFormatterOptions=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS)))
             index += 1
             
     def UpdateLinux(self):
@@ -108,7 +107,7 @@ class Temperature(Entity):
                 # Set main value = current of the package
                 # TODO Temperature in ValueFormatter
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
-                    package.getLabel()), package.getCurrent(), value_formatter_options=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS))
+                    package.getLabel()), package.getCurrent())
                 self.SetEntitySensorExtraAttributes(self.packageNameToEntitySensorKey(
                     package.getLabel()), package.getAttributesDict())
             index += 1

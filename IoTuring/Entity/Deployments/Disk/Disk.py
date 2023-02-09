@@ -11,14 +11,13 @@ class Disk(Entity):
     DEPENDENCIES = ["Os"]
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_USED_PERCENTAGE))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_USED_PERCENTAGE, ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
 
     def PostInitialize(self):
         self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
 
     def Update(self):
-        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage(
-        ), ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
+        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage())
 
     def GetDiskUsedPercentage(self):
         if self.os == 'macOS':

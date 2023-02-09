@@ -59,33 +59,4 @@ class Cpu(Entity):
                 EntitySensor(self, KEY_AVERAGE_LOAD_LAST_15))
 
     def Update(self):
-        self.SetEntitySensorValue(KEY_PERCENTAGE, psutil.cpu_percent(),
-                                  ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE, 1))
-        self.SetEntitySensorValue(KEY_COUNT, psutil.cpu_count())
-        # CPU times
-        self.SetEntitySensorValue(KEY_TIMES_USER, psutil.cpu_times()[
-            0], ValueFormatterOptions(ValueFormatterOptions.TYPE_MILLISECONDS))
-        self.SetEntitySensorValue(KEY_TIMES_SYSTEM, psutil.cpu_times()[
-            1], ValueFormatterOptions(ValueFormatterOptions.TYPE_MILLISECONDS))
-        self.SetEntitySensorValue(KEY_TIMES_IDLE, psutil.cpu_times()[
-            2], ValueFormatterOptions(ValueFormatterOptions.TYPE_MILLISECONDS))
-        # CPU stats
-        self.SetEntitySensorValue(KEY_STATS_CTX, psutil.cpu_stats(
-        )[0], ValueFormatterOptions(ValueFormatterOptions.TYPE_NONE, 2))
-        self.SetEntitySensorValue(KEY_STATS_INTERR, psutil.cpu_stats()[
-                                  1], ValueFormatterOptions(ValueFormatterOptions.TYPE_NONE, 2))
-        # CPU freq
-        self.SetEntitySensorValue(KEY_FREQ_CURRENT, MHZ * psutil.cpu_freq()[
-            0], ValueFormatterOptions(ValueFormatterOptions.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
-        self.SetEntitySensorValue(KEY_FREQ_MIN, MHZ * psutil.cpu_freq()[
-            1], ValueFormatterOptions(ValueFormatterOptions.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
-        self.SetEntitySensorValue(KEY_FREQ_MAX, MHZ * psutil.cpu_freq()[
-            2], ValueFormatterOptions(ValueFormatterOptions.TYPE_FREQUENCY, FREQUENCY_DECIMALS, "MHz"))
-        if self.os != 'macOS':
-            # CPU avg load
-            self.SetEntitySensorValue(KEY_AVERAGE_LOAD_LAST_1,
-                                      psutil.getloadavg()[0], ValueFormatterOptions(ValueFormatterOptions.TYPE_NONE, 2))
-            self.SetEntitySensorValue(KEY_AVERAGE_LOAD_LAST_5,
-                                      psutil.getloadavg()[1], ValueFormatterOptions(ValueFormatterOptions.TYPE_NONE, 2))
-            self.SetEntitySensorValue(KEY_AVERAGE_LOAD_LAST_15,
-                                      psutil.getloadavg()[2], ValueFormatterOptions(ValueFormatterOptions.TYPE_NONE, 2))
+        pass

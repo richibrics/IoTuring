@@ -11,7 +11,7 @@ class Battery(Entity):
     NAME = "Battery"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_PERCENTAGE))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_PERCENTAGE, ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)))
         
         # Check if charging state working:
         batteryInfo = self.GetBatteryInformation()
@@ -25,8 +25,7 @@ class Battery(Entity):
 
     def Update(self):
         batteryInfo = self.GetBatteryInformation()
-        self.SetEntitySensorValue(KEY_PERCENTAGE, int(
-            batteryInfo['level']), ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE))
+        self.SetEntitySensorValue(KEY_PERCENTAGE, int(batteryInfo['level']))
         if isinstance(batteryInfo['charging'], bool):
             self.SetEntitySensorValue(
                 KEY_CHARGING_STATUS, str(batteryInfo['charging']))

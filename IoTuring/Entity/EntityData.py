@@ -25,14 +25,22 @@ class EntityData(LogObject):
 
 class EntitySensor(EntityData):
 
-    def __init__(self, entity, key, supportsExtraAttributes = False):
+    def __init__(self, entity, key, valueFormatterOptions=None, supportsExtraAttributes = False):
+        """
+        If supportsExtraAttributes is True, the entity sensor can have extra attributes.
+        valueFormatterOptions is a IoTuring.Entity.ValueFormat.ValueFormatterOptions object.
+        """
         EntityData.__init__(self, entity, key)
         self.supportsExtraAttributes = supportsExtraAttributes
         self.value = None
         self.extraAttributes = None
+        self.valueFormatterOptions = valueFormatterOptions
 
     def DoesSupportExtraAttributes(self):
         return self.supportsExtraAttributes
+
+    def GetValueFormatterOptions(self):
+        return self.valueFormatterOptions
 
     def GetValue(self):
         return self.value

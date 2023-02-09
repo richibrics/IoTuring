@@ -80,21 +80,14 @@ class Entity(LogObject):
             self.Log(self.LOG_ERROR, 'Error occured during update: ' + str(exc))
             # self.entityManager.UnloadEntity(self) # TODO Think how to improve this
 
-    def Update(self):  #
+    def Update(self):
         """ Must be implemented in sub-classes """
         # Can't be called directly, cause stops everything in exception, call only using CallUpdate
         pass
 
-    def SetEntitySensorValue(self, key, value, value_formatter_options=None) -> None:
-        """ Set the value for an entity sensor. A value_formatter_options (got from ValueFormatterOptions) can be passed to format the value """
-
-        if value_formatter_options is not None:
-            value = ValueFormatter.GetFormattedValue(
-                value, value_formatter_options)
-
-        value = str(value)
-
-        self.GetEntitySensorByKey(key).SetValue(value)
+    def SetEntitySensorValue(self, key, value) -> None:
+        """ Set the value for an entity sensor """
+        self.GetEntitySensorByKey(key).SetValue(str(value))
 
     def GetEntitySensorValue(self, key) -> str:
         """ Get value using its entity sensor key if the value is present (else raise an exception) """
