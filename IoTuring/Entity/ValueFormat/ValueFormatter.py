@@ -17,6 +17,8 @@ FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 CELSIUS_UNIT = '°C'
 
+SPACE_BEFORE_UNIT = ' '
+
 class ValueFormatter():
     
     # includeUnit: isn't in the option as it's chosen by each warehouse and not by the entity itself
@@ -48,7 +50,7 @@ class ValueFormatter():
             return ValueFormatter.TemperatureCelsiusFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if includeUnit:
-                return str(value) + '%'
+                return str(value) + SPACE_BEFORE_UNIT + '%'
             else:
                 return str(value)
         else:
@@ -73,7 +75,7 @@ class ValueFormatter():
         result = str(value)
 
         if includeUnit:
-            result = result + TIME_SIZES[index]
+            result = result + SPACE_BEFORE_UNIT + TIME_SIZES[index]
 
         return result
 
@@ -84,7 +86,7 @@ class ValueFormatter():
         value = ValueFormatter.roundValue(value, options)
         
         if includeUnit:
-            return str(value) + 'ms'
+            return str(value) + SPACE_BEFORE_UNIT + 'ms'
         else:
             return str(value)
 
@@ -110,7 +112,7 @@ class ValueFormatter():
         result = str(value)
 
         if includeUnit:
-            result = result + BYTE_SIZES[powOf1024]
+            result = result + SPACE_BEFORE_UNIT + BYTE_SIZES[powOf1024]
 
         return result
 
@@ -131,7 +133,7 @@ class ValueFormatter():
         result = str(value)
         
         if includeUnit:
-            result = result + FREQUENCY_SIZES[index]
+            result = result + SPACE_BEFORE_UNIT + FREQUENCY_SIZES[index]
         return result
 
 
@@ -145,7 +147,7 @@ class ValueFormatter():
         result = str(value)
         
         if includeUnit:
-            result = result + CELSIUS_UNIT 
+            result = result + SPACE_BEFORE_UNIT + CELSIUS_UNIT 
         return result
 
     @staticmethod
