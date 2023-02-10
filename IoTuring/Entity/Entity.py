@@ -107,9 +107,9 @@ class Entity(LogObject):
                 "The Entity sensor you asked for hasn't got extra attributes")
         return self.GetEntitySensorByKey(key).GetExtraAttributes()
 
-    def SetEntitySensorExtraAttributes(self, key, _dict) -> None:
-        """ Set the extra attributes for an entity sensor """
-        self.GetEntitySensorByKey(key).SetExtraAttributes(_dict)
+    def SetEntitySensorExtraAttribute(self, sensorDataKey, name, value, valueFormatterOptions = None) -> None:
+        """ Set the extra attribute for an entity sensor """
+        self.GetEntitySensorByKey(sensorDataKey).SetExtraAttribute(name, value, valueFormatterOptions)
         
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set how much time to wait between 2 updates """

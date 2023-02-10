@@ -43,10 +43,8 @@ class FileSwitch(Entity):
     def Update(self):
         self.SetEntitySensorValue(KEY_STATE,
                                   str(Path(self.config_path).exists()))
-        
-        extra = {}
-        extra["Path"] = str(self.config_path)
-        self.SetEntitySensorExtraAttributes(KEY_STATE, extra)
+    
+        self.SetEntitySensorExtraAttribute(KEY_STATE, "Path", str(self.config_path))
 
     @classmethod
     def ConfigurationPreset(self):

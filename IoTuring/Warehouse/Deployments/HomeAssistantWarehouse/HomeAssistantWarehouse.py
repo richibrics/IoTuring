@@ -124,7 +124,16 @@ class HomeAssistantWarehouse(Warehouse):
                     self.client.SendTopicData(topic, value)  # send
                 if (entitySensor.HasExtraAttributes()):
                     self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
-                                              json.dumps(entitySensor.GetExtraAttributes()))
+                                              json.dumps(self.PrepareExtraAttributes(entitySensor)))
+
+    def PrepareExtraAttributes(self, entitySensor):
+        """ Prepare extra attributes to send to HA """
+        extraAttributesDict = {}
+        extraAttributes = entitySensor.GetExtraAttributes()
+        for extraAttribute in extraAttributes:
+            extraAttributesDict[extraAttribute.GetName()] = ValueFormatter.FormatValue(
+                extraAttribute.GetValue(), extraAttribute.GetValueFormatterOptions(), INCLUDE_UNITS_IN_SENSORS)
+        return extraAttributesDict
 
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()

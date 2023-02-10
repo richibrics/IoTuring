@@ -75,11 +75,13 @@ class Temperature(Entity):
         # key = description, value = smc key
         for key, value in MACOS_SMC_TEMPERATURE_KEYS.items():
             if value in self.valid_keys: # in valid_keys I have only the smc keys that returned a value != 0.0
-                # save temperature in the dictionary with key = description
                 values[key] = ioturing_applesmc.get_temperature(value)
-        self.SetEntitySensorValue("cpu", max(values.values()))
-        self.SetEntitySensorExtraAttributes("cpu", values)
         
+        # Set main value to the highest value found
+        self.SetEntitySensorValue("cpu", max(values.values()))
+        # Set extra attributes
+        for key, value in values.items():
+            self.SetEntitySensorExtraAttribute("cpu", key, values[key])
         
     # I don't register packages that do not have Current temperature, so I store the registered in a list which is then checked during update
     def InitLinux(self):
@@ -108,8 +110,12 @@ class Temperature(Entity):
                 # TODO Temperature in ValueFormatter
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
                     package.getLabel()), package.getCurrent())
-                self.SetEntitySensorExtraAttributes(self.packageNameToEntitySensorKey(
-                    package.getLabel()), package.getAttributesDict())
+                
+                # Set extra attributes
+                for key, value in package.getAttributesDict().items():
+                    self.SetEntitySensorExtraAttribute(self.packageNameToEntitySensorKey(
+                        package.getLabel()), key, value)
+                    
             index += 1
 
     def packageNameToEntitySensorKey(self, packageName):

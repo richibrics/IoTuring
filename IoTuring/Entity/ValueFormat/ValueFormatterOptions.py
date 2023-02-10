@@ -5,6 +5,7 @@ class ValueFormatterOptions():
     TYPE_PERCENTAGE = 3
     TYPE_FREQUENCY = 4
     TYPE_MILLISECONDS = 5
+    TYPE_TEMPERATURE = 6
 
     DO_NOT_TOUCH_DECIMALS = -1
       

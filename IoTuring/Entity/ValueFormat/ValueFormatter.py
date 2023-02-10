@@ -15,7 +15,7 @@ BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
-
+CELSIUS_UNIT = '°C'
 
 class ValueFormatter():
     
@@ -45,6 +45,8 @@ class ValueFormatter():
             return ValueFormatter.TimeFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_FREQUENCY:
             return ValueFormatter.FrequencyFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_TEMPERATURE:
+            return ValueFormatter.TemperatureCelsiusFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if includeUnit:
                 return str(value) + '%'
@@ -132,6 +134,21 @@ class ValueFormatter():
         if includeUnit:
             result = result + FREQUENCY_SIZES[index]
         return result
+
+
+    @staticmethod
+    def TemperatureCelsiusFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # asked_size not implemented
+        
+        # decimals
+        value = ValueFormatter.roundValue(value, options)
+
+        result = str(value)
+        
+        if includeUnit:
+            result = result + CELSIUS_UNIT 
+        return result
+
 
     @staticmethod
     def roundValue(value, options: ValueFormatterOptions):
