@@ -6,7 +6,7 @@ from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
 FALLBACK_SENSOR_LABEL = "sensor_{}"
-CURRENT_TEMPERATURE_DECIMALS = 1
+TEMPERATURE_DECIMALS = 1
 
 INVALID_SMC_VALUE_HIGH = 120 # skip sensors if when initialized they return a value higher than this
 MACOS_SMC_TEMPERATURE_KEYS = {
@@ -36,6 +36,9 @@ class Temperature(Entity):
     NAME = "Temperature"
     DEPENDENCIES = ["Os"]
 
+    def Initialize(self):
+        self.temperatureFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_TEMPERATURE, decimals=TEMPERATURE_DECIMALS)
+
     def PostInitialize(self):
         self.specificInitialize = None
         self.specificUpdate = None
@@ -55,7 +58,7 @@ class Temperature(Entity):
         
     def InitmacOS(self):
         import ioturing_applesmc
-        self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True, valueFormatterOptions=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS)))
+        self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True, valueFormatterOptions=self.temperatureFormatOptions))
         self.valid_keys = []
         # get smc values for all the keys I have in the dictionary and remember
         # the keys that do not return a 0.0 value
@@ -81,7 +84,7 @@ class Temperature(Entity):
         self.SetEntitySensorValue("cpu", max(values.values()))
         # Set extra attributes
         for key, value in values.items():
-            self.SetEntitySensorExtraAttribute("cpu", key, values[key])
+            self.SetEntitySensorExtraAttribute("cpu", key, values[key], valueFormatterOptions=self.temperatureFormatOptions)
         
     # I don't register packages that do not have Current temperature, so I store the registered in a list which is then checked during update
     def InitLinux(self):
@@ -95,7 +98,7 @@ class Temperature(Entity):
             if package.hasCurrent():
                 self.registeredPackages.append(package.getLabel())
                 self.RegisterEntitySensor(EntitySensor(
-                    self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True, valueFormatterOptions=ValueFormatterOptions(decimals=CURRENT_TEMPERATURE_DECIMALS)))
+                    self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True, valueFormatterOptions=self.temperatureFormatOptions))
             index += 1
             
     def UpdateLinux(self):
@@ -107,14 +110,13 @@ class Temperature(Entity):
             package = psutilTemperaturePackage(pkgName, data)
             if package.getLabel() in self.registeredPackages:
                 # Set main value = current of the package
-                # TODO Temperature in ValueFormatter
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
                     package.getLabel()), package.getCurrent())
                 
                 # Set extra attributes
                 for key, value in package.getAttributesDict().items():
                     self.SetEntitySensorExtraAttribute(self.packageNameToEntitySensorKey(
-                        package.getLabel()), key, value)
+                        package.getLabel()), key, value, valueFormatterOptions=self.temperatureFormatOptions)
                     
             index += 1
 

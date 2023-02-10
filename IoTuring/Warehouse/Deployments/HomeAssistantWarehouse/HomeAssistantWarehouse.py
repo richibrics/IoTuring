@@ -131,8 +131,8 @@ class HomeAssistantWarehouse(Warehouse):
         extraAttributesDict = {}
         extraAttributes = entitySensor.GetExtraAttributes()
         for extraAttribute in extraAttributes:
-            extraAttributesDict[extraAttribute.GetName()] = ValueFormatter.FormatValue(
-                extraAttribute.GetValue(), extraAttribute.GetValueFormatterOptions(), INCLUDE_UNITS_IN_SENSORS)
+            formatted_value = ValueFormatter.FormatValue(extraAttribute.GetValue(), extraAttribute.GetValueFormatterOptions(), INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
+            extraAttributesDict[extraAttribute.GetName()] = formatted_value
         return extraAttributesDict
 
     def SendEntityDataConfigurations(self):

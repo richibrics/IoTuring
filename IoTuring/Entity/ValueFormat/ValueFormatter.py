@@ -31,7 +31,6 @@ class ValueFormatter():
     def _ParseValue(value, options: ValueFormatterOptions, includeUnit: bool):
         if options is None:
             return value
-        
         valueType = options.get_value_type()
         
         # specific type formatting
@@ -148,7 +147,6 @@ class ValueFormatter():
         if includeUnit:
             result = result + CELSIUS_UNIT 
         return result
-
 
     @staticmethod
     def roundValue(value, options: ValueFormatterOptions):
