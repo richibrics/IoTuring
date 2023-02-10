@@ -2,10 +2,12 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
 from IoTuring.Warehouse.Warehouse import Warehouse
 from IoTuring.MyApp.App import App
+from IoTuring.Entity.ValueFormat import ValueFormatter
 
 import inspect  # To get this folder path
 import os  # To get this folder path
 import time
+
 
 SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
@@ -18,6 +20,7 @@ CONFIG_KEY_PORT = "port"
 CONFIG_KEY_NAME = "name"
 CONFIG_KEY_USERNAME = "username"
 CONFIG_KEY_PASSWORD = "password"
+CONFIG_KEY_ADD_UNITS = "add_units"
 
 
 class MQTTWarehouse(Warehouse):
@@ -32,6 +35,7 @@ class MQTTWarehouse(Warehouse):
                                  self.GetFromConfigurations(
                                      CONFIG_KEY_USERNAME),
                                  self.GetFromConfigurations(CONFIG_KEY_PASSWORD))
+        self.addUnitsToValues = self.GetFromConfigurations(CONFIG_KEY_ADD_UNITS) # is a boolean
         self.client.AsyncConnect()
         self.RegisterEntityCommands()
 
@@ -55,8 +59,9 @@ class MQTTWarehouse(Warehouse):
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
                 if(entitySensor.HasValue()):
+                    value = ValueFormatter.FormatValue(entitySensor.GetValue(), entitySensor.GetValueFormatterOptions(), self.addUnitsToValues)
                     self.client.SendTopicData(self.MakeTopic(
-                        entitySensor), entitySensor.GetValue())
+                        entitySensor), value)
 
     def MakeTopic(self, entityData):
         return MQTTClient.NormalizeTopic(TOPIC_FORMAT.format(App.getName(), self.clientName, entityData.GetId()))
@@ -80,4 +85,5 @@ class MQTTWarehouse(Warehouse):
         preset.AddEntry("Client name", CONFIG_KEY_NAME, default=App.getName())
         preset.AddEntry("Username", CONFIG_KEY_USERNAME, default="")
         preset.AddEntry("Password", CONFIG_KEY_PASSWORD, default="")
+        preset.AddEntry("Add units to values (Y/N)", CONFIG_KEY_ADD_UNITS, default="Y", modify_value_callback=MenuPreset.Callback_NormalizeBoolean)
         return preset

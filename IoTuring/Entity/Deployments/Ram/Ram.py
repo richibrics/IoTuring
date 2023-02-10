@@ -1,7 +1,7 @@
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 # Sensor: Virtual memory
 KEY_MEMORY_PERCENTAGE = 'physical_memory_percentage'

@@ -16,7 +16,7 @@ class Volume(Entity):
         self.getStateMethod = None
         
         if self.os == "macOS":        
-            self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, False))
+            self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_CMD, self.CallbackMac, KEY_STATE))
             self.getStateMethod = self.GetVolumeMac
