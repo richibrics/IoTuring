@@ -80,4 +80,5 @@ FileSwitch:
   payload_off: "False"
 Volume:
   icon: mdi:volume-high
+  unit_of_measurement: "%"
   custom_type: number
