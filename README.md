@@ -135,6 +135,7 @@ All sensors and switches will be available to be added to your dashboard in your
 | Temperature        | shares temperature sensor data                                              | ![mac](docs/images/mac.png) ![linux](docs/images/linux.png)                             |
 | Uptime             | shares the time since the machine is on                                     | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Username           | shares the name of the user who is working on the machine                   | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
+| Volume           | control audio volume                | ![mac](docs/images/mac.png)  |
 
 \* To use the features from Power entity on Linux and macOS you need to give permissions to your user to shutdown and reboot without sudo password.
 You can easily do that by adding the following line at the end of the "/etc/sudoers" file (you can use the following command: sudo nano /etc/sudoers):
