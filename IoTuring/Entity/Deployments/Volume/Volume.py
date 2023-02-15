@@ -15,7 +15,6 @@ VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0 = ValueFormatterOptions(value_type=Value
 
 class Volume(Entity):
     NAME = "Volume"
-    ALLOW_MULTI_INSTANCE = True
     DEPENDENCIES = ["Os"]
 
     def PostInitialize(self):
