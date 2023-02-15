@@ -25,21 +25,28 @@ class EntityData(LogObject):
 
 class EntitySensor(EntityData):
 
-    def __init__(self, entity, key, supportsExtraAttributes = False):
+    def __init__(self, entity, key, valueFormatterOptions=None, supportsExtraAttributes = False):
+        """
+        If supportsExtraAttributes is True, the entity sensor can have extra attributes.
+        valueFormatterOptions is a IoTuring.Entity.ValueFormat.ValueFormatterOptions object.
+        """
         EntityData.__init__(self, entity, key)
         self.supportsExtraAttributes = supportsExtraAttributes
         self.value = None
         self.extraAttributes = None
+        self.valueFormatterOptions = valueFormatterOptions
 
     def DoesSupportExtraAttributes(self):
         return self.supportsExtraAttributes
+
+    def GetValueFormatterOptions(self):
+        return self.valueFormatterOptions
 
     def GetValue(self):
         return self.value
 
     def SetValue(self, value):
-        value = str(value)
-        self.Log(self.LOG_DEBUG, "Set to " + value)
+        self.Log(self.LOG_DEBUG, "Set to " + str(value))
         self.value = value
         return self.value
 
@@ -56,13 +63,17 @@ class EntitySensor(EntityData):
         """ True if self.extraAttributes isn't empty """
         return self.extraAttributes is not None
     
-    def SetExtraAttributes(self, _dict):
-        # a dict with (attribute_name: value) that is compatible only with certain warehouses
+    def SetExtraAttribute(self, name, value, valueFormatterOptions=None):
         if self.supportsExtraAttributes == False:
             raise Exception("This entity sensor does not support extra attributes. Please specify it when initializing the sensor.")
-        self.extraAttributes = _dict
-
-
+        if self.extraAttributes is None:
+            self.extraAttributes = []
+        # If the Attribute does not already exists, create it, otherwise update it
+        extraAttributeObj = next((attr for attr in self.extraAttributes if attr.GetName() == name), None)
+        if (extraAttributeObj is None):
+            self.extraAttributes.append(ExtraAttribute(name, value, valueFormatterOptions))
+        else:
+            extraAttributeObj.SetValue(value)
 
 class EntityCommand(EntityData):
 
@@ -98,3 +109,24 @@ class EntityCommand(EntityData):
         """ Called only by CallCallback. 
             Run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage) """
         self.callbackFunction(message)
+
+class ExtraAttribute():
+    def __init__(self, name, value, valueFormatterOptions=None):
+        self.name = name
+        self.value = value
+        self.valueFormatterOptions = valueFormatterOptions
+        
+    def GetName(self):
+        return self.name
+    
+    def GetValue(self):
+        return self.value
+    
+    def GetValueFormatterOptions(self):
+        return self.valueFormatterOptions
+    
+    def HasValueFormatterOptions(self):
+        return self.valueFormatterOptions is not None
+    
+    def SetValue(self, value):
+        self.value = value

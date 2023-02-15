@@ -5,11 +5,15 @@ from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
 from IoTuring.Warehouse.Warehouse import Warehouse
 from IoTuring.MyApp.App import App
 from IoTuring.Logger import consts
+from IoTuring.Entity.ValueFormat import ValueFormatter
 
 import json
 import yaml
 import re
 import time
+
+INCLUDE_UNITS_IN_SENSORS = False
+INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES = True
 
 SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
@@ -116,11 +120,20 @@ class HomeAssistantWarehouse(Warehouse):
             for entitySensor in entity.GetEntitySensors():
                 if (entitySensor.HasValue()):
                     topic = self.MakeEntityDataTopic(entitySensor)
-                    self.client.SendTopicData(
-                        topic, entitySensor.GetValue())  # send
+                    value = ValueFormatter.FormatValue(entitySensor.GetValue(), entitySensor.GetValueFormatterOptions(), INCLUDE_UNITS_IN_SENSORS)
+                    self.client.SendTopicData(topic, value)  # send
                 if (entitySensor.HasExtraAttributes()):
                     self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
-                                              json.dumps(entitySensor.GetExtraAttributes()))
+                                              json.dumps(self.PrepareExtraAttributes(entitySensor)))
+
+    def PrepareExtraAttributes(self, entitySensor):
+        """ Prepare extra attributes to send to HA """
+        extraAttributesDict = {}
+        extraAttributes = entitySensor.GetExtraAttributes()
+        for extraAttribute in extraAttributes:
+            formatted_value = ValueFormatter.FormatValue(extraAttribute.GetValue(), extraAttribute.GetValueFormatterOptions(), INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
+            extraAttributesDict[extraAttribute.GetName()] = formatted_value
+        return extraAttributesDict
 
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()

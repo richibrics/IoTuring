@@ -98,9 +98,19 @@ class MenuPreset():
             Useful for entities that must have a tag because of their multi-instance possibility """
         self.AddEntry("Tag", "tag", mandatory=True, modify_value_callback=normalize_tag)
 
+
+
+    @staticmethod 
+    def Callback_NormalizeBoolean(value):
+        """ Normalize a boolean value to be used, given a string from user input. To be used as MenuPreset callback. """
+        if value.lower() in BooleanAnswers.TRUE_ANSWERS:
+            return True
+        return False
+
 def normalize_tag(tag):
     """ Normalize a tag to be used safely"""
     return tag.lower().replace(" ", "_")
+
 
 class BooleanAnswers:
     TRUE_ANSWERS = ["y", "yes", "t", "true", "ok", "okay"]  # all lower !

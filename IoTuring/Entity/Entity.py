@@ -1,5 +1,5 @@
 from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Entity.ValueFormatter import ValueFormatter
+from IoTuring.Entity.ValueFormat import ValueFormatter
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntitySensor, EntityCommand
@@ -80,20 +80,13 @@ class Entity(LogObject):
             self.Log(self.LOG_ERROR, 'Error occured during update: ' + str(exc))
             # self.entityManager.UnloadEntity(self) # TODO Think how to improve this
 
-    def Update(self):  #
+    def Update(self):
         """ Must be implemented in sub-classes """
         # Can't be called directly, cause stops everything in exception, call only using CallUpdate
         pass
 
-    def SetEntitySensorValue(self, key, value, value_formatter_options=None) -> None:
-        """ Set the value for an entity sensor. A value_formatter_options (got from ValueFormatter) can be passed to format the value """
-
-        if value_formatter_options is not None:
-            value = ValueFormatter.GetFormattedValue(
-                value, value_formatter_options)
-
-        value = str(value)
-
+    def SetEntitySensorValue(self, key, value) -> None:
+        """ Set the value for an entity sensor """
         self.GetEntitySensorByKey(key).SetValue(value)
 
     def GetEntitySensorValue(self, key) -> str:
@@ -114,9 +107,9 @@ class Entity(LogObject):
                 "The Entity sensor you asked for hasn't got extra attributes")
         return self.GetEntitySensorByKey(key).GetExtraAttributes()
 
-    def SetEntitySensorExtraAttributes(self, key, _dict) -> None:
-        """ Set the extra attributes for an entity sensor """
-        self.GetEntitySensorByKey(key).SetExtraAttributes(_dict)
+    def SetEntitySensorExtraAttribute(self, sensorDataKey, name, value, valueFormatterOptions = None) -> None:
+        """ Set the extra attribute for an entity sensor """
+        self.GetEntitySensorByKey(sensorDataKey).SetExtraAttribute(name, value, valueFormatterOptions)
         
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set how much time to wait between 2 updates """
