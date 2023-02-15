@@ -277,7 +277,7 @@ class Configurator(LogObject):
             preset = entityClass.ConfigurationPreset()
 
             if preset is not None:  # Then let's configure the Entity
-                # Ask also for Tag if the entity allows multi-instance
+                # Ask also for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available 
                 if entityClass.AllowMultiInstance():
                     preset.AddTagQuestion()
 
