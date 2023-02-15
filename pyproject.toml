@@ -34,7 +34,7 @@ dependencies = [
 homepage = "https://github.com/richibrics/IoTuring"
 documentation = "https://github.com/richibrics/IoTuring"
 repository = "https://github.com/richibrics/IoTuring"
-changelog = "https://github.com/richibrics/IoTuring/commits/main"
+changelog = "https://github.com/richibrics/IoTuring/releases"
 
 [project.scripts]
 IoTuring = "IoTuring:loop"
