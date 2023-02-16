@@ -38,7 +38,7 @@ class Warehouse(LogObject):
                 self.Loop()
 
     def GetEntities(self) -> list:
-        return EntityManager.getInstance().GetEntities(includePassive=False)
+        return EntityManager.getInstance().GetEntities()
 
     # Called by "LoopThread", with time constant defined in "ShouldCallLoop"
     def Loop(self) -> None:

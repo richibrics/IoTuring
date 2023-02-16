@@ -12,7 +12,6 @@ DEFAULT_UPDATE_TIMEOUT = 10
 
 class Entity(LogObject):
     NAME = "Unnamed"
-    DEPENDENCIES = []
     ALLOW_MULTI_INSTANCE = False
 
     def __init__(self, configurations) -> None:
@@ -52,18 +51,10 @@ class Entity(LogObject):
     def CallPostInitialize(self) -> bool:
         """ Safe method to run the PostInitialize function. Returns True if no error occcured. """
         try:
-            missingDependencies = self.GetMissingDependencies()
-            if len(missingDependencies) == 0:
-                self.PostInitialize()
-                self.postinitializeState = True
-                self.Log(self.LOG_INFO,
-                         "Post-initialization successfully completed")
-            else:
-                raise Exception("Some dependencies were not correctly loaded: " +
-                                "check if there have been errors in their log " +
-                                "and, if not already present in the configuration, try to activate them.\n" +
-                                "Missing dependencies: " + ", ".join(missingDependencies))
-
+            self.PostInitialize()
+            self.postinitializeState = True
+            self.Log(self.LOG_INFO,
+                        "Post-initialization successfully completed")
         except Exception as e:
             self.Log(self.LOG_ERROR,
                      "Post-initialization interrupted due to an error:")
@@ -168,17 +159,6 @@ class Entity(LogObject):
         else:
             return self.GetEntityName()+" @" + self.GetEntityTag()
 
-    @classmethod
-    def GetDependenciesList(self) -> str:
-        """ Static method, (safe) return the DEPENDENCIES list in the entity """
-        return self.DEPENDENCIES.copy()  # Safe return
-
-    def GetDependentEntitySensorValue(self, entityToFind, dataKeyToFind):
-        """ Return the value of "entityToFind"."dataKeyToFind" if it has value and I have the permission to access that entity.
-            Permission is granted if "entityToFind" is present in self.GetDependenciesList() """
-
-        return EntityManager.getInstance().GetDependentEntitySensorValue(self, entityToFind, dataKeyToFind)
-
     def GetEntityId(self) -> str:
         if self.tag is not None and self.tag != "":
             return "Entity." + self.GetEntityName() + "." + self.tag
@@ -201,13 +181,6 @@ class Entity(LogObject):
             self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
         else:
             self.tag = ""
-
-    def GetMissingDependencies(self) -> list:
-        """ Returns a list of entity names:
-            if all the Entities specified in an entity dependencies list have been initialized,
-            which means they must be activated in the configuration and also working correctly, list will be empty
-            The list will contain missing dependencies otherwise """
-        return EntityManager.getInstance().CheckEntityDependenciesSatisfied(self)
 
     @classmethod
     def AllowMultiInstance(self):
