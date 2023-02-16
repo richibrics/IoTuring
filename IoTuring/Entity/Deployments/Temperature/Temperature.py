@@ -2,7 +2,7 @@ import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
-from IoTuring.SystemConsts.SystemConsts import Os
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD # don't name Os as could be a problem with old configurations that used the Os entity
 
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
@@ -43,10 +43,10 @@ class Temperature(Entity):
         self.specificInitialize = None
         self.specificUpdate = None
         
-        if Os.IsLinux():
+        if OsD.IsLinux():
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
-        elif Os.IsMacos():
+        elif OsD.IsMacos():
             self.specificInitialize = self.InitmacOS
             self.specificUpdate = self.UpdatemacOS
         else:

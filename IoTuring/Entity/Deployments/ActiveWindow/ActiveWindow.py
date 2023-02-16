@@ -1,6 +1,6 @@
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.Entity import consts
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection
 
 # Linux dep
 try:
@@ -9,7 +9,7 @@ try:
     import sys
     from subprocess import PIPE, Popen
     linux_support = True
-except:
+except BaseException:
     linux_support = False
 
 
@@ -17,43 +17,41 @@ except:
 try:
     from win32gui import GetWindowText, GetForegroundWindow
     windows_support = True
-except:
+except BaseException:
     windows_support = False
 
-# macOS dep (in PyObjC)
+# macOS dep
 try:
     from AppKit import NSWorkspace
     macos_support = True
-except:
+except BaseException:
     macos_support = False
-
 
 KEY = 'active_window'
 
 
 class ActiveWindow(Entity):
     NAME = "ActiveWindow"
-    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def PostInitialize(self):
-        os = self.GetDependentEntitySensorValue("Os", "operating_system")
-        # Specific function for this os/de, set this here to avoid all OS filters on Update
+        # Specific function for this os/de, set this here to avoid all OS
+        # filters on Update
         self.UpdateSpecificFunction = None
 
-        if os == consts.OS_FIXED_VALUE_LINUX:
+        if OperatingSystemDetection.IsLinux():
             if linux_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Linux
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif os == consts.OS_FIXED_VALUE_WINDOWS:
+        elif OperatingSystemDetection.IsWindows():
             if windows_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Windows
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif os == consts.OS_FIXED_VALUE_MACOS:
+        elif OperatingSystemDetection.IsMacos():
             if macos_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_macOS
             else:
@@ -70,7 +68,7 @@ class ActiveWindow(Entity):
             curr_app = NSWorkspace.sharedWorkspace().activeApplication()
             curr_app_name = curr_app['NSApplicationName']
             return curr_app_name  # Better choice beacuse on Mac the window title is a bit buggy
-        except:
+        except BaseException:
             return "Inactive"
 
     def GetActiveWindow_Windows(self):
@@ -80,14 +78,14 @@ class ActiveWindow(Entity):
         root = Popen(['xprop', '-root', '_NET_ACTIVE_WINDOW'], stdout=PIPE)
         stdout, stderr = root.communicate()
 
-        m = re.search(b'^_NET_ACTIVE_WINDOW.* ([\w]+)$', stdout)
+        m = re.search(b'^_NET_ACTIVE_WINDOW.* ([\\w]+)$', stdout)
 
         if m is not None:
             window_id = m.group(1)
             window = Popen(['xprop', '-id', window_id, 'WM_NAME'], stdout=PIPE)
             stdout, stderr = window.communicate()
 
-            match = re.match(b'WM_NAME\(\w+\) = (?P<name>.+)$', stdout)
+            match = re.match(b'WM_NAME\\(\\w+\\) = (?P<name>.+)$', stdout)
             if match is not None:
                 return match.group('name').decode('UTF-8').strip('"')
 
