@@ -2,7 +2,7 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.App import App
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 import json
 
@@ -15,8 +15,8 @@ except:
     supports_win = False
 
 commands = {
-    OperatingSystemDetection.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
-    OperatingSystemDetection.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+    OsD.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
+    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
 }
 
 
@@ -71,17 +71,16 @@ class Notify(Entity):
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     def PostInitialize(self): # Prepare the notification system
-        if OperatingSystemDetection.IsWindows():
+        if OsD.IsWindows():
             if not supports_win:
                 raise Exception(
                     'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 
-        elif OperatingSystemDetection.IsLinux() \
-            or OperatingSystemDetection.IsMacos():
+        elif OsD.IsLinux() or OsD.IsMacos():
             # Use 'command -v' to test if comman exists:
-            if os.system(f'command -v {commands[OperatingSystemDetection.GetOs()].split(" ")[0]}') != 0:
+            if os.system(f'command -v {commands[OsD.GetOs()].split(" ")[0]}') != 0:
                 raise Exception(
-                    f'Command not found {commands[OperatingSystemDetection.GetOs()].split(" ")[0]}!'
+                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
                 )  
         else:
             raise Exception(
@@ -107,7 +106,7 @@ class Notify(Entity):
 
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
-        if  OperatingSystemDetection.IsWindows():
+        if OsD.IsWindows():
             toast_icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ICON_FILENAME)
             twt.getToast(
                 title=self.notification_title, 
@@ -116,17 +115,17 @@ class Notify(Entity):
                 appId=App.getName(),
                 isMute=False).show()
 
-        elif OperatingSystemDetection.IsLinux():
-            os.system(commands[OperatingSystemDetection.GetOs()]
+        elif OsD.IsLinux():
+            os.system(commands[OsD.GetOs()]
                 .format(self.notification_title,self.notification_message))
 
-        elif OperatingSystemDetection.IsMacos():
-            os.system(commands[OperatingSystemDetection.GetOs()]
+        elif OsD.IsMacos():
+            os.system(commands[OsD.GetOs()]
                 .format(self.notification_message,self.notification_title))
 
         else:
             self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
-                     str(OperatingSystemDetection.GetOs()) + ")... Aborting")
+                     str(OsD.GetOs()) + ")... Aborting")
 
     @classmethod
     def ConfigurationPreset(self):

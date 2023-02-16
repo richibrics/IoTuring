@@ -1,6 +1,6 @@
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 # Linux dep
 try:
@@ -41,17 +41,17 @@ class ActiveWindow(Entity):
         # filters on Update
         self.UpdateSpecificFunction = None
 
-        if OperatingSystemDetection.IsLinux():
+        if OsD.IsLinux():
             if linux_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Linux
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif OperatingSystemDetection.IsWindows():
+        elif OsD.IsWindows():
             if windows_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Windows
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
-        elif OperatingSystemDetection.IsMacos():
+        elif OsD.IsMacos():
             if macos_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_macOS
             else:

@@ -6,7 +6,7 @@ import re
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_STATE = 'monitor_state'
 KEY_CMD = 'monitor'
@@ -16,7 +16,7 @@ class Monitor(Entity):
 
     def Initialize(self):
         supports_linux = False
-        if OperatingSystemDetection.IsLinux():
+        if OsD.IsLinux():
             # Check if xset is working:
             p = subprocess.run(
                 ['xset', 'dpms'], capture_output=True, shell=False)
@@ -27,7 +27,7 @@ class Monitor(Entity):
             else:
                 supports_linux = True
 
-        if OperatingSystemDetection.IsWindows():
+        if OsD.IsWindows():
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_CMD, self.Callback))
         elif supports_linux: # True only if linux and command is working
@@ -40,23 +40,23 @@ class Monitor(Entity):
         payloadString = message.payload.decode('utf-8')
 
         if payloadString == STATE_ON:
-            if OperatingSystemDetection.IsWindows():
+            if OsD.IsWindows():
                 ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, -1)
-            elif OperatingSystemDetection.IsLinux():
+            elif OsD.IsLinux():
                 command = 'xset dpms force on'
                 subprocess.Popen(command.split(), stdout=subprocess.PIPE)
 
         elif payloadString == STATE_OFF:
-            if OperatingSystemDetection.IsWindows():
+            if OsD.IsWindows():
                 ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, 2)
-            elif OperatingSystemDetection.IsLinux():
+            elif OsD.IsLinux():
                 command = 'xset dpms force off'
                 subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         else:
             raise Exception('Incorrect payload!')
 
     def Update(self):
-        if OperatingSystemDetection.IsLinux():
+        if OsD.IsLinux():
             p = subprocess.run(['xset', 'q'], capture_output=True, shell=False)
             outputString = p.stdout.decode()
             monitorState = re.findall(

@@ -2,7 +2,7 @@ import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_USED_PERCENTAGE = 'space_used_percentage'
 
@@ -17,7 +17,7 @@ class Disk(Entity):
         self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage())
 
     def GetDiskUsedPercentage(self):
-        if OperatingSystemDetection.IsMacos():
+        if OsD.IsMacos():
             return psutil.disk_usage('/Users')[3] # macos has a different disk structure
         else:
             return psutil.disk_usage('/')[3]
