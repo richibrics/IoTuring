@@ -57,12 +57,12 @@ class Logger():
 
     # LOG
 
-    def Log(self, messageType, source, message) -> None:
+    def Log(self, messageType, source, message, printToConsole=True, writeToFile=True) -> None:
         if type(message) == dict:
-            self.LogDict(messageType, source, message)
+            self.LogDict(messageType, source, message, printToConsole, writeToFile)
             return  # Log dict will call this function so I don't need to go down at the moment
         elif type(message) == list:
-            self.LogList(messageType, source, message)
+            self.LogList(messageType, source, message, printToConsole, writeToFile)
             return  # Log list will call this function so I don't need to go down at the moment
 
         message = str(message)
@@ -70,7 +70,7 @@ class Logger():
         messageLines = message.split("\n")
         if len(messageLines) > 1:
             for line in messageLines:
-                self.Log(messageType, source, line)
+                self.Log(messageType, source, line, printToConsole, writeToFile)
             return  # Stop the function then because I've already called this function from each line so I don't have to go down here
 
         if messageType == self.LOG_INFO:
@@ -99,7 +99,7 @@ class Logger():
             # then I add the dash to the row
             if(len(message) > 0 and string[-1] != " " and string[-1] != "." and string[-1] != ","):
                 string = string + '-'  # Print new line indicator if I will go down in the next iteration
-            self.PrintAndSave(string, messageType)
+            self.PrintAndSave(string, messageType, printToConsole, writeToFile)
             # -1 + space cause if the char in the prestring isn't a space, it will be directly attached to my message without a space
 
             prestring = (len(prestring)-consts.PRESTRING_MESSAGE_SEPARATOR_LEN) * \
@@ -130,10 +130,10 @@ class Logger():
 
     # Both print and save to file
 
-    def PrintAndSave(self, string, level) -> None:
-        if level <= consts.CONSOLE_LOG_LEVEL:
+    def PrintAndSave(self, string, level, printToConsole=True, writeToFile=True) -> None:
+        if printToConsole and level <= consts.CONSOLE_LOG_LEVEL:
             self.ColoredPrint(string, level)
-        if level <= consts.FILE_LOG_LEVEL:
+        if writeToFile and level <= consts.FILE_LOG_LEVEL:
             # acquire the lock
             with self.lock:
                 self.GetLogFileDescriptor().write(string+' \n')

@@ -65,6 +65,8 @@ def loop():
         time.sleep(1)
 
 def Exit_SIGINT_handler(sig, frame):
+    Logger.getInstance().Log(Logger.LOG_INFO, "Main", "Application closed by SigInt", printToConsole=False) # to file
+    
     messages = ["Exiting...",
                 "Thanks for using IoTuring !"]
     print("") # New line
@@ -75,6 +77,7 @@ def Exit_SIGINT_handler(sig, frame):
         text += message 
         if(Logger.checkTerminalSupportsColors()):
             text += Colors.reset
-        Logger.getInstance().Log(Logger.LOG_INFO, "Main", text)
+        Logger.getInstance().Log(Logger.LOG_INFO, "Main", text, writeToFile=False) # to terminal
+        
     Logger.getInstance().CloseFile()
     os._exit(0)
