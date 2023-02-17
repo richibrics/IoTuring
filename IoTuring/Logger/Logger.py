@@ -6,6 +6,7 @@ import os  # to access directory functions
 import inspect  # to get this file path
 from datetime import datetime  # for logging purpose and filename
 import json  # to print a dict easily
+import threading  # to lock the file descriptor
 # Singleton pattern used
 
 
@@ -13,6 +14,8 @@ class Logger():
 
     from IoTuring.Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
     __instance = None
+
+    lock = threading.Lock()
 
     log_filename = ""
     log_file_descriptor = None
@@ -29,6 +32,8 @@ class Logger():
         
         # Prepare the log
         self.SetLogFilename()
+        # Open the file descriptor
+        self.GetLogFileDescriptor()
 
     def SetLogFilename(self) -> str:
         """ Set filename with timestamp and also call setup folder """
@@ -100,9 +105,6 @@ class Logger():
             prestring = (len(prestring)-consts.PRESTRING_MESSAGE_SEPARATOR_LEN) * \
                 consts.LONG_MESSAGE_PRESTRING_CHAR+consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '
 
-        # After log I close the file so the log is visible outside the script # TODO Better way to do this without closing always the file ?
-        self.CloseFile()
-
     def LogDict(self, messageLevel, source, dict):
         try:
             string = json.dumps(dict, indent=4, sort_keys=False,
@@ -132,7 +134,9 @@ class Logger():
         if level <= consts.CONSOLE_LOG_LEVEL:
             self.ColoredPrint(string, level)
         if level <= consts.FILE_LOG_LEVEL:
-            self.GetLogFileDescriptor().write(string+' \n')
+            # acquire the lock
+            with self.lock:
+                self.GetLogFileDescriptor().write(string+' \n')
 
     def ColoredPrint(self, string, level) -> None:
         if not self.terminalSupportsColors:

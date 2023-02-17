@@ -76,4 +76,5 @@ def Exit_SIGINT_handler(sig, frame):
         if(Logger.checkTerminalSupportsColors()):
             text += Colors.reset
         Logger.getInstance().Log(Logger.LOG_INFO, "Main", text)
+    Logger.getInstance().CloseFile()
     os._exit(0)
