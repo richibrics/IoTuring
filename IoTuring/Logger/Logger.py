@@ -137,6 +137,7 @@ class Logger():
             # acquire the lock
             with self.lock:
                 self.GetLogFileDescriptor().write(string+' \n')
+            self.GetLogFileDescriptor().flush() # so I can see the log in real time from a reader
 
     def ColoredPrint(self, string, level) -> None:
         if not self.terminalSupportsColors:
