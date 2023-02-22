@@ -1,5 +1,5 @@
 LOGS_FOLDER = "Logs"
-LOG_FILENAME_FORMAT = "Log_%Y-%m-%d_%H:%M:%S.log"
+LOG_FILENAME_FORMAT = "{}_%Y-%m-%d_%H:%M:%S.log" # first place for App Name
 MESSAGE_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
