@@ -17,10 +17,16 @@ class LogsDirectory(GetDirectory):
     def _macOSFolderPath(self):
         return os.path.join(NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, True)[0], "Logs")
     
-    # get the folder where windows stores all the application log files
+    # get the folder on windows where to store application log file
     def _windowsFolderPath(self):
-        return os.path.join(os.environ["APPDATA"], "Logs")
+        # return joined local app data folder and "Logs" subfolder
+        return os.path.join(os.environ["LOCALAPPDATA"], "Logs")
     
     # get the folder where linux stores all the application log files
     def _linuxFolderPath(self):
-        return os.path.join(os.environ["HOME"], ".local", "share", "Logs")
+        # There is no standard in the XDG spec for logs, so place it in $XDG_CACHE_HOME, and fallback to $HOME/.cache
+        if "XDG_CACHE_HOME" in os.environ:
+            return os.path.join(os.environ["XDG_CACHE_HOME"], "Logs")
+        else:
+            return os.path.join(os.environ["HOME"], ".cache", "Logs")
+            
