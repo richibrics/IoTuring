@@ -191,13 +191,11 @@ class psutilTemperaturePackage():
             else:
                 label = FALLBACK_SENSOR_LABEL.format(index)
             if sensor.hasCurrent():
-                attributes[label +
-                           " - Current"] = str(sensor.getCurrent()) + "°C"
+                attributes[f"{label} - Current"] = sensor.getCurrent()
             if sensor.hasHighest():
-                attributes[label +
-                           " - Highest"] = str(sensor.getHighest()) + "°C"
+                attributes[f"{label} - Highest"] = sensor.getHighest()
             if sensor.hasCritical():
-                attributes[label + " - Critical"] = str(sensor.getCritical()) + "°C"
+                attributes[ f"{label} - Critical"] = sensor.getCritical()
         return attributes
 
 
