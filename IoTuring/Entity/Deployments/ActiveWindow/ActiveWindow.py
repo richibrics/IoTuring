@@ -1,12 +1,12 @@
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
+
 
 # Linux dep
 try:
-    import os
     import re
-    import sys
     from subprocess import PIPE, Popen
     linux_support = True
 except BaseException:
@@ -34,15 +34,15 @@ class ActiveWindow(Entity):
     NAME = "ActiveWindow"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY))
 
-    def PostInitialize(self):
         # Specific function for this os/de, set this here to avoid all OS
         # filters on Update
         self.UpdateSpecificFunction = None
 
         if OsD.IsLinux():
-            if linux_support:
+            if De.IsWayland():
+                raise Exception("Wayland is not supported")
+            elif linux_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Linux
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
@@ -59,6 +59,9 @@ class ActiveWindow(Entity):
         else:
             raise Exception(
                 'Entity not available for this operating system')
+
+        if self.UpdateSpecificFunction:
+            self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def Update(self):
         self.SetEntitySensorValue(KEY, str(self.UpdateSpecificFunction()))
