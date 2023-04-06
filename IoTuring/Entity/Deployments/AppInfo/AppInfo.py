@@ -21,7 +21,6 @@ class AppInfo(Entity):
         self.RegisterEntitySensor(EntitySensor(self, KEY_VERSION))
         self.RegisterEntitySensor(EntitySensor(self, KEY_UPDATE, supportsExtraAttributes=True))
 
-    def PostInitialize(self):
         self.SetEntitySensorValue(KEY_NAME, App.getName())
         self.SetEntitySensorValue(KEY_VERSION, App.getVersion())
         self.SetUpdateTimeout(600)

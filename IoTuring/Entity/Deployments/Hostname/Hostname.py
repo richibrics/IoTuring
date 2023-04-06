@@ -10,7 +10,7 @@ class Hostname(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_HOSTNAME))
-        # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
+        # The value for this sensor is static for the entire script run time
         self.SetEntitySensorValue(KEY_HOSTNAME, self.GetHostname())
 
     def GetHostname(self):

@@ -23,7 +23,6 @@ class Entity(LogObject):
         self.SetTagFromConfiguration()
 
         self.initializeState = False
-        self.postinitializeState = False
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
         self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
@@ -40,24 +39,6 @@ class Entity(LogObject):
             self.Log(self.LOG_INFO, "Initialization successfully completed")
         except Exception as e:
             self.Log(self.LOG_ERROR, "Initialization interrupted due to an error:")
-            self.Log(self.LOG_ERROR, e)
-            return False
-        return True
-
-    def PostInitialize(self):
-        """ Must be implemented in sub-classes """
-        pass
-
-    def CallPostInitialize(self) -> bool:
-        """ Safe method to run the PostInitialize function. Returns True if no error occcured. """
-        try:
-            self.PostInitialize()
-            self.postinitializeState = True
-            self.Log(self.LOG_INFO,
-                        "Post-initialization successfully completed")
-        except Exception as e:
-            self.Log(self.LOG_ERROR,
-                     "Post-initialization interrupted due to an error:")
             self.Log(self.LOG_ERROR, e)
             return False
         return True
@@ -119,11 +100,11 @@ class Entity(LogObject):
                 self.CallUpdate()
 
     def RegisterEntitySensor(self, entitySensor: EntitySensor):
-        """ Add EntitySensor to the Entity. This action must be in Initialize or in PostInitialize """
+        """ Add EntitySensor to the Entity. This action must be in Initialize """
         self.entitySensors.append(entitySensor)
 
     def RegisterEntityCommand(self, entityCommand: EntityCommand):
-        """ Add EntityCommand to the Entity. This action must be in Initialize or in PostInitialize, so the Warehouses can subscribe to them at initializing time"""
+        """ Add EntityCommand to the Entity. This action must be in Initialize, so the Warehouses can subscribe to them at initializing time"""
         self.entityCommands.append(entityCommand)
 
     def GetEntitySensors(self) -> list:

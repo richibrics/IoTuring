@@ -19,7 +19,6 @@ class DesktopEnvironment(Entity):
             self, KEY_DE, supportsExtraAttributes=OsD.IsLinux()))
 
         # The value for this sensor is static for the entire script run time
-        # (set in initialize so other entities can get the value from Postinitialize)
         self.SetEntitySensorValue(KEY_DE, De.GetDesktopEnvironment())
 
         # Add an attribute on linux checking if it's a wayland session:

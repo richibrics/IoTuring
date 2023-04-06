@@ -39,7 +39,6 @@ class Temperature(Entity):
     def Initialize(self):
         self.temperatureFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_TEMPERATURE, decimals=TEMPERATURE_DECIMALS)
 
-    def PostInitialize(self):
         self.specificInitialize = None
         self.specificUpdate = None
         

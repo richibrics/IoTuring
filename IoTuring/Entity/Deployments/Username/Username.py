@@ -10,10 +10,9 @@ class Username(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_USERNAME))
-
-    def PostInitialize(self):
         self.SetEntitySensorValue(KEY_USERNAME, self.GetUsername())
 
+    
     def Update(self):
         pass
 

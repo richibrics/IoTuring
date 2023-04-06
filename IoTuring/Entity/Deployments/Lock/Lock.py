@@ -28,7 +28,6 @@ class Lock(Entity):
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_LOCK, self.Callback_Lock))
 
-    def PostInitialize(self):
         self.os = OsD.GetOs()
         self.de = De.GetDesktopEnvironment()
 

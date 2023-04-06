@@ -17,7 +17,7 @@ VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0 = ValueFormatterOptions(value_type=Value
 class Volume(Entity):
     NAME = "Volume"
 
-    def PostInitialize(self):        
+    def Initialize(self):        
         if OsD.IsMacos():        
             self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, supportsExtraAttributes=True, valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0))
             self.RegisterEntityCommand(EntityCommand(

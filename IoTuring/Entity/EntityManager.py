@@ -29,7 +29,6 @@ class EntityManager(LogObject):
 
     def Start(self):
         self.InitializeEntities()
-        self.PostInitializeEntities()
         self.ManageUpdates()
 
     def GetEntities(self) -> list:
@@ -47,13 +46,8 @@ class EntityManager(LogObject):
         self.Log(self.LOG_INFO, entity.GetEntityId() + " unloaded")
 
     def InitializeEntities(self):
-        for entity in self.GetEntities():
+        for entity in self.GetEntities().copy():
             if not entity.CallInitialize():
-                self.UnloadEntity(entity) # if errors, unload
-
-    def PostInitializeEntities(self):
-        for entity in self.GetEntities():
-            if not entity.CallPostInitialize():
                 self.UnloadEntity(entity) # if errors, unload
 
     def ManageUpdates(self):
