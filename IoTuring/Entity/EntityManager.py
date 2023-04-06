@@ -53,9 +53,12 @@ class EntityManager(LogObject):
     def ManageUpdates(self):
         """ Start a thread for each entity in which it will update periodically """
         for entity in self.GetEntities():
-            thread = Thread(target=entity.LoopThread)
-            thread.daemon = True
-            thread.start()
+            
+            # Only start threads for entities with Update() method:
+            if not entity.Update.__qualname__ == "Entity.Update":
+                thread = Thread(target=entity.LoopThread)
+                thread.daemon = True
+                thread.start()
 
     # Singleton method
 

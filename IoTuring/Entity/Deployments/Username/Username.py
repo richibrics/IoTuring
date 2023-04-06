@@ -12,9 +12,6 @@ class Username(Entity):
         self.RegisterEntitySensor(EntitySensor(self, KEY_USERNAME))
         self.SetEntitySensorValue(KEY_USERNAME, self.GetUsername())
 
-    
-    def Update(self):
-        pass
 
     def GetUsername(self):
         # Gives user's home directory
