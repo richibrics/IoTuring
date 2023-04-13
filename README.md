@@ -124,18 +124,20 @@ All sensors and switches will be available to be added to your dashboard in your
 | Cpu                | shares useful information about cpu usage (times, frequencies, percentages) | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | DesktopEnvironment | shares the running desktop environment (useful only for Linux)              | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Disk               | shares disk usage data                                                      | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
+| DisplayMode        | command for changing multimonitor display mode                              | ![win](docs/images/win.png)                                                             |
 | Hostname           | shares the machine hostname                                                 | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Lock               | command for locking the machine                                             | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Monitor            | command for switching monitors on/off                                       | ![win](docs/images/win.png) ![linux](docs/images/linux.png)                             |
 | Notify             | displays a notification                                                     | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
-| Os                 | shares the operating system of your machine                                 | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
+| OperatingSystem    | shares the operating system of your machine                                 | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Power*             | commands for poweroff, reboot and sleep                                     | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Ram                | shares useful information about ram usage                                   | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Time               | shares the machine local time                                               | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Temperature        | shares temperature sensor data                                              | ![mac](docs/images/mac.png) ![linux](docs/images/linux.png)                             |
+| Terminal           | runs custom commands in the shell                                           | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Uptime             | shares the time since the machine is on                                     | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
 | Username           | shares the name of the user who is working on the machine                   | ![win](docs/images/win.png) ![mac](docs/images/mac.png) ![linux](docs/images/linux.png) |
-| Volume           | control audio volume                | ![mac](docs/images/mac.png)  |
+| Volume             | control audio volume                                                        | ![mac](docs/images/mac.png)                                                             |
 
 \* To use the features from Power entity on Linux and macOS you need to give permissions to your user to shutdown and reboot without sudo password.
 You can easily do that by adding the following line at the end of the "/etc/sudoers" file (you can use the following command: sudo nano /etc/sudoers):
