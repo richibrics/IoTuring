@@ -84,6 +84,9 @@ class Terminal(Entity):
         # Get data from payload:
         payloadString = message.payload.decode('utf-8')
 
+        self.Log(self.LOG_DEBUG,
+                 f"Decoded payload string: {payloadString}")
+
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:
             # Check regex and max length
             if re.search(self.config_command_on, payloadString) \
@@ -130,7 +133,7 @@ class Terminal(Entity):
         """Run a command, log, collect output"""
 
         # Run the command:
-        p = subprocess.run(command, capture_output=True, shell=True)
+        p = subprocess.run(command, capture_output=True, shell=True, universal_newlines=True,)
 
         output = {
             "returncode": p.returncode,
@@ -139,14 +142,14 @@ class Terminal(Entity):
 
         # Log output and error:
         if p.stderr:
-            output["message"] = "Error: " + p.stderr.decode()
+            output["message"] = "Error: " + p.stderr
             loglevel = self.LOG_ERROR if log_errors else self.LOG_DEBUG
             self.Log(loglevel,
-                     f"Error running command '{command}': {p.stderr.decode()}")
+                     f"Error running command '{command}': {p.stderr}")
         else:
-            output["message"] = p.stdout.decode()
+            output["message"] = p.stdout
             self.Log(self.LOG_DEBUG,
-                     f"Command '{command}' run, stdout: {p.stdout.decode()}")
+                     f"Command '{command}' run, stdout: {p.stdout}")
         return output
 
     @classmethod
