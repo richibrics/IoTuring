@@ -71,9 +71,10 @@ class Notify(Entity):
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
         # Prepare the notification system
-        if OsD.IsWindows() and not supports_win:
-            raise Exception(
-                'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+        if OsD.IsWindows():
+            if not supports_win:
+                raise Exception(
+                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 
         elif OsD.IsLinux() or OsD.IsMacos():
             if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):            
