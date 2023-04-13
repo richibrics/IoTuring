@@ -82,3 +82,12 @@ Volume:
   icon: mdi:volume-high
   unit_of_measurement: "%"
   custom_type: number
+TerminalPayload:
+  icon: mdi:console-line
+  custom_type: text
+TerminalSwitch:
+  icon: mdi:console
+  custom_type: switch
+Terminal:
+  icon: mdi:console
+  custom_type: button

@@ -1,24 +1,27 @@
+import re
+
 class MenuPreset():
 
     def __init__(self) -> None:
         self.preset = []
 
-    def AddEntry(self, name, key, default=None, mandatory=False, display_if_value_for_following_key_provided=None, modify_value_callback=None):
+    def AddEntry(self, name, key, default=None, mandatory=False, display_if_key_value_regex_match=None, modify_value_callback=None):
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
         - name: the name to display to the user
         - default: the default value to use if the user doesn't provide one (works only if mandatory=False)
         - mandatory: if the user must provide a value for this entry
-        - display_if_value_for_following_key_provided: key of an entry (that must preceed this) that will enable this one, if the user has provided a value for that.
+        - display_if_key_value_regex_match: dict of a key and value regex of an entry (that must preceed this) that will enable this one, if the provided value of that key matches the value regex
           * If it's None, the entry will always be displayed
-          * If it has a key, the entry won't be displayed if menu[provided_key] has value.
+          * If value of the key doesn't match the regex, it won't be displayed
+          * If value of a key is a boolean True it will be displayed if anything was given
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
         - modify_value_callback: a callback to modify the value before it's set in the dict (called also for a default value). The callback must have the following signature: NAME(value) -> value
         """
         self.preset.append(
-            {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_value_for_following_key_provided, "modify_value_callback": modify_value_callback, "value": None})
+            {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_key_value_regex_match, "modify_value_callback": modify_value_callback, "value": None})
 
     def ListEntries(self):
         return self.preset
@@ -28,8 +31,27 @@ class MenuPreset():
             question = ""
             value = None
             if id < len(self.preset):
-                # if the display of this does not depend on a previous entry, or if the previous entry (this depends on) has a value: ask for a value
-                if self.preset[id]["dependsOn"] is None or self.RetrievePresetAnswerByKey(self.preset[id]["dependsOn"]): 
+                shouldDisplay = True
+
+                # Check previous entry regexes:
+                if self.preset[id]["dependsOn"]:
+                    matches = []
+                    # Multiple rules are possible:
+                    for key in self.preset[id]["dependsOn"]:
+                        # If value is True, anything ok:
+                        if type(self.preset[id]["dependsOn"][key]) is bool and \
+                                self.preset[id]["dependsOn"][key]:
+                            matches.append(bool(self.RetrievePresetAnswerByKey(key)))
+                        else:
+                            # Check if regex matches:
+                            matches.append(re.search(self.preset[id]["dependsOn"][key], str(
+                                self.RetrievePresetAnswerByKey(key))))
+                    # All should match:
+                    if not all(matches):
+                        shouldDisplay = False
+
+                # ask for a value:
+                if shouldDisplay:
                     question = "Add value for \""+self.preset[id]["name"]+"\""
                     if self.preset[id]['mandatory']:
                         question = question + " {!}"
