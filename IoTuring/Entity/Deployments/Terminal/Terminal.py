@@ -61,6 +61,7 @@ class Terminal(Entity):
                 self.switch_mode = MODE_SWITCH_WITH_STATE
             elif self.GetConfigurations()[CONFIG_KEY_COMMAND_OFF]:
                 self.switch_mode = MODE_SWITCH_WITHOUT_STATE
+                self.optimistic = True
 
         # Update name based on mode:
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:

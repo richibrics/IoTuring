@@ -55,6 +55,7 @@ Time:
   icon: "mdi:clock"
 Monitor:
   icon: "mdi:monitor-shimmer"
+  custom_type: switch
 AppInfo - update:
   custom_type: binary_sensor
   icon: "mdi:package-up"
