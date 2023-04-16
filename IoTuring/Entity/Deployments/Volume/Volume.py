@@ -18,7 +18,7 @@ VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0 = ValueFormatterOptions(
 
 commands = {
     OsD.OS_FIXED_VALUE_LINUX: 'pactl set-sink-volume @DEFAULT_SINK@ {}%',
-    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e set volume output volume {}'
+    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e "set volume output volume {}"'
 }
 
 
