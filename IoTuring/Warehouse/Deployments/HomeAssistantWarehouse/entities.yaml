@@ -83,12 +83,21 @@ Volume:
   icon: mdi:volume-high
   unit_of_measurement: "%"
   custom_type: number
-TerminalPayload:
+TerminalPayloadCommand:
   icon: mdi:console-line
   custom_type: text
 TerminalSwitch:
   icon: mdi:console
   custom_type: switch
-Terminal:
+TerminalSensor:
+  icon: mdi:console
+  custom_type: sensor
+TerminalBinarySensor:
+  icon: mdi:console
+  custom_type: binary_sensor
+TerminalCover:
+  icon: mdi:console
+  custom_type: cover
+TerminalButton:
   icon: mdi:console
   custom_type: button

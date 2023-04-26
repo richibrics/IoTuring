@@ -4,6 +4,7 @@ class MenuPreset():
 
     def __init__(self) -> None:
         self.preset = []
+        self.result = []
 
     def AddEntry(self, name, key, default=None, mandatory=False, display_if_key_value_regex_match=None, modify_value_callback=None):
         """ 
@@ -74,35 +75,38 @@ class MenuPreset():
                         else:
                             value = None 
                     # else value already in value
-                else: 
-                    # If the entry is not displayed, set the default value if provided
-                    if self.preset[id]["default"]: # if I have a default
-                        # Set in the preset
-                        value = self.preset[id]["default"]
-                    else:
-                        return None # don't set anything
+
+                # If it already has value from another question:
+                elif self.preset[id]['key'] in [ r['key'] for r in self.result]:
+                    return
+
+                # If the entry is not displayed, set the default value if provided
+                elif self.preset[id]["default"]: # if I have a default    
+                    # Set in the preset
+                    value = self.preset[id]["default"]
+                
                     
                 # if a callback is provided, use it to modify the value
-                if value is not None and "modify_value_callback" in self.preset[id] and self.preset[id]["modify_value_callback"]:
-                    value = self.preset[id]["modify_value_callback"](value) 
+                if value and self.preset[id]["modify_value_callback"]:
+                    value = self.preset[id]["modify_value_callback"](value)
+
                 self.preset[id]['value'] = value
-                return value
+                # move the answered question to results:
+                self.result.append(self.preset[id])
+                
                     
         except Exception as e:
             print("Error while making the question:", e)
 
     def RetrievePresetAnswerByKey(self, key):
-        for entry in self.preset:
+        for entry in self.result:
             if entry['key'] == key:
                 return entry['value']
         return None
 
     def GetDict(self) -> dict:
         """ Get a dict with keys and responses"""
-        result = {}
-        for entry in self.preset:
-            result[entry['key']] = entry['value']
-        return result
+        return {entry['key']: entry['value'] for entry in self.result}
 
     @staticmethod
     def PrintRules() -> None:

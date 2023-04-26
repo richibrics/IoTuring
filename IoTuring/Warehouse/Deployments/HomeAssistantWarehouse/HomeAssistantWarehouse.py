@@ -234,6 +234,11 @@ class HomeAssistantWarehouse(Warehouse):
                 payload["payload_available"] = LWT_PAYLOAD_ONLINE
                 payload["payload_not_available"] = LWT_PAYLOAD_OFFLINE
 
+                # Override from custom entity config:
+                if entityData.HasCustomPayload():
+                    for key, value in entityData.GetCustomPayload().items():
+                        payload[key] = value
+
                 # Send
                 self.client.SendTopicData(
                     autoDiscoverySendTopic, json.dumps(payload))

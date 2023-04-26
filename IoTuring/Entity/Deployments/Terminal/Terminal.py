@@ -2,26 +2,38 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 import subprocess
 import re
 
 KEY = "terminal"
 KEY_STATE = "terminal_state"
 
-CONFIG_KEY_COMMAND_ON = "command_on"
-CONFIG_KEY_LENGTH = "length"
-CONFIG_KEY_COMMAND_OFF = "command_off"
+# possible values: payload command, sensor, binary sensor, button, switch, cover
+CONFIG_KEY_ENTITY_TYPE = "entity_type"
+CONFIG_KEY_LENGTH = "length"  # For payload validation
+CONFIG_KEY_UNIT = "unit"  # for sensor only
+CONFIG_KEY_DECIMALS = "decimals"  # for sensor only
+
+# commands:
+CONFIG_KEY_COMMAND_ON = "command_on"  # for payload, button, switch
+CONFIG_KEY_COMMAND_OFF = "command_off"  # for switch
+# for sensor, binary sensor, switch, cover
 CONFIG_KEY_COMMAND_STATE = "command_state"
 
+# cover commands
+CONFIG_KEY_COMMAND_OPEN = "command_open"
+CONFIG_KEY_COMMAND_CLOSE = "command_close"
+CONFIG_KEY_COMMAND_STOP = "command_stop"
 
-MODE_DATA_VIA_CONFIG = "data_via_config"
-MODE_DATA_VIA_PAYLOAD = "data_via_payload"
-MODE_SWITCH_WITH_STATE = "switch_with_state"
-MODE_SWITCH_WITHOUT_STATE = "switch_without_state"
-
-
-# If a string matches this, it's a regex:
-REGEX_IS_REGEX = r"^\^.*\$$"
+ENTITY_TYPE_KEYS = {
+    "PAYLOAD_COMMAND": "payload_command",
+    "BUTTON": "button",
+    "SWITCH": "switch",
+    "SENSOR": "sensor",
+    "BINARY_SENSOR": "binary_sensor",
+    "COVER": "cover"
+}
 
 
 class Terminal(Entity):
@@ -30,81 +42,151 @@ class Terminal(Entity):
 
     def Initialize(self):
 
-        # Commands from config:
-        self.config_command_on = \
-            self.GetConfigurations()[CONFIG_KEY_COMMAND_ON]
-        self.config_command_off = \
-            self.GetConfigurations()[CONFIG_KEY_COMMAND_OFF]
-        self.config_command_state = \
-            self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+        self.config_entity_type = self.GetConfigurations()[
+            CONFIG_KEY_ENTITY_TYPE]
 
-        # Set max length to infinite:
-        self.config_length = float('inf')
-        self.switch_mode = False
+        # sanitize entity type:
+        self.entity_type = str(
+            self.config_entity_type).lower().strip().replace(" ", "_")
 
-        # It's regex based, exact command from payload:
-        if re.search(REGEX_IS_REGEX, self.config_command_on):
-            self.data_mode = MODE_DATA_VIA_PAYLOAD
-            if self.GetConfigurations()[CONFIG_KEY_LENGTH]:
-                self.config_length = int(
-                    self.GetConfigurations()[CONFIG_KEY_LENGTH])
+        if not self.entity_type in ENTITY_TYPE_KEYS.values():
+            raise Exception(
+                f"Configuration error: Unsupported entity type: {self.config_entity_type}")
 
-        # It's config based:
-        else:
-            self.data_mode = MODE_DATA_VIA_CONFIG
-            if self.GetConfigurations()[CONFIG_KEY_LENGTH]:
+        # Update the NAME
+        name_extension = "".join([p.capitalize()
+                                 for p in self.entity_type.split("_")])
+        self.NAME += name_extension
+
+        self.has_state = False
+        self.has_binary_state = False
+        self.has_command = False
+        self.value_formatter_options = None
+        self.custom_payload = {}
+
+        # payload_command
+        if self.entity_type == ENTITY_TYPE_KEYS["PAYLOAD_COMMAND"]:
+            self.config_command_regex = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_ON]
+            # Check if it's a correct regex:
+            if not re.search(r"^\^.*\$$", self.config_command_regex):
                 raise Exception(
-                    "Configuration error: Command length should given only in regex mode")
+                    f"Configuration error: Invalid regex: {self.config_command_regex}")
 
-            # It's a switch:
+            # Get max length, use float so "inf" works
+            self.config_length = float(
+                self.GetConfigurations()[CONFIG_KEY_LENGTH])
+
+            self.has_command = True
+
+        # button
+        elif self.entity_type == ENTITY_TYPE_KEYS["BUTTON"]:
+            self.config_command = self.GetConfigurations()[
+                CONFIG_KEY_COMMAND_ON]
+            self.has_command = True
+
+        # switch
+        elif self.entity_type == ENTITY_TYPE_KEYS["SWITCH"]:
+            self.config_command_on = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_ON]
+            self.config_command_off = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_OFF]
+            self.has_command = True
+
             if self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]:
-                self.switch_mode = MODE_SWITCH_WITH_STATE
-            elif self.GetConfigurations()[CONFIG_KEY_COMMAND_OFF]:
-                self.switch_mode = MODE_SWITCH_WITHOUT_STATE
-                self.optimistic = True
+                self.config_command_state = \
+                    self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+                self.has_binary_state = True
 
-        # Update name based on mode:
-        if self.data_mode == MODE_DATA_VIA_PAYLOAD:
-            self.NAME += "Payload"
-        elif self.switch_mode:
-            self.NAME += "Switch"
+        # sensor
+        elif self.entity_type == ENTITY_TYPE_KEYS["SENSOR"]:
+            self.config_command_state = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+            self.has_state = True
 
-        # Defaults for extra attributes:
+            self.config_unit = self.GetConfigurations()[CONFIG_KEY_UNIT]
+            if self.config_unit:
+                self.custom_payload["unit_of_measurement"] = self.config_unit
+
+            if self.GetConfigurations()[CONFIG_KEY_DECIMALS]:
+                self.value_formatter_options = \
+                    ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_NONE,
+                                          decimals=int(self.GetConfigurations()[CONFIG_KEY_DECIMALS]))
+
+        # binary sensor
+        elif self.entity_type == ENTITY_TYPE_KEYS["BINARY_SENSOR"]:
+            self.config_command_state = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+            self.has_binary_state = True
+
+        # cover
+        elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
+            self.config_conver_commands = {
+                "OPEN": self.GetConfigurations()[CONFIG_KEY_COMMAND_OPEN],
+                "CLOSE": self.GetConfigurations()[CONFIG_KEY_COMMAND_CLOSE],
+                "STOP": self.GetConfigurations()[CONFIG_KEY_COMMAND_STOP]
+            }
+            self.has_command = True
+
+            self.config_command_state = \
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+            if self.config_command_state:
+                self.has_state = True
+
+        else:
+            raise Exception("Configuration error: Unknown entity type")
+
+        # The sensor is for displaying extra attributes for commands:
+        self.RegisterEntitySensor(
+            EntitySensor(self, KEY_STATE,
+                         supportsExtraAttributes=True,
+                         valueFormatterOptions=self.value_formatter_options,
+                         customPayload=self.custom_payload))
+
+        if self.has_command:
+            self.RegisterEntityCommand(EntityCommand(
+                self, KEY, self.Callback, KEY_STATE))
+
+        # Defaults for attributes:
         self.last_command = ""
         self.last_output = ""
-
-        # The sensor is for displaying extra attributes:
-        self.RegisterEntitySensor(
-            EntitySensor(self, KEY_STATE, supportsExtraAttributes=True))
-        self.RegisterEntityCommand(EntityCommand(
-            self, KEY, self.Callback, KEY_STATE))
+        self.state = ""
+        self.state_message = ""
 
     def Callback(self, message):
 
         # Get data from payload:
         payloadString = message.payload.decode('utf-8')
-
         self.Log(self.LOG_DEBUG,
                  f"Decoded payload string: {payloadString}")
 
-        if self.data_mode == MODE_DATA_VIA_PAYLOAD:
+        if self.entity_type == ENTITY_TYPE_KEYS["PAYLOAD_COMMAND"]:
             # Check regex and max length
-            if re.search(self.config_command_on, payloadString) \
+            if re.search(self.config_command_regex, payloadString) \
                     and not len(payloadString) > self.config_length:
                 self.command = payloadString
             else:
                 raise Exception(f"Invalid payload: {payloadString}")
 
-        elif self.switch_mode:
+        elif self.entity_type == ENTITY_TYPE_KEYS["BUTTON"]:
+            self.command = self.config_command
+
+        elif self.entity_type == ENTITY_TYPE_KEYS["SWITCH"]:
             if payloadString == STATE_ON:
                 self.command = self.config_command_on
             elif payloadString == STATE_OFF:
                 self.command = self.config_command_off
             else:
-                raise Exception('Incorrect payload!')
+                raise Exception(f"Invalid payload: {payloadString}")
 
-        else:  # self.data_mode = MODE_DATA_VIA_CONFIG
-            self.command = self.config_command_on
+        elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
+            if not payloadString in self.config_conver_commands.keys():
+                raise Exception(f"Invalid payload: {payloadString}")
+
+            self.command = self.config_conver_commands[payloadString]
+
+            if not self.command:
+                raise Exception(f"No command for payload: {payloadString}")
 
         self.last_command = self.command
 
@@ -113,30 +195,57 @@ class Terminal(Entity):
         self.last_output = command["message"]
 
     def Update(self):
-        if self.switch_mode == MODE_SWITCH_WITH_STATE:
-            # Run the command:
-            command = self.RunCommand(self.config_command_state, False)
 
-            state = STATE_ON if command["returncode"] == 0 else STATE_OFF
+        if self.has_binary_state or self.has_state:
 
-            self.SetEntitySensorValue(KEY_STATE, state)
+            # Run the command, do not log error on binary sensor:
+            command = self.RunCommand(self.config_command_state,
+                                      log_errors=not self.has_binary_state)
+
+            if self.has_binary_state:
+                self.state = STATE_ON if command["returncode"] == 0 else STATE_OFF
+
+            elif self.has_state:
+
+                if self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
+                    if command["stdout"].lower() in ['opening', 'closing', 'stopped']:
+                        self.state = command["stdout"].lower()
+                    else:
+                        self.Log(self.LOG_ERROR,
+                                 f"Invalid state: {command['stdout']}")
+
+                else:
+                    self.state = command["stdout"]
+
+                    # Parse state
+                    try:
+                        self.state = float(self.state)
+                    except ValueError:
+                        if self.value_formatter_options or self.config_unit:
+                            self.Log(self.LOG_ERROR,
+                                     f"Invalid state: {self.state}")
+
+            self.SetEntitySensorValue(KEY_STATE, self.state)
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE, "Last state command output", command["message"])
 
-        # Set extra attributes:
-        self.SetEntitySensorExtraAttribute(
-            KEY_STATE, "Last command", self.last_command)
-        self.SetEntitySensorExtraAttribute(
-            KEY_STATE, "Last output", self.last_output)
+        if self.has_command:
+            # Set extra attributes:
+            self.SetEntitySensorExtraAttribute(
+                KEY_STATE, "Last command", self.last_command)
+            self.SetEntitySensorExtraAttribute(
+                KEY_STATE, "Last output", self.last_output)
 
     def RunCommand(self, command, log_errors=True):
         """Run a command, log, collect output"""
 
         # Run the command:
-        p = subprocess.run(command, capture_output=True, shell=True, universal_newlines=True,)
+        p = subprocess.run(command, capture_output=True,
+                           shell=True, universal_newlines=True)
 
         output = {
             "returncode": p.returncode,
+            "stdout": p.stdout,
             "message": ""
         }
 
@@ -155,16 +264,72 @@ class Terminal(Entity):
     @classmethod
     def ConfigurationPreset(cls):
         preset = MenuPreset()
-        preset.AddEntry("Terminal command or regex - For regex use ^ as the first and $ as the last character",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True)
-        preset.AddEntry("Maximum command length", CONFIG_KEY_LENGTH,
-                        display_if_key_value_regex_match={CONFIG_KEY_COMMAND_ON: REGEX_IS_REGEX}, mandatory=False)
-        # The regex here matches, if the first command was not a regex:
-        preset.AddEntry("OFF command for creating a switch, leave empty to use only a the previous command",
-                        CONFIG_KEY_COMMAND_OFF, mandatory=False,
-                        display_if_key_value_regex_match={CONFIG_KEY_COMMAND_ON: r"^[^^]|.*[^\$]$"})
+        preset.AddEntry("Entity type (payload command, sensor, binary sensor, button, switch or cover)",
+                        CONFIG_KEY_ENTITY_TYPE, mandatory=True)
+
+        # payload command
+        preset.AddEntry("Regex for filter the incoming payload: Use ^ as the first and $ as the last character",
+                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^payload.?command$"})
+        preset.AddEntry("Maximum command length", CONFIG_KEY_LENGTH, mandatory=False, default="inf",
+                        display_if_key_value_regex_match={CONFIG_KEY_ENTITY_TYPE: r"^payload.?command$"})
+
+        # sensor
+        preset.AddEntry("Terminal command to get the sensor value",
+                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
+        preset.AddEntry("Unit of measurement",
+                        CONFIG_KEY_UNIT, mandatory=False,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
+        preset.AddEntry("Number of decimals",
+                        CONFIG_KEY_DECIMALS, mandatory=False,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
+
+        # binary sensor
+        preset.AddEntry("Terminal command, exit code must be 0 for ON state",
+                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^binary.?sensor$"})
+
+        # button
+        preset.AddEntry("Terminal command to run",
+                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^button$"})
+
+        # switch
+        preset.AddEntry("Terminal command to switch ON",
+                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
+        preset.AddEntry("Terminal command to switch OFF",
+                        CONFIG_KEY_COMMAND_OFF, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
         preset.AddEntry("Terminal command for STATE of the switch, leave empty for an optimistic switch. The command must return 0 for ON state",
                         CONFIG_KEY_COMMAND_STATE, mandatory=False,
-                        display_if_key_value_regex_match={CONFIG_KEY_COMMAND_OFF: True})
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
 
+        # cover
+        preset.AddEntry("Terminal command to OPEN",
+                        CONFIG_KEY_COMMAND_OPEN, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+        preset.AddEntry("Terminal command to CLOSE",
+                        CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+        preset.AddEntry("Terminal command to STOP",
+                        CONFIG_KEY_COMMAND_STOP, mandatory=False,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+        preset.AddEntry("Terminal command for STATE, leave empty for optimistic. Command must return 'opening', 'closing' or 'stopped'",
+                        CONFIG_KEY_COMMAND_STATE, mandatory=False,
+                        display_if_key_value_regex_match={
+                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
         return preset
