@@ -33,7 +33,6 @@ class Power(Entity):
     def Initialize(self):
         self.sleep_command = ""
 
-    def PostInitialize(self):
         self.os = OsD.GetOs()
         # Check if commands are available for this OS/DE combo, then register them
 

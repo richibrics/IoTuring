@@ -1,12 +1,13 @@
 import subprocess
 import ctypes
-import os
 import re
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
+
 
 KEY_STATE = 'monitor_state'
 KEY_CMD = 'monitor'
@@ -17,15 +18,19 @@ class Monitor(Entity):
     def Initialize(self):
         supports_linux = False
         if OsD.IsLinux():
-            # Check if xset is working:
-            p = subprocess.run(
-                ['xset', 'dpms'], capture_output=True, shell=False)
-            if p.stderr:
-                raise Exception(f"Xset dpms error: {p.stderr.decode()}")
-            elif not os.getenv('DISPLAY'):
-                raise Exception('No $DISPLAY environment variable!')
+            if De.IsWayland():
+                raise Exception("Wayland is not supported")
+            elif not OsD.CommandExists("xset"):
+                raise Exception("xset command not found!")
             else:
-                supports_linux = True
+                # Check if xset is working:
+                p = subprocess.run(['xset', 'dpms'], capture_output=True, shell=False)
+                if p.stderr:
+                    raise Exception(f"Xset dpms error: {p.stderr.decode()}")
+                elif not OsD.GetEnv('DISPLAY'):
+                    raise Exception('No $DISPLAY environment variable!')
+                else:
+                    supports_linux = True
 
         if OsD.IsWindows():
             self.RegisterEntityCommand(EntityCommand(
