@@ -11,6 +11,13 @@ class App():
     DESCRIPTION = METADATA['Summary']
     VENDOR = METADATA['Maintainer-email'].split(' <')[0]
     VERSION = METADATA['Version']
+    
+    # "Project-URL": "homepage, https://github.com/richibrics/IoTuring",
+    # "Project-URL": "documentation, https://github.com/richibrics/IoTuring",
+    # "Project-URL": "repository, https://github.com/richibrics/IoTuring",
+    # "Project-URL": "changelog, https://github.com/richibrics/IoTuring/releases",
+    URL_HOMEPAGE = METADATA.get_all("Project-URL")[0].split(', ')[1].strip()
+    URL_RELEASES = METADATA.get_all("Project-URL")[-1].split(', ')[1].strip()
 
     @staticmethod
     def getName() -> str:
@@ -27,6 +34,14 @@ class App():
     @staticmethod
     def getVersion() -> str:
         return App.VERSION
+    
+    @staticmethod
+    def getUrlHomepage() -> str:
+        return App.URL_HOMEPAGE
+
+    @staticmethod
+    def getUrlReleases() -> str:
+        return App.URL_RELEASES
 
     def __str__(self) -> str:
         msg = ""
