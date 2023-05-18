@@ -107,7 +107,7 @@ The device will also have some properties like connectivity and battery status.
 You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
 
 
-![device](docs/images/homeassistant-demo.gif)
+![device](https://github.com/richibrics/IoTuring/blob/main/docs/images/homeassistant-demo.gif?raw=true)
 
 All sensors and switches will be available to be added to your dashboard in your favourite cards !
 
