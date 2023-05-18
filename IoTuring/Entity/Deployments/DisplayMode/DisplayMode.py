@@ -2,6 +2,7 @@ import subprocess
 import os as sys_os
 from IoTuring.Entity.Entity import Entity
 from ctypes import *
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 from IoTuring.Entity.EntityData import EntityCommand
 
@@ -13,21 +14,15 @@ KEY_MODE = "mode"
 
 class DisplayMode(Entity):
     NAME = "DisplayMode"
-    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
-        pass
-
-    def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-
         callback = None
-        if self.os == 'Windows':
+        if OsD.IsWindows():
             sr = sys_os.environ.get('SystemRoot')
             if sys_os.path.exists('{}\System32\DisplaySwitch.exe'.format(sr)):
                 callback = self.Callback_Win
             else:
-                self.Log(self.LOG_ERROR, "Error log:\nOperating system: {}, sr: {}, path exists: {}".format(self.os, sr, sys_os.path.exists('{}\System32\DisplaySwitch.exe'.format(sr))))
+                self.Log(self.LOG_ERROR, "Error log:\nOperating system: {}, sr: {}, path exists: {}".format(OsD.GetOs(), sr, sys_os.path.exists('{}\System32\DisplaySwitch.exe'.format(sr))))
                 raise Exception("Unsupported software, report this log to the developer")
         else:
             raise Exception("Unsupported operating system for this entity")

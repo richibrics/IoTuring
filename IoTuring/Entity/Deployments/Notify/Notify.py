@@ -2,7 +2,7 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.App import App
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.Entity import consts
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 import json
 
@@ -15,8 +15,8 @@ except:
     supports_win = False
 
 commands = {
-    consts.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
-    consts.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+    OsD.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
+    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
 }
 
 
@@ -37,7 +37,6 @@ MODE_DATA_VIA_PAYLOAD = "data_via_payload"
 
 class Notify(Entity):
     NAME = "Notify"
-    DEPENDENCIES = ["Os"]
     ALLOW_MULTI_INSTANCE = True
 
     # Data is set from configurations if configurations contain both title and message
@@ -71,29 +70,22 @@ class Notify(Entity):
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
-    # I need it here cause I have to check the right import for my OS (and I may not know the OS in Init function)
-    def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue("Os", "operating_system")
-        if self.os == consts.OS_FIXED_VALUE_WINDOWS:
-            if not supports_win:
-                raise Exception(
-                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+        # Prepare the notification system
+        if OsD.IsWindows() and not supports_win:
+            raise Exception(
+                'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 
-        elif self.os == consts.OS_FIXED_VALUE_LINUX \
-            or self.os == consts.OS_FIXED_VALUE_MACOS:
-            # Use 'command -v' to test if comman exists:
-            if os.system(f'command -v {commands[self.os].split(" ")[0]}') != 0:
+        elif OsD.IsLinux() or OsD.IsMacos():
+            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):            
                 raise Exception(
-                    f'Command not found {commands[self.os].split(" ")[0]}!'
-                )
-                
+                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
+                )  
         else:
             raise Exception(
                 'Notify not available for this platorm!')
       
 
     def Callback(self, message):
-
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:
             # Get data from payload:
             payloadString = message.payload.decode('utf-8')
@@ -106,14 +98,13 @@ class Notify(Entity):
                 self.notification_title = payloadMessage[0]
                 self.notification_message = PAYLOAD_SEPARATOR.join(
                     payloadMessage[1:])
-
         else:  # self.data_mode = MODE_DATA_VIA_CONFIG
             self.notification_title = self.config_title
             self.notification_message = self.config_message
 
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
-        if self.os == consts.OS_FIXED_VALUE_WINDOWS:
+        if OsD.IsWindows():
             toast_icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ICON_FILENAME)
             twt.getToast(
                 title=self.notification_title, 
@@ -122,17 +113,17 @@ class Notify(Entity):
                 appId=App.getName(),
                 isMute=False).show()
 
-        elif self.os == consts.OS_FIXED_VALUE_LINUX:
-            os.system(commands[self.os]
+        elif OsD.IsLinux():
+            os.system(commands[OsD.GetOs()]
                 .format(self.notification_title,self.notification_message))
 
-        elif self.os == consts.OS_FIXED_VALUE_MACOS:
-            os.system(commands[self.os]
+        elif OsD.IsMacos():
+            os.system(commands[OsD.GetOs()]
                 .format(self.notification_message,self.notification_title))
 
         else:
             self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
-                     str(self.os) + ")... Aborting")
+                     str(OsD.GetOs()) + ")... Aborting")
 
     @classmethod
     def ConfigurationPreset(self):

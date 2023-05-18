@@ -2,6 +2,7 @@ import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD # don't name Os as could be a problem with old configurations that used the Os entity
 
 KEY_SENSOR_FORMAT = "{}"
 FALLBACK_PACKAGE_LABEL = "package_{}"
@@ -34,19 +35,17 @@ MACOS_SMC_TEMPERATURE_KEYS = {
 
 class Temperature(Entity):
     NAME = "Temperature"
-    DEPENDENCIES = ["Os"]
 
     def Initialize(self):
         self.temperatureFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_TEMPERATURE, decimals=TEMPERATURE_DECIMALS)
 
-    def PostInitialize(self):
         self.specificInitialize = None
         self.specificUpdate = None
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-        if(self.os == "Linux"):
+        
+        if OsD.IsLinux():
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
-        elif(self.os == "macOS"):
+        elif OsD.IsMacos():
             self.specificInitialize = self.InitmacOS
             self.specificUpdate = self.UpdatemacOS
         else:
@@ -192,13 +191,11 @@ class psutilTemperaturePackage():
             else:
                 label = FALLBACK_SENSOR_LABEL.format(index)
             if sensor.hasCurrent():
-                attributes[label +
-                           " - Current"] = sensor.getCurrent()
+                attributes[f"{label} - Current"] = sensor.getCurrent()
             if sensor.hasHighest():
-                attributes[label +
-                           " - Highest"] = sensor.getHighest()
+                attributes[f"{label} - Highest"] = sensor.getHighest()
             if sensor.hasCritical():
-                attributes[label + " - Critical"] = sensor.getCritical()
+                attributes[ f"{label} - Critical"] = sensor.getCritical()
         return attributes
 
 

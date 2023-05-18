@@ -6,7 +6,7 @@ Battery - charging:
   device_class: "battery_charging"
   payload_on: "True"
   payload_off: "False"
-Os - operating_system:
+OperatingSystem - operating_system:
   icon: "mdi:apple-keyboard-command"
 ActiveWindow - active_window:
   icon: "mdi:window-restore"

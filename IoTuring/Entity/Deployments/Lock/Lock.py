@@ -1,6 +1,8 @@
 import subprocess
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
+from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD # don't name Os as could be a problem with old configurations that used the Os entity
 
 KEY_LOCK = 'lock'
 
@@ -21,16 +23,13 @@ commands = {
 
 class Lock(Entity):
     NAME = "Lock"
-    DEPENDENCIES = ["Os", "DesktopEnvironment"]
 
     def Initialize(self):
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_LOCK, self.Callback_Lock))
 
-    def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-        self.de = self.GetDependentEntitySensorValue(
-            'DesktopEnvironment', 'desktop_environment')
+        self.os = OsD.GetOs()
+        self.de = De.GetDesktopEnvironment()
 
     def Callback_Lock(self, message):
         if self.os in commands:

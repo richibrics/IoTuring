@@ -25,9 +25,6 @@ class FileSwitch(Entity):
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_CMD, self.Callback, KEY_STATE))
 
-    def PostInitialize(self):
-        pass
-
     def Callback(self, message):
         payloadString = message.payload.decode('utf-8')
 

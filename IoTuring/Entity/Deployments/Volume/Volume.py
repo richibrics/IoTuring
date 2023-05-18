@@ -3,6 +3,7 @@ import subprocess
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_STATE = 'volume_state'
 KEY_CMD = 'volume'
@@ -15,12 +16,9 @@ VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0 = ValueFormatterOptions(value_type=Value
 
 class Volume(Entity):
     NAME = "Volume"
-    DEPENDENCIES = ["Os"]
 
-    def PostInitialize(self):
-        self.os = self.GetDependentEntitySensorValue('Os', "operating_system")
-        
-        if self.os == "macOS":        
+    def Initialize(self):        
+        if OsD.IsMacos():        
             self.RegisterEntitySensor(EntitySensor(self, KEY_STATE, supportsExtraAttributes=True, valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0))
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_CMD, self.CallbackMac, KEY_STATE))
@@ -29,7 +27,7 @@ class Volume(Entity):
 
 
     def Update(self):
-        if self.os == "macOS":        
+        if OsD.IsMacos():        
             self.UpdateMac()
     
     def CallbackMac(self, message):

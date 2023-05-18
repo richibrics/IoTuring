@@ -1,8 +1,10 @@
-import os
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
+from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_DE = 'desktop_environment'
+EXTRA_KEY_WAYLAND = 'wayland'
 
 # TODO Here I need the possibility for fixed value -> a configuration
 
@@ -11,15 +13,15 @@ class DesktopEnvironment(Entity):
     NAME = "DesktopEnvironment"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_DE))
-        # The value for this sensor is static for the entire script run time (set in initialize so other entities can get the value from Postinitialize)
-        self.SetEntitySensorValue(KEY_DE, self.GetDesktopEnvironment())
 
-    # If value passed use it else get it from the system
-    def GetDesktopEnvironment(self):
+        # Attribute only on Linux
+        self.RegisterEntitySensor(EntitySensor(
+            self, KEY_DE, supportsExtraAttributes=OsD.IsLinux()))
 
-        de = os.environ.get('DESKTOP_SESSION')
-        if de == None:
-            de = "base"
+        # The value for this sensor is static for the entire script run time
+        self.SetEntitySensorValue(KEY_DE, De.GetDesktopEnvironment())
 
-        return de
+        # Add an attribute on linux checking if it's a wayland session:
+        if OsD.IsLinux():
+            self.SetEntitySensorExtraAttribute(
+                KEY_DE, EXTRA_KEY_WAYLAND, str(De.IsWayland()))

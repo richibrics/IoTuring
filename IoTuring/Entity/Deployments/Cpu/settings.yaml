@@ -1,6 +1,6 @@
 requirements:
   sensors:
-    - Os:
+    - O:
         dont_send: True
 
 discovery:
