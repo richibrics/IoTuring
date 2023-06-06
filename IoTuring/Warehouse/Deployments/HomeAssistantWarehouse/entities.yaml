@@ -98,6 +98,9 @@ TerminalBinarySensor:
 TerminalCover:
   icon: mdi:console
   custom_type: cover
+  state_closing: CLOSE
+  state_opening: OPEN
+  state_stopped: STOP
 TerminalButton:
   icon: mdi:console
   custom_type: button

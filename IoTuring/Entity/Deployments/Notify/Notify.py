@@ -127,10 +127,10 @@ class Notify(Entity):
                      str(OsD.GetOs()) + ")... Aborting")
 
     @classmethod
-    def ConfigurationPreset(self):
+    def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Notification title - leave empty to send this data via remote message", CONFIG_KEY_TITLE, mandatory=False)
-        # ask for the message only if the title is provided, otherwise don't ask (use display_if_key_value_regex_match)
+        # ask for the message only if the title is provided, otherwise don't ask (use display_if_key_value)
         preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, 
-            display_if_key_value_regex_match={CONFIG_KEY_TITLE: True}, mandatory=True)
+            display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
         return preset

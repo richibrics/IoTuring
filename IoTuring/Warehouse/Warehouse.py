@@ -1,5 +1,6 @@
 from IoTuring.Configurator.MenuPreset import BooleanAnswers
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
 
 from threading import Thread
@@ -8,7 +9,7 @@ import time
 DEFAULT_LOOP_TIMEOUT = 10
 
 
-class Warehouse(LogObject):
+class Warehouse(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
 
     def __init__(self, configurations) -> None:
@@ -73,9 +74,3 @@ class Warehouse(LogObject):
             return True
         else:
             return False
-
-    # Configuration methods
-    @classmethod
-    def ConfigurationPreset(self):
-        """ Prepare a preset to manage settings insert/edit for the warehouse """
-        return None

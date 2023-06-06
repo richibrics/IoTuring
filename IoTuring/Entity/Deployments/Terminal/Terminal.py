@@ -11,9 +11,14 @@ KEY_STATE = "terminal_state"
 
 # possible values: payload command, sensor, binary sensor, button, switch, cover
 CONFIG_KEY_ENTITY_TYPE = "entity_type"
-CONFIG_KEY_LENGTH = "length"  # For payload validation
-CONFIG_KEY_UNIT = "unit"  # for sensor only
-CONFIG_KEY_DECIMALS = "decimals"  # for sensor only
+
+# For payload commands:
+CONFIG_KEY_COMMAND_REGEX = "command_regex"
+CONFIG_KEY_LENGTH = "command_length"  # For payload validation
+
+# For sensors only:
+CONFIG_KEY_UNIT = "unit"
+CONFIG_KEY_DECIMALS = "decimals"
 
 # commands:
 CONFIG_KEY_COMMAND_ON = "command_on"  # for payload, button, switch
@@ -33,6 +38,12 @@ ENTITY_TYPE_KEYS = {
     "SENSOR": "sensor",
     "BINARY_SENSOR": "binary_sensor",
     "COVER": "cover"
+}
+
+COVER_STATES = {
+    "opening": "OPEN",
+    "closing": "CLOSE",
+    "stopped": "STOP"
 }
 
 
@@ -67,7 +78,7 @@ class Terminal(Entity):
         # payload_command
         if self.entity_type == ENTITY_TYPE_KEYS["PAYLOAD_COMMAND"]:
             self.config_command_regex = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_ON]
+                self.GetConfigurations()[CONFIG_KEY_COMMAND_REGEX]
             # Check if it's a correct regex:
             if not re.search(r"^\^.*\$$", self.config_command_regex):
                 raise Exception(
@@ -121,17 +132,27 @@ class Terminal(Entity):
 
         # cover
         elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
-            self.config_conver_commands = {
+            self.config_cover_commands = {
                 "OPEN": self.GetConfigurations()[CONFIG_KEY_COMMAND_OPEN],
-                "CLOSE": self.GetConfigurations()[CONFIG_KEY_COMMAND_CLOSE],
-                "STOP": self.GetConfigurations()[CONFIG_KEY_COMMAND_STOP]
+                "CLOSE": self.GetConfigurations()[CONFIG_KEY_COMMAND_CLOSE]
             }
+
+            stop_command = self.GetConfigurations()[CONFIG_KEY_COMMAND_STOP]
+
+            if stop_command:
+                self.config_cover_commands["STOP"] = stop_command
+            else:
+                self.custom_payload["payload_stop"] = None
+
             self.has_command = True
 
             self.config_command_state = \
                 self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+
             if self.config_command_state:
                 self.has_state = True
+            else:
+                self.custom_payload["optimistic"] = "true"
 
         else:
             raise Exception("Configuration error: Unknown entity type")
@@ -180,10 +201,11 @@ class Terminal(Entity):
                 raise Exception(f"Invalid payload: {payloadString}")
 
         elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
-            if not payloadString in self.config_conver_commands.keys():
+            cover_command = payloadString.upper()
+            if not cover_command in self.config_cover_commands.keys():
                 raise Exception(f"Invalid payload: {payloadString}")
 
-            self.command = self.config_conver_commands[payloadString]
+            self.command = self.config_cover_commands[cover_command]
 
             if not self.command:
                 raise Exception(f"No command for payload: {payloadString}")
@@ -208,8 +230,9 @@ class Terminal(Entity):
             elif self.has_state:
 
                 if self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
-                    if command["stdout"].lower() in ['opening', 'closing', 'stopped']:
-                        self.state = command["stdout"].lower()
+                    cmdout = command["stdout"].lower()
+                    if cmdout in COVER_STATES.keys():
+                        self.state = COVER_STATES[cmdout]
                     else:
                         self.Log(self.LOG_ERROR,
                                  f"Invalid state: {command['stdout']}")
@@ -265,71 +288,58 @@ class Terminal(Entity):
     def ConfigurationPreset(cls):
         preset = MenuPreset()
         preset.AddEntry("Entity type (payload command, sensor, binary sensor, button, switch or cover)",
-                        CONFIG_KEY_ENTITY_TYPE, mandatory=True)
+                        CONFIG_KEY_ENTITY_TYPE, mandatory=True, modify_value_callback=MenuPreset.Callback_LowerAndStripString)
 
         # payload command
         preset.AddEntry("Regex for filter the incoming payload: Use ^ as the first and $ as the last character",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^payload.?command$"})
+                        CONFIG_KEY_COMMAND_REGEX, mandatory=True,
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
         preset.AddEntry("Maximum command length", CONFIG_KEY_LENGTH, mandatory=False, default="inf",
-                        display_if_key_value_regex_match={CONFIG_KEY_ENTITY_TYPE: r"^payload.?command$"})
-
-        # sensor
-        preset.AddEntry("Terminal command to get the sensor value",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
-        preset.AddEntry("Unit of measurement",
-                        CONFIG_KEY_UNIT, mandatory=False,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
-        preset.AddEntry("Number of decimals",
-                        CONFIG_KEY_DECIMALS, mandatory=False,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^sensor$"})
-
-        # binary sensor
-        preset.AddEntry("Terminal command, exit code must be 0 for ON state",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^binary.?sensor$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
 
         # button
         preset.AddEntry("Terminal command to run",
                         CONFIG_KEY_COMMAND_ON, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^button$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "button"})
 
         # switch
         preset.AddEntry("Terminal command to switch ON",
                         CONFIG_KEY_COMMAND_ON, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
         preset.AddEntry("Terminal command to switch OFF",
                         CONFIG_KEY_COMMAND_OFF, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
         preset.AddEntry("Terminal command for STATE of the switch, leave empty for an optimistic switch. The command must return 0 for ON state",
                         CONFIG_KEY_COMMAND_STATE, mandatory=False,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^switch$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
+
+        # sensor
+        preset.AddEntry("Terminal command to get the sensor value",
+                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
+        preset.AddEntry("Unit of measurement",
+                        CONFIG_KEY_UNIT, mandatory=False,
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
+        preset.AddEntry("Number of decimals",
+                        CONFIG_KEY_DECIMALS, mandatory=False,
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
+
+        # binary sensor
+        preset.AddEntry("Terminal command, exit code must be 0 for ON state",
+                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "binary sensor"})
 
         # cover
         preset.AddEntry("Terminal command to OPEN",
                         CONFIG_KEY_COMMAND_OPEN, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         preset.AddEntry("Terminal command to CLOSE",
                         CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         preset.AddEntry("Terminal command to STOP",
                         CONFIG_KEY_COMMAND_STOP, mandatory=False,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         preset.AddEntry("Terminal command for STATE, leave empty for optimistic. Command must return 'opening', 'closing' or 'stopped'",
                         CONFIG_KEY_COMMAND_STATE, mandatory=False,
-                        display_if_key_value_regex_match={
-                            CONFIG_KEY_ENTITY_TYPE: r"^cover$"})
+                        display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         return preset

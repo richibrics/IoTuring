@@ -5,12 +5,12 @@ from IoTuring.Logger.LogObject import LogObject
 
 class EntityData(LogObject):
 
-    def __init__(self, entity, key):
+    def __init__(self, entity, key, customPayload = {}):
         self.entityId = entity.GetEntityId()
         self.id = self.entityId + "." + key
         self.key = key
         self.entity = entity
-        self.customPayload = {}
+        self.customPayload = customPayload
 
     def GetEntity(self):
         return self.entity
@@ -23,9 +23,6 @@ class EntityData(LogObject):
 
     def LogSource(self):
         return self.GetId()
-
-    def HasCustomPayload(self):
-        return bool(self.customPayload)
 
     def GetCustomPayload(self):
         return self.customPayload
@@ -42,12 +39,11 @@ class EntitySensor(EntityData):
         valueFormatterOptions is a IoTuring.Entity.ValueFormat.ValueFormatterOptions object.
         CustomPayload overrides HomeAssistant discovery configuration
         """
-        EntityData.__init__(self, entity, key)
+        EntityData.__init__(self, entity, key, customPayload)
         self.supportsExtraAttributes = supportsExtraAttributes
         self.value = None
         self.extraAttributes = None
         self.valueFormatterOptions = valueFormatterOptions
-        self.customPayload = customPayload
 
     def DoesSupportExtraAttributes(self):
         return self.supportsExtraAttributes
@@ -102,10 +98,9 @@ class EntityCommand(EntityData):
         Better to register the sensor before this command to avoud unexpected behaviours.
         CustomPayload overrides HomeAssistant discovery configuration
         """
-        EntityData.__init__(self, entity, key)
+        EntityData.__init__(self, entity, key, customPayload)
         self.callbackFunction = callbackFunction
         self.connectedEntitySensorKey = connectedEntitySensorKey
-        self.customPayload = customPayload
 
     def SupportsState(self):
         return self.connectedEntitySensorKey is not None
