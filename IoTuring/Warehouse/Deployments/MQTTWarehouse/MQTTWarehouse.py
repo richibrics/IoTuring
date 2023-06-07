@@ -78,7 +78,7 @@ class MQTTWarehouse(Warehouse):
 
     # CONFIGURATION
     @classmethod
-    def ConfigurationPreset(self):
+    def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Address", CONFIG_KEY_ADDRESS, mandatory=True)
         preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883)

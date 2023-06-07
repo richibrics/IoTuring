@@ -1,3 +1,4 @@
+from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
 from IoTuring.Entity.ValueFormat import ValueFormatter
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
@@ -10,7 +11,7 @@ KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
 DEFAULT_UPDATE_TIMEOUT = 10
 
 
-class Entity(LogObject):
+class Entity(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
     ALLOW_MULTI_INSTANCE = False
 
@@ -168,10 +169,3 @@ class Entity(LogObject):
         """ Return True if this Entity can have multiple instances, useful for customizable entities 
             These entities are the ones that must have a tag to be recognized """
         return self.ALLOW_MULTI_INSTANCE
-
-    # Configuration methods
-
-    @classmethod
-    def ConfigurationPreset(self):
-        """ Prepare a preset to manage settings insert/edit for the warehouse """
-        return None

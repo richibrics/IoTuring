@@ -264,17 +264,15 @@ class Configurator(LogObject):
         try:
             preset = entityClass.ConfigurationPreset()
 
-            if preset is not None:  # Then let's configure the Entity
-                # Ask also for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available 
+            if preset.HasQuestions():
+                # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
                 if entityClass.AllowMultiInstance():
                     preset.AddTagQuestion()
 
                 preset.PrintRules()
-                for index, question in enumerate(preset.ListEntries()):
-                    preset.Question(index)
+                preset.AskQuestions()
 
             else:
-                preset = MenuPreset()  # Use blank
                 print("No configuration needed for this Entity :)")
 
             self.EntityMenuPresetToConfiguration(entityName, preset)
@@ -305,16 +303,13 @@ class Configurator(LogObject):
 
         whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
-            # With the use of "type" I get the staticmethod of the subclass and not of the parentclass
             preset = whClass.ConfigurationPreset()
 
-            if preset is not None:
+            if preset.HasQuestions():
                 preset.PrintRules()
+                preset.AskQuestions()
 
-                for index, question in enumerate(preset.ListEntries()):
-                    preset.Question(index)
             else:
-                preset = MenuPreset()  # Use blank
                 print("No configuration needed for this Warehouse :)")
 
             # Save added settings

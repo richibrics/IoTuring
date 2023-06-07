@@ -71,9 +71,10 @@ class Notify(Entity):
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
         # Prepare the notification system
-        if OsD.IsWindows() and not supports_win:
-            raise Exception(
-                'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+        if OsD.IsWindows():
+            if not supports_win:
+                raise Exception(
+                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 
         elif OsD.IsLinux() or OsD.IsMacos():
             if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):            
@@ -126,9 +127,10 @@ class Notify(Entity):
                      str(OsD.GetOs()) + ")... Aborting")
 
     @classmethod
-    def ConfigurationPreset(self):
+    def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Notification title - leave empty to send this data via remote message", CONFIG_KEY_TITLE, mandatory=False)
-        # ask for the message only if the title is provided, otherwise don't ask (use display_if_value_for_following_key_provided)
-        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, display_if_value_for_following_key_provided=CONFIG_KEY_TITLE, mandatory=True)
+        # ask for the message only if the title is provided, otherwise don't ask (use display_if_key_value)
+        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, 
+            display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
         return preset

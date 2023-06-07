@@ -55,6 +55,7 @@ Time:
   icon: "mdi:clock"
 Monitor:
   icon: "mdi:monitor-shimmer"
+  custom_type: switch
 AppInfo - update:
   custom_type: binary_sensor
   icon: "mdi:package-up"
@@ -82,3 +83,24 @@ Volume:
   icon: mdi:volume-high
   unit_of_measurement: "%"
   custom_type: number
+TerminalPayloadCommand:
+  icon: mdi:console-line
+  custom_type: text
+TerminalSwitch:
+  icon: mdi:console
+  custom_type: switch
+TerminalSensor:
+  icon: mdi:console
+  custom_type: sensor
+TerminalBinarySensor:
+  icon: mdi:console
+  custom_type: binary_sensor
+TerminalCover:
+  icon: mdi:console
+  custom_type: cover
+  state_closing: CLOSE
+  state_opening: OPEN
+  state_stopped: STOP
+TerminalButton:
+  icon: mdi:console
+  custom_type: button

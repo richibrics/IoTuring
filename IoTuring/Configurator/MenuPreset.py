@@ -1,86 +1,146 @@
+class QuestionPreset():
+
+    def __init__(self, name, key, default=None, mandatory=False, dependsOn={}, modify_value_callback=None) -> None:
+        self.name = name
+        self.key = key
+        self.default = default
+        self.mandatory = mandatory
+        self.dependsOn = dependsOn
+        self.modify_value_callback = modify_value_callback
+        self.value = None
+
+        # Build the question:
+        question_parts = [f'Add value for "{self.name}"']
+        if mandatory:
+            question_parts.append("{!}")
+        if default is not None:
+            question_parts.append(f"[{str(default)}]")
+
+        self.question = " ".join(question_parts) + ": "
+
+    def SetValue(self, value) -> None:
+        """Sanitize and set value for this question"""
+
+        if value and self.modify_value_callback:
+            value = self.modify_value_callback(value)
+
+        self.value = value
+
+    def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
+        """Check if this question should be displayed"""
+
+        should_display = True
+
+        # Check if it has dependencies:
+        if self.dependsOn:
+            dependencies_ok = []
+            for key, value in self.dependsOn.items():
+                answered = menupreset.GetAnsweredPresetByKey(key)
+                dependency_ok = False
+
+                # Found the key in results:
+                if answered:
+
+                    # Value is True or False:
+                    if isinstance(value, bool):
+                        if (answered.value == answered.default) != value:
+                            dependency_ok = True
+
+                    # Value must match:
+                    elif isinstance(value, str) and answered.value == value:
+                        dependency_ok = True
+
+                dependencies_ok.append(dependency_ok)
+
+            # All should be True:
+            if not all(dependencies_ok):
+                should_display = False
+
+        return should_display
+
+
 class MenuPreset():
 
     def __init__(self) -> None:
-        self.preset = []
+        self.presets: list[QuestionPreset] = []
+        self.results: list[QuestionPreset] = []
 
-    def AddEntry(self, name, key, default=None, mandatory=False, display_if_value_for_following_key_provided=None, modify_value_callback=None):
+    def HasQuestions(self) -> bool:
+        """Check if this preset has any questions to ask"""
+        return bool(self.presets)
+
+    def AddEntry(self, name, key, default=None, mandatory=False, display_if_key_value={}, modify_value_callback=None) -> None:
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
         - name: the name to display to the user
         - default: the default value to use if the user doesn't provide one (works only if mandatory=False)
         - mandatory: if the user must provide a value for this entry
-        - display_if_value_for_following_key_provided: key of an entry (that must preceed this) that will enable this one, if the user has provided a value for that.
-          * If it's None, the entry will always be displayed
-          * If it has a key, the entry won't be displayed if menu[provided_key] has value.
+        - display_if_key_value: dict of a key and value another entry (that must preceed this) that will enable this one:
+          * Default empty dict: the entry will be always displayed
+          * In the dict each key is a key of a previous entry.
+          * If the value is a string, this entry will be enabled, if the value is the same as the of answer that question
+          * If the value is True this entry will be enabled if anything was answered
+          * If the value if False, it will be displayed, if nothing was answered to that question.
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
         - modify_value_callback: a callback to modify the value before it's set in the dict (called also for a default value). The callback must have the following signature: NAME(value) -> value
         """
-        self.preset.append(
-            {"name": name, "key": key, "default": default, "mandatory": mandatory, "dependsOn": display_if_value_for_following_key_provided, "modify_value_callback": modify_value_callback, "value": None})
 
-    def ListEntries(self):
-        return self.preset
+        # Add question to presets:
+        self.presets.append(
+            QuestionPreset(
+                name=name,
+                key=key,
+                default=default,
+                mandatory=mandatory,
+                dependsOn=display_if_key_value,
+                modify_value_callback=modify_value_callback
+            ))
 
-    def Question(self, id):
-        try:
-            question = ""
-            value = None
-            if id < len(self.preset):
-                # if the display of this does not depend on a previous entry, or if the previous entry (this depends on) has a value: ask for a value
-                if self.preset[id]["dependsOn"] is None or self.RetrievePresetAnswerByKey(self.preset[id]["dependsOn"]): 
-                    question = "Add value for \""+self.preset[id]["name"]+"\""
-                    if self.preset[id]['mandatory']:
-                        question = question + " {!}"
-                    if self.preset[id]["default"] is not None:
-                        question = question + \
-                            " [" + str(self.preset[id]["default"])+"]"
+    def AskQuestions(self) -> None:
+        """Ask all questions of this preset"""
+        for q_preset in self.presets:
+            try:
+                value = None
 
-                    question = question + ": "
+                # It should be displayed, ask question:
+                if q_preset.ShouldDisplay(self):
+                    value = input(q_preset.question)
 
-                    value = input(question)
+                    # Mandatory loop:
+                    while value == "" and q_preset.mandatory:
+                        value = input(
+                            "You must provide a value for this key: ")
 
-                    # Mandatory loop
-                    while value == "" and self.preset[id]["mandatory"]:
-                        value = input("You must provide a value for this key: ")
-
+                    # Set default:
                     if value == "":
-                        if self.preset[id]["default"] is not None:
-                            # Set in the preset
-                            value = self.preset[id]["default"]
-                        else:
-                            value = None 
-                    # else value already in value
-                else: 
-                    # If the entry is not displayed, set the default value if provided
-                    if self.preset[id]["default"]: # if I have a default
-                        # Set in the preset
-                        value = self.preset[id]["default"]
-                    else:
-                        return None # don't set anything
-                    
-                # if a callback is provided, use it to modify the value
-                if value is not None and "modify_value_callback" in self.preset[id] and self.preset[id]["modify_value_callback"]:
-                    value = self.preset[id]["modify_value_callback"](value) 
-                self.preset[id]['value'] = value
-                return value
-                    
-        except Exception as e:
-            print("Error while making the question:", e)
+                        value = q_preset.default
 
-    def RetrievePresetAnswerByKey(self, key):
-        for entry in self.preset:
-            if entry['key'] == key:
-                return entry['value']
-        return None
+                # It should not be displayed:
+                else:
+                    # It's already answered:
+                    if self.GetAnsweredPresetByKey(q_preset.key):
+                        continue
+
+                    # Set default value otherwise:
+                    else:
+                        value = q_preset.default
+
+                # Set and sanitize the value:
+                q_preset.SetValue(value)
+                # Add to answered questions:
+                self.results.append(q_preset)
+
+            except Exception as e:
+                print("Error while making the question:", e)
+
+    def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
+        return next((entry for entry in self.results if entry.key == key), None)
 
     def GetDict(self) -> dict:
         """ Get a dict with keys and responses"""
-        result = {}
-        for entry in self.preset:
-            result[entry['key']] = entry['value']
-        return result
+        return {entry.key: entry.value for entry in self.results}
 
     @staticmethod
     def PrintRules() -> None:
@@ -96,16 +156,21 @@ class MenuPreset():
     def AddTagQuestion(self):
         """ Add a Tag question (compulsory, no default) to the preset.
             Useful for entities that must have a tag because of their multi-instance possibility """
-        self.AddEntry("Tag", "tag", mandatory=True, modify_value_callback=normalize_tag)
+        self.AddEntry("Tag", "tag", mandatory=True,
+                      modify_value_callback=normalize_tag)
 
-
-
-    @staticmethod 
+    @staticmethod
     def Callback_NormalizeBoolean(value):
         """ Normalize a boolean value to be used, given a string from user input. To be used as MenuPreset callback. """
         if value.lower() in BooleanAnswers.TRUE_ANSWERS:
             return True
         return False
+
+    @staticmethod
+    def Callback_LowerAndStripString(value) -> str:
+        """ Remove spaces from a string end, make lowercase """
+        return str(value).lower().strip()
+
 
 def normalize_tag(tag):
     """ Normalize a tag to be used safely"""

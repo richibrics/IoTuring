@@ -89,10 +89,13 @@ class HomeAssistantWarehouse(Warehouse):
                 message)  # True: success, False: error
             if status and self.client.IsConnected():
                 if entityCommand.SupportsState():
-                    self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
-                             self.MakeEntityDataTopicForSensorByCommandIfSwitch(entityCommand))
-                    self.client.SendTopicData(self.MakeEntityDataTopicForSensorByCommandIfSwitch(
-                        entityCommand), message.payload.decode('utf-8'))
+
+                    connected_sensor = entityCommand.GetConnectedEntitySensor()
+                    # Only set value if it was already set, to exclude optimistic switches
+                    if connected_sensor.HasValue():
+                        sensor_topic = self.MakeEntityDataTopic(connected_sensor)
+                        self.Log(self.LOG_DEBUG, "Switch callback: sending state to " + sensor_topic)
+                        self.client.SendTopicData(sensor_topic, message.payload.decode('utf-8'))
         return CommandCallback
 
     def Loop(self):
@@ -153,7 +156,8 @@ class HomeAssistantWarehouse(Warehouse):
                 if entityData.GetKey() in keys_of_sensors_connected_to_commands:
                     continue  # it's a sensor linked to a command, so skip
 
-                entitycommand_supports_state = False
+                connected_sensor = None
+                is_entity_sensor = False
                 data_type = ""
                 autoDiscoverySendTopic = ""
                 payload = {}
@@ -162,9 +166,10 @@ class HomeAssistantWarehouse(Warehouse):
 
                 if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
                     data_type = "sensor"
+                    is_entity_sensor = True
                 elif entityData.SupportsState():  # it's a EntityCommandData: has it a state ?
                     data_type = "switch"
-                    entitycommand_supports_state = True
+                    connected_sensor = entityData.GetConnectedEntitySensor()
                 else:
                     data_type = "button"
 
@@ -185,29 +190,27 @@ class HomeAssistantWarehouse(Warehouse):
                     "." + entityData.GetId()
 
                 # add configurations about sensors or switches (both have a state)
-                if entityData in entity.GetEntitySensors() or entitycommand_supports_state:  # it's an EntitySensorData
+                if is_entity_sensor or connected_sensor:
                     # If the sensor supports extra attributes, send them as JSON.
                     # So here I have to specify also the topic for those attributes
-                    # - for sensors that became switches: entityData is the command 
-                    # so I need to retrieve the sensor and check there if supports extra attributes 
+                    # - for sensors that became switches: entityData is the command
+                    # so I need to retrieve the sensor and check there if supports extra attributes
                     # and get from there the topic
-                    if entitycommand_supports_state and entityData.GetConnectedEntitySensor().DoesSupportExtraAttributes():
-                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
-                            entityData.GetConnectedEntitySensor())
-                    
-                    # - for real sensors -
-                    elif not entitycommand_supports_state and entityData.DoesSupportExtraAttributes():
-                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
-                            entityData)
 
+                    # select the sensor for data:
+                    if connected_sensor:
+                        data_sensor = connected_sensor
+                    else:
+                        data_sensor = entityData
+
+                    # extra attributes
+                    if data_sensor.DoesSupportExtraAttributes():
+                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
+                            data_sensor)
+                    
                     payload['expire_after'] = 600  # TODO Improve
 
-                    if entitycommand_supports_state: # it has a state, so the key of the sensor to generate the topic is found in the sensor
-                        payload['state_topic'] = self.MakeEntityDataTopicForSensorByCommandIfSwitch(
-                            entityData)
-                    else: # it's a real sensor:
-                        payload['state_topic'] = self.MakeEntityDataTopic(
-                            entityData)
+                    payload['state_topic'] = self.MakeEntityDataTopic(data_sensor)
 
                 # Add default payloads (only for ON/OFF entities)
                 if data_type in ["binary_sensor", "switch"]:
@@ -230,6 +233,12 @@ class HomeAssistantWarehouse(Warehouse):
                 payload["payload_available"] = LWT_PAYLOAD_ONLINE
                 payload["payload_not_available"] = LWT_PAYLOAD_OFFLINE
 
+                # Override from custom entity payload config:
+                custom_payload = entityData.GetCustomPayload()
+                if connected_sensor:
+                    custom_payload = {**custom_payload, **connected_sensor.GetCustomPayload()}
+                payload.update(custom_payload)
+                
                 # Send
                 self.client.SendTopicData(
                     autoDiscoverySendTopic, json.dumps(payload))
@@ -276,14 +285,6 @@ class HomeAssistantWarehouse(Warehouse):
                         return {**payload, **entityDataConfiguration}
         return payload  # if nothing found
 
-    def MakeEntityDataTopicForSensorByCommandIfSwitch(self, entityData):
-        """ If the entityData is a command, returns the topic of the sensor connected to it """
-        if entityData.SupportsState():
-            return self.MakeEntityDataTopic(entityData.GetConnectedEntitySensor())
-        else:
-            raise Exception(entityData.GetID() +
-                            " is not a switch, can't get its sensor topic")
-
     def MakeEntityDataTopic(self, entityData):
         """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
         return self.MakeValuesTopic(entityData.GetId())
@@ -307,7 +308,7 @@ class HomeAssistantWarehouse(Warehouse):
         return device
 
     @classmethod
-    def ConfigurationPreset(self):
+    def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Home assistant MQTT broker address",
                         CONFIG_KEY_ADDRESS, mandatory=True)

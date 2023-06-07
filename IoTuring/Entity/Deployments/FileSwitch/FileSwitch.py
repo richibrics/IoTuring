@@ -44,7 +44,7 @@ class FileSwitch(Entity):
         self.SetEntitySensorExtraAttribute(KEY_STATE, "Path", str(self.config_path))
 
     @classmethod
-    def ConfigurationPreset(self):
+    def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Path to file?", CONFIG_KEY_PATH, mandatory=True)
         return preset
