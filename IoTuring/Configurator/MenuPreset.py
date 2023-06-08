@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class QuestionPreset():
 
     def __init__(self, name, key, default=None, mandatory=False, dependsOn={}, modify_value_callback=None) -> None:
