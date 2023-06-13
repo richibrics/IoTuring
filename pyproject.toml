@@ -1,6 +1,6 @@
 [project]
 name = "IoTuring"
-version = "2023.5.1"
+version = "2023.6.1"
 description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
 readme = "README.md"
 requires-python = ">=3.7"
