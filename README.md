@@ -175,7 +175,7 @@ Warning: sometimes to run the module in editable mode you need to cd into the up
 
 The project uses [calendar versioning](https://calver.org/):
 
-`YYYY.0M.n`:
+`YYYY.M.n`:
 
 - `YYYY`: Full year: 2022, 2023 ...
 - `M`: Month: 1, 2 ... 11, 12
