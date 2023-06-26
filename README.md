@@ -181,6 +181,12 @@ The project uses [calendar versioning](https://calver.org/):
 - `M`: Month: 1, 2 ... 11, 12
 - `n`: Build number in the month: 1, 2 ...
 
+## Contributors
+
+- [@richibrics](https://github.com/richibrics): Riccardo Briccola - Author
+- [@infeeeee](https://github.com/infeeeee) - Main contributor
+- [@tsunglung](https://github.com/tsunglung)
+
 ## Acknowledgement
 
 Icons in this readme are from [Material Design Icons](https://materialdesignicons.com/), License: [Pictogrammers Free License](https://github.com/Templarian/MaterialDesign-SVG/blob/master/LICENSE)
