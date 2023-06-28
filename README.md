@@ -4,6 +4,12 @@
 [![PyPI version](https://badge.fury.io/py/ioturing.svg)](https://pypi.org/project/IoTuring/)
 [![Build, release and publish](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml/badge.svg)](https://github.com/richibrics/IoTuring/actions/workflows/build-release-publish-with-vtag.yml)
 
+If you really like this project and you would like to support it:
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/richibrics)
+
+# The project
+
 Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like **HomeAssistant**.
 
 Like his predecessor - **PyMonitorMQTT** - IoTuring allows you to choose which data are sent and which command are expected to be given. 
@@ -180,6 +186,12 @@ The project uses [calendar versioning](https://calver.org/):
 - `YYYY`: Full year: 2022, 2023 ...
 - `M`: Month: 1, 2 ... 11, 12
 - `n`: Build number in the month: 1, 2 ...
+
+## Contributors
+
+- [@richibrics](https://github.com/richibrics): Riccardo Briccola - Author
+- [@infeeeee](https://github.com/infeeeee) - Main contributor
+- [@tsunglung](https://github.com/tsunglung)
 
 ## Acknowledgement
 
