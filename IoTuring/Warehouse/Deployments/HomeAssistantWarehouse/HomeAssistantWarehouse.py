@@ -141,28 +141,23 @@ class HomeAssistantWarehouse(Warehouse):
     def SendEntityDataConfigurations(self):
         self.SendLwtSensorConfiguration()
         for entity in self.GetEntities():
-
-            # Get sensors entity data linked to commands so they are not configured as sensor but
-            # will be set in command state which will be a switch
-            keys_of_sensors_connected_to_commands = \
-                [command.GetConnectedEntitySensor().GetKey()
-                    for command in entity.GetEntityCommands()
-                    if command.SupportsState()]
-
-            for entityData in entity.GetAllEntityData():
-
-                # if I found a sensor data that will be configured only after, together with
-                # its command (as a switch)
-                if entityData.GetKey() in keys_of_sensors_connected_to_commands:
-                    continue  # it's a sensor linked to a command, so skip
+            
+            for entityData in entity.GetAllUnconnectedEntityData():
 
                 connected_sensor = None
                 is_entity_sensor = False
                 data_type = ""
                 autoDiscoverySendTopic = ""
                 payload = {}
-                payload['name'] = entity.GetEntityNameWithTag() + " - " + \
-                    entityData.GetKey()
+                payload['name'] = entity.GetEntityNameWithTag()
+
+                # Add key only if more than one entityData, and it doesn't have a tag:
+                if not entity.GetEntityTag() and \
+                        len(entity.GetAllUnconnectedEntityData()) > 1:
+
+                    formatted_key = entityData.GetKey().capitalize().replace("_", " ")
+                    payload['name'] += " - " + formatted_key
+
 
                 if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
                     data_type = "sensor"

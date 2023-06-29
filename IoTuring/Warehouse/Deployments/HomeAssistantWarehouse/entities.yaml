@@ -1,25 +1,32 @@
-Battery - percentage:
+Battery - Percentage:
+  name: Battery Level
   unit_of_measurement: "%"
   device_class: battery
-Battery - charging:
+Battery - Charging:
+  name: Battery State
   custom_type: binary_sensor
   device_class: "battery_charging"
   payload_on: "True"
   payload_off: "False"
-OperatingSystem - operating_system:
+OperatingSystem:
+  name: Operating System
   icon: "mdi:apple-keyboard-command"
-ActiveWindow - active_window:
+ActiveWindow:
+  name: Active Window
   icon: "mdi:window-restore"
 BootTime:
+  name: Boot Time
   icon: "mdi:clock"
 UpTime:
+  name: Uptime
   unit_of_measurement: "min"
   icon: "mdi:clock"
-DesktopEnvironment - desktop_environment:
+DesktopEnvironment:
+  name: Desktop Environment
   icon: "mdi:window-maximize"
-Username - username:
+Username:
   icon: "mdi:account-supervisor-circle"
-Lock - lock:
+Lock:
   icon: "mdi:lock"
 NotifyPayload:
   icon: "mdi:forum"
@@ -28,11 +35,11 @@ Notify:
   icon: "mdi:forum"
 Hostname:
   icon: "mdi:form-textbox"
-Power - shutdown:
+Power - Shutdown:
   icon: "mdi:power"
-Power - reboot:
+Power - Reboot:
   icon: "mdi:restart"
-Power - sleep:
+Power - Sleep:
   icon: "mdi:power-sleep"
 Disk:
   unit_of_measurement: "%"
@@ -56,7 +63,7 @@ Time:
 Monitor:
   icon: "mdi:monitor-shimmer"
   custom_type: switch
-AppInfo - update:
+AppInfo - Update:
   custom_type: binary_sensor
   icon: "mdi:package-up"
   device_class: "update"
@@ -68,6 +75,7 @@ Temperature:
   icon: "mdi:thermometer-lines"
   unit_of_measurement: "°C"
 DisplayMode:
+  name: Display Mode
   icon: "mdi:monitor-multiple"
   custom_type: select
   options:

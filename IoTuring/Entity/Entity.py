@@ -119,6 +119,16 @@ class Entity(LogObject, ConfiguratorObject):
     def GetAllEntityData(self) -> list:
         """ safe - Return list of entity sensors and commands """
         return self.entityCommands.copy() + self.entitySensors.copy()  # Safe return: nobody outside can change the callback !
+    
+    def GetAllUnconnectedEntityData(self) -> list:
+        """ safe - Return All EntityCommands and EntitySensors without connected command """
+        connected_sensors = [command.GetConnectedEntitySensor()
+                             for command in self.entityCommands
+                             if command.SupportsState()]
+        unconnected_sensors = [sensor for sensor in self.entitySensors
+                               if sensor not in connected_sensors]
+        return self.entityCommands.copy() + unconnected_sensors.copy()
+        
 
     def GetEntitySensorByKey(self, key) -> EntitySensor:
         for sensor in self.entitySensors:
