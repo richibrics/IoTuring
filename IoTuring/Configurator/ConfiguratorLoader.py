@@ -1,7 +1,9 @@
+from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
+from IoTuring.Warehouse.Warehouse import Warehouse
 
 
 class ConfiguratorLoader(LogObject):
@@ -11,7 +13,7 @@ class ConfiguratorLoader(LogObject):
         self.configurations = configurator.GetConfigurations()
 
     # Return list of instances initialized using their configurations
-    def LoadWarehouses(self) -> list:
+    def LoadWarehouses(self) -> list[Warehouse]:
         warehouses = []
         wcm = WarehouseClassManager()
         if not KEY_ACTIVE_WAREHOUSES in self.configurations:
@@ -22,14 +24,18 @@ class ConfiguratorLoader(LogObject):
             # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
             whClass = wcm.GetClassFromName(
                 activeWarehouse[KEY_WAREHOUSE_TYPE]+"Warehouse")
+
             if whClass is None:
                 self.Log(self.LOG_ERROR, "Can't find " +
                          activeWarehouse[KEY_WAREHOUSE_TYPE] + " warehouse, check your configurations.")
-            warehouses.append(whClass(activeWarehouse))
+            else:
+                whClass(activeWarehouse).AddMissingDefaultConfigs()
+                warehouses.append(whClass(activeWarehouse))
         return warehouses
 
     # warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance()): may be useful
-    def LoadEntities(self) -> list:  # Return list of entities initialized
+    # Return list of entities initialized
+    def LoadEntities(self) -> list[Entity]:
         entities = []
         ecm = EntityClassManager()
         if not KEY_ACTIVE_ENTITIES in self.configurations:
@@ -42,6 +48,7 @@ class ConfiguratorLoader(LogObject):
                 self.Log(self.LOG_ERROR, "Can't find " +
                          activeEntity[KEY_ENTITY_TYPE] + " entity, check your configurations.")
             else:
+                entityClass(activeEntity).AddMissingDefaultConfigs()
                 entities.append(entityClass(activeEntity))  # Entity instance
         return entities
 

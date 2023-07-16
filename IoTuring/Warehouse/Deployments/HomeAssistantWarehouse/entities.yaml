@@ -1,8 +1,11 @@
-Battery - Percentage:
+Connectivity:
+  custom_type: binary_sensor
+  device_class: connectivity
+Battery - percentage:
   name: Battery Level
   unit_of_measurement: "%"
   device_class: battery
-Battery - Charging:
+Battery - charging:
   name: Battery State
   custom_type: binary_sensor
   device_class: "battery_charging"
@@ -35,11 +38,11 @@ Notify:
   icon: "mdi:forum"
 Hostname:
   icon: "mdi:form-textbox"
-Power - Shutdown:
+Power - shutdown:
   icon: "mdi:power"
-Power - Reboot:
+Power - reboot:
   icon: "mdi:restart"
-Power - Sleep:
+Power - sleep:
   icon: "mdi:power-sleep"
 Disk:
   unit_of_measurement: "%"
@@ -63,7 +66,7 @@ Time:
 Monitor:
   icon: "mdi:monitor-shimmer"
   custom_type: switch
-AppInfo - Update:
+AppInfo - update:
   custom_type: binary_sensor
   icon: "mdi:package-up"
   device_class: "update"

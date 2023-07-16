@@ -39,11 +39,10 @@ SEPARATOR_CHAR_NUMBER = 120
 class Configurator(LogObject):
 
     def __init__(self) -> None:
-        self.config = None
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
-        self.LoadConfigurations()
+        self.config = self.LoadConfigurations()
 
-    def GetConfigurations(self):
+    def GetConfigurations(self) -> dict:
         """ Return a copy of the configurations dict"""
         return self.config.copy()  # Safe return
 
@@ -164,12 +163,13 @@ class Configurator(LogObject):
                         self.Log(self.LOG_ERROR,
                                  "Error in Warehouse select menu: " + str(e))
 
-    def LoadConfigurations(self) -> None:
+    def LoadConfigurations(self) -> dict:
         """ Reads the configuration file and returns configuration dictionary.
             If not available, returns the blank configuration  """
-        self.config = self.configuratorIO.readConfigurations()
-        if self.config is None:
-            self.config = BLANK_CONFIGURATION
+        read_config = self.configuratorIO.readConfigurations()
+        if read_config is None:
+            read_config = BLANK_CONFIGURATION
+        return read_config
 
     def WriteConfigurations(self) -> None:
         """ Save to configurations file """

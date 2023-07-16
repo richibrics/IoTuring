@@ -1,4 +1,4 @@
-from IoTuring.Configurator.MenuPreset import BooleanAnswers
+from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
@@ -38,8 +38,8 @@ class Warehouse(LogObject, ConfiguratorObject):
             if self.ShouldCallLoop():
                 self.Loop()
 
-    def GetEntities(self) -> list:
-        return EntityManager.getInstance().GetEntities()
+    def GetEntities(self) -> list[Entity]:
+        return EntityManager().GetEntities()
 
     # Called by "LoopThread", with time constant defined in "ShouldCallLoop"
     def Loop(self) -> None:
@@ -56,21 +56,3 @@ class Warehouse(LogObject, ConfiguratorObject):
     def LogSource(self):
         return self.GetWarehouseId()
 
-    def GetConfigurations(self) -> dict:
-        """ Safe return configurations dict """
-        return self.configurations.copy()
-
-    def GetFromConfigurations(self, key):
-        """ Get value from confiugurations with key (if not present raise Exception) """
-        if key in self.GetConfigurations():
-            return self.GetConfigurations()[key]
-        else:
-            raise Exception("Can't find key " + key + " in configurations")
-
-    def GetTrueOrFalseFromConfigurations(self, key):
-        """ Get boolean value from confiugurations with key (if not present raise Exception) """
-        value = self.GetFromConfigurations(key).lower()
-        if value in BooleanAnswers.TRUE_ANSWERS:
-            return True
-        else:
-            return False

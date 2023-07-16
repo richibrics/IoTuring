@@ -1,19 +1,12 @@
 from threading import Thread
+from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
-# Singleton pattern used
+from IoTuring.Logger.Logger import Singleton
 
 
-class EntityManager(LogObject):
-
-    __instance = None
+class EntityManager(LogObject, metaclass=Singleton):
 
     def __init__(self) -> None:
-        # Prepare the singleton
-        if EntityManager.__instance != None:
-            raise Exception(
-                "This class is a singleton, use .getInstance() to access it!")
-        else:
-            EntityManager.__instance = self
 
         # Where I store the entities that update periodically that have an active behaviour: can send and receive data
         self.activeEntities = []
@@ -31,7 +24,7 @@ class EntityManager(LogObject):
         self.InitializeEntities()
         self.ManageUpdates()
 
-    def GetEntities(self) -> list:
+    def GetEntities(self) -> list[Entity]:
         """ 
             Return a list with entities.
         """
@@ -60,11 +53,3 @@ class EntityManager(LogObject):
                 thread.daemon = True
                 thread.start()
 
-    # Singleton method
-
-    @staticmethod
-    def getInstance():
-        """ Static access method. """
-        if EntityManager.__instance == None:
-            EntityManager()
-        return EntityManager.__instance

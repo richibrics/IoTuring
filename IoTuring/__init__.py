@@ -3,12 +3,8 @@
 from IoTuring.MyApp.App import App
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
-from IoTuring.Entity.Deployments.Username.Username import Username
 from IoTuring.Entity.EntityManager import EntityManager
 from IoTuring.Logger.Logger import Logger, Colors
-from IoTuring.Entity.Entity import Entity
-from IoTuring.Warehouse.Deployments.ConsoleWarehouse.ConsoleWarehouse import ConsoleWarehouse
-from IoTuring.Warehouse.Warehouse import Warehouse
 import sys
 import signal
 import os
@@ -21,9 +17,8 @@ entities = []
 def loop():
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
     
-    # I use .getInstance() to init/get this instance 'cause it's a singleton
-    logger = Logger.getInstance()
-
+    # Start logger:
+    logger = Logger()
     configurator = Configurator()
 
     # add -c to configure with the menu
@@ -37,8 +32,8 @@ def loop():
     logger.Log(Logger.LOG_INFO, "Configurator",
                "Run the script with -c to enter configuration mode")
 
-    # I use .getInstance() to init/get this instance 'cause it's a singleton
-    eM = EntityManager.getInstance()
+    
+    eM = EntityManager()
 
     # These will be done from the configuration reader
     entities = ConfiguratorLoader(configurator).LoadEntities()
@@ -65,7 +60,8 @@ def loop():
         time.sleep(1)
 
 def Exit_SIGINT_handler(sig, frame):
-    Logger.getInstance().Log(Logger.LOG_INFO, "Main", "Application closed by SigInt", printToConsole=False) # to file
+    logger = Logger()
+    logger.Log(Logger.LOG_INFO, "Main", "Application closed by SigInt", printToConsole=False) # to file
     
     messages = ["Exiting...",
                 "Thanks for using IoTuring !"]
@@ -77,7 +73,7 @@ def Exit_SIGINT_handler(sig, frame):
         text += message 
         if(Logger.checkTerminalSupportsColors()):
             text += Colors.reset
-        Logger.getInstance().Log(Logger.LOG_INFO, "Main", text, writeToFile=False) # to terminal
+        logger.Log(Logger.LOG_INFO, "Main", text, writeToFile=False) # to terminal
         
-    Logger.getInstance().CloseFile()
+    logger.CloseFile()
     os._exit(0)

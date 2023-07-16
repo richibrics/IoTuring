@@ -1,9 +1,7 @@
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Entity.ValueFormat import ValueFormatter
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Entity.EntityData import EntitySensor, EntityCommand
+from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand
 import time
 
 KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
@@ -39,7 +37,8 @@ class Entity(LogObject, ConfiguratorObject):
             self.initializeState = True
             self.Log(self.LOG_INFO, "Initialization successfully completed")
         except Exception as e:
-            self.Log(self.LOG_ERROR, "Initialization interrupted due to an error:")
+            self.Log(self.LOG_ERROR,
+                     "Initialization interrupted due to an error:")
             self.Log(self.LOG_ERROR, e)
             return False
         return True
@@ -51,7 +50,7 @@ class Entity(LogObject, ConfiguratorObject):
         except Exception as exc:
             # TODO I need an exception manager
             self.Log(self.LOG_ERROR, 'Error occured during update: ' + str(exc))
-            # self.entityManager.UnloadEntity(self) # TODO Think how to improve this
+            #  self.entityManager.UnloadEntity(self) # TODO Think how to improve this
 
     def Update(self):
         """ Must be implemented in sub-classes """
@@ -80,10 +79,11 @@ class Entity(LogObject, ConfiguratorObject):
                 "The Entity sensor you asked for hasn't got extra attributes")
         return self.GetEntitySensorByKey(key).GetExtraAttributes()
 
-    def SetEntitySensorExtraAttribute(self, sensorDataKey, name, value, valueFormatterOptions = None) -> None:
+    def SetEntitySensorExtraAttribute(self, sensorDataKey, name, value, valueFormatterOptions=None) -> None:
         """ Set the extra attribute for an entity sensor """
-        self.GetEntitySensorByKey(sensorDataKey).SetExtraAttribute(name, value, valueFormatterOptions)
-        
+        self.GetEntitySensorByKey(sensorDataKey).SetExtraAttribute(
+            name, value, valueFormatterOptions)
+
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set how much time to wait between 2 updates """
         self.updateTimeout = timeout
@@ -95,8 +95,8 @@ class Entity(LogObject, ConfiguratorObject):
 
     def LoopThread(self) -> None:
         """ Entry point of Entity thread, will run the Update function periodically """
-        self.CallUpdate() # first call
-        while(True):
+        self.CallUpdate()  # first call
+        while (True):
             if self.ShouldUpdate():
                 self.CallUpdate()
 
@@ -108,19 +108,19 @@ class Entity(LogObject, ConfiguratorObject):
         """ Add EntityCommand to the Entity. This action must be in Initialize, so the Warehouses can subscribe to them at initializing time"""
         self.entityCommands.append(entityCommand)
 
-    def GetEntitySensors(self) -> list:
+    def GetEntitySensors(self) -> list[EntitySensor]:
         """ safe - Return list of registered entity sensors """
         return self.entitySensors.copy()  # Safe return: nobody outside can change the value !
 
-    def GetEntityCommands(self) -> list:
+    def GetEntityCommands(self) -> list[EntityCommand]:
         """ safe - Return list of registered entity commands """
         return self.entityCommands.copy()  # Safe return: nobody outside can change the callback !
 
     def GetAllEntityData(self) -> list:
         """ safe - Return list of entity sensors and commands """
         return self.entityCommands.copy() + self.entitySensors.copy()  # Safe return: nobody outside can change the callback !
-    
-    def GetAllUnconnectedEntityData(self) -> list:
+
+    def GetAllUnconnectedEntityData(self) -> list[EntityData]:
         """ safe - Return All EntityCommands and EntitySensors without connected command """
         connected_sensors = [command.GetConnectedEntitySensor()
                              for command in self.entityCommands
@@ -128,7 +128,6 @@ class Entity(LogObject, ConfiguratorObject):
         unconnected_sensors = [sensor for sensor in self.entitySensors
                                if sensor not in connected_sensors]
         return self.entityCommands.copy() + unconnected_sensors.copy()
-        
 
     def GetEntitySensorByKey(self, key) -> EntitySensor:
         for sensor in self.entitySensors:
@@ -146,23 +145,16 @@ class Entity(LogObject, ConfiguratorObject):
 
     def GetEntityNameWithTag(self) -> str:
         """ Return entity name and tag combined (or name alone if no tag is present) """
-        if self.tag == "":
-            return self.GetEntityName()
-        else:
+        if self.tag:
             return self.GetEntityName()+" @" + self.GetEntityTag()
+        else:
+            return self.GetEntityName()
 
     def GetEntityId(self) -> str:
-        if self.tag is not None and self.tag != "":
+        if self.tag:
             return "Entity." + self.GetEntityName() + "." + self.tag
         else:
             return "Entity." + self.GetEntityName()
-
-    def GetConfigurations(self) -> dict:
-        """ Safe return entity configurations """
-        if self.configurations:
-            return self.configurations.copy()
-        else:
-            return None
 
     def LogSource(self):
         return self.GetEntityId()
@@ -175,7 +167,7 @@ class Entity(LogObject, ConfiguratorObject):
             self.tag = ""
 
     @classmethod
-    def AllowMultiInstance(self):
+    def AllowMultiInstance(cls):
         """ Return True if this Entity can have multiple instances, useful for customizable entities 
             These entities are the ones that must have a tag to be recognized """
-        return self.ALLOW_MULTI_INSTANCE
+        return cls.ALLOW_MULTI_INSTANCE

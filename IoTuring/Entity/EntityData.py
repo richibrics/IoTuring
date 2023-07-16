@@ -105,7 +105,7 @@ class EntityCommand(EntityData):
     def SupportsState(self):
         return self.connectedEntitySensorKey is not None
 
-    def GetConnectedEntitySensor(self):
+    def GetConnectedEntitySensor(self) -> EntitySensor:
         """ Returns the entity sensor connected to this command, if this command supports state.
             Otherwise returns None. """
         return self.GetEntity().GetEntitySensorByKey(self.connectedEntitySensorKey)

@@ -144,6 +144,10 @@ class MenuPreset():
         """ Get a dict with keys and responses"""
         return {entry.key: entry.value for entry in self.results}
 
+    def GetDefaults(self) -> dict:
+        """ Get a dict of default values of keys """
+        return {entry.key: entry.default for entry in self.presets}
+
     @staticmethod
     def PrintRules() -> None:
         """ Print configuration rules, like a legend for complusory symbol and default values """
