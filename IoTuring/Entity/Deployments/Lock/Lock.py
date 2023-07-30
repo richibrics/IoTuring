@@ -16,7 +16,8 @@ commands = {
     'Linux': {
         'gnome': 'gnome-screensaver-command -l',
         'cinnamon': 'cinnamon-screensaver-command -a',
-        'i3': 'i3lock'
+        'i3': 'i3lock',
+        'plasma': 'loginctl lock-session'
     }
 }
 
