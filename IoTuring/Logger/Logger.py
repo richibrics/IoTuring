@@ -2,11 +2,12 @@ from io import TextIOWrapper
 import IoTuring.Logger.consts as consts
 from IoTuring.Logger.Colors import Colors
 import sys
-import os  # to access directory functions
-import inspect  # to get this file path
+import os 
 from datetime import datetime  # for logging purpose and filename
 import json  # to print a dict easily
 import threading  # to lock the file descriptor
+from IoTuring.MyApp.Directory import LogsDirectory
+from IoTuring.MyApp.App import App
 # Singleton pattern used
 
 
@@ -17,7 +18,7 @@ class Logger():
 
     lock = threading.Lock()
 
-    log_filename = ""
+    log_path = ""
     log_file_descriptor = None
 
     def __init__(self) -> None:
@@ -31,25 +32,26 @@ class Logger():
         self.terminalSupportsColors = Logger.checkTerminalSupportsColors()
         
         # Prepare the log
-        self.SetLogFilename()
+        self.SetLogPath()
         # Open the file descriptor
         self.GetLogFileDescriptor()
 
-    def SetLogFilename(self) -> str:
-        """ Set filename with timestamp and also call setup folder """
+    def SetLogPath(self) -> str:
+        """ Set filename with timestamp and also call setup folder to create log folder if does not exist (and get folder for the file)"""
         dateTimeObj = datetime.now()
-        self.log_filename = os.path.join(
-            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT).replace(":", "_"))
-        return self.log_filename
+        self.log_path = os.path.join(
+            self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT.format(App.getName())).replace(":", "_"))
+        print(self.log_path)
+        return self.log_path
 
     def SetupFolder(self) -> str:
-        """ Check if exists (or create) the folder of logs inside this file's folder """
-        thisFolder = os.path.dirname(inspect.getfile(Logger))
-        newFolder = os.path.join(thisFolder, consts.LOGS_FOLDER)
-        if not os.path.exists(newFolder):
-            os.mkdir(newFolder)
-
-        return newFolder
+        """ Check if exists (or create) the folder of logs using LogsDirectory class """
+        print("here")
+        logsFolder = LogsDirectory().getFolderPath()
+        if not os.path.exists(logsFolder):
+            os.mkdir(logsFolder)
+        print("return",logsFolder)
+        return logsFolder
 
     def GetMessageDatetimeString(self) -> str:
         now = datetime.now()
@@ -155,7 +157,8 @@ class Logger():
 
     def GetLogFileDescriptor(self) -> TextIOWrapper:
         if self.log_file_descriptor is None:
-            self.log_file_descriptor = open(self.log_filename, "a")
+            self.log_file_descriptor = open(self.log_path, "a")
+            self.Log(self.LOG_MESSAGE, "Logger", "Log saved in " + self.log_path, printToConsole=True, writeToFile=False)
 
         return self.log_file_descriptor
 

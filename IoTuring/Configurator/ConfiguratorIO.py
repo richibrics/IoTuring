@@ -6,6 +6,7 @@ import inspect # Configurations file path manipulation
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.MyApp.App import App # App name
+from IoTuring.MyApp.Directory import ConfigurationsDirectory
 
 # macOS dep (in PyObjC)
 try:
@@ -25,6 +26,7 @@ DONT_MOVE_FILE_FILENAME = "dontmoveconf.itg"
 class ConfiguratorIO(LogObject):
     def __init__(self):
         self.directoryName = App.getName()
+        self.ConfigurationsDirectory = ConfigurationsDirectory()
     
     def readConfigurations(self):
         """ Returns configurations dictionary. If does not exist the file where it should be stored, return None. """
@@ -35,7 +37,7 @@ class ConfiguratorIO(LogObject):
             self.Log(self.LOG_MESSAGE, "Loaded \"" + self.getFilePath() + "\"")
         except:
             self.Log(self.LOG_WARNING, "It seems you don't have a configuration yet. Use configuration mode (-c) to enable your favourite entities and warehouses.\
-                     \nConfigurations will be saved in \"" + self.getFolderPath() + "\"")
+                     \nConfigurations will be saved in \"" + self.ConfigurationsDirectory.getFolderPath() + "\"")
         return config
     
     def writeConfigurations(self, data):
@@ -51,64 +53,15 @@ class ConfiguratorIO(LogObject):
     
     def getFilePath(self):
         """ Returns the path to the configurations file. """
-        return os.path.join(self.getFolderPath(), CONFIGURATION_FILE_NAME)
+        return os.path.join(self.ConfigurationsDirectory.getFolderPath(), CONFIGURATION_FILE_NAME)
     
     def createFolderPathIfDoesNotExist(self):      
         """ Check if file exists, if not check if path exists: if not create both folder and file otherwise just the file """
-        if not os.path.exists(self.getFolderPath()):    
-            if not os.path.exists(self.getFolderPath()):
-                os.makedirs(self.getFolderPath())        
+        if not os.path.exists(self.ConfigurationsDirectory.getFolderPath()):    
+            if not os.path.exists(self.ConfigurationsDirectory.getFolderPath()):
+                os.makedirs(self.ConfigurationsDirectory.getFolderPath())        
     
-    def getFolderPath(self):
-        """ Returns the path to the configurations file. If the directory where the file
-            will be stored doesn't exist, it will be created. """
-            
-        folderPath = self.defaultFolderPath()
-        try:
-            # Use path from environment variable if present, otherwise os specific folders, otherwise use default path
-            envvarPath = self.envvarFolderPath()
-            if envvarPath is not None:
-                folderPath = envvarPath
-            else:
-                _os = platform.system()
-                if _os == 'Darwin' and macos_support:
-                    folderPath = self.macOSFolderPath()
-                    folderPath = os.path.join(folderPath, self.directoryName)
-                elif _os == "Windows":
-                    folderPath = self.windowsFolderPath()        
-                    folderPath = os.path.join(folderPath, self.directoryName)
-                elif _os == "Linux":
-                    folderPath = self.linuxFolderPath()
-                    folderPath = os.path.join(folderPath, self.directoryName)
-        except:
-            pass # default folder path will be used
-        
-        # add slash if missing (for log reasons)
-        if not folderPath.endswith(os.sep):
-            folderPath += os.sep
-            
-        return folderPath
 
-    def defaultFolderPath(self):
-        return os.path.dirname(inspect.getfile(ConfiguratorIO))
-    
-    # https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/MacOSXDirectories/MacOSXDirectories.html
-    def macOSFolderPath(self):
-        paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,True)
-        basePath = (len(paths) > 0 and paths[0]) or NSTemporaryDirectory()
-        return basePath
-    
-    # https://docs.microsoft.com/en-us/windows/win32/shell/knownfolderid
-    def windowsFolderPath(self):
-        return os.environ["APPDATA"]
-    
-    # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-    def linuxFolderPath(self):
-        return os.environ["XDG_CONFIG_HOME"] if "XDG_CONFIG_HOME" in os.environ else os.path.join(os.environ["HOME"], ".config")
-    
-    def envvarFolderPath(self):
-        return os.getenv(CONFIG_PATH_ENV_VAR)
-    
     # In versions prior to 2022.12.2, the configurations file was stored in the same folder as this file
     def oldFolderPath(self):
         return os.path.dirname(inspect.getfile(ConfiguratorIO))
@@ -123,7 +76,7 @@ class ConfiguratorIO(LogObject):
         """
         
         # This check is not done if old path = current chosen path (also check if ending slash is present)
-        if self.oldFolderPath() == self.getFolderPath() or self.oldFolderPath() == self.getFolderPath()[:-1]:
+        if self.oldFolderPath() == self.ConfigurationsDirectory.getFolderPath() or self.oldFolderPath() == self.ConfigurationsDirectory.getFolderPath()[:-1]:
             return
         
         # Exit check if no config. in old directory or if there is also the dont move file with it.
@@ -139,8 +92,8 @@ class ConfiguratorIO(LogObject):
             # create folder if not exists
             self.createFolderPathIfDoesNotExist()
             # copy file from old to new location
-            os.rename(os.path.join(self.oldFolderPath(), CONFIGURATION_FILE_NAME), os.path.join(self.getFolderPath(), CONFIGURATION_FILE_NAME))
-            self.Log(self.LOG_MESSAGE, "Copied into \"" + os.path.join(self.getFolderPath(), CONFIGURATION_FILE_NAME) + "\"")
+            os.rename(os.path.join(self.oldFolderPath(), CONFIGURATION_FILE_NAME), os.path.join(self.ConfigurationsDirectory.getFolderPath(), CONFIGURATION_FILE_NAME))
+            self.Log(self.LOG_MESSAGE, "Copied into \"" + os.path.join(self.ConfigurationsDirectory.getFolderPath(), CONFIGURATION_FILE_NAME) + "\"")
         else:
             # create dont move file
             with open(os.path.join(self.oldFolderPath(), DONT_MOVE_FILE_FILENAME), "w") as f:

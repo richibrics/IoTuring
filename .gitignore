@@ -9,3 +9,4 @@ IoTuring/Configurator/dontmoveconf.itg*
 .venv
 build
 *.egg-info
+UserFiles/
