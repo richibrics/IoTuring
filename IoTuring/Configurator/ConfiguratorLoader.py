@@ -1,3 +1,4 @@
+from __future__ import annotations
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE

@@ -1,7 +1,8 @@
+from __future__ import annotations
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand
+from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
 import time
 
 KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
@@ -61,7 +62,7 @@ class Entity(LogObject, ConfiguratorObject):
         """ Set the value for an entity sensor """
         self.GetEntitySensorByKey(key).SetValue(value)
 
-    def GetEntitySensorValue(self, key) -> str:
+    def GetEntitySensorValue(self, key) -> str | int | float:
         """ Get value using its entity sensor key if the value is present (else raise an exception) """
         if not self.GetEntitySensorByKey(key).HasValue():
             raise Exception(
@@ -72,17 +73,17 @@ class Entity(LogObject, ConfiguratorObject):
         """ Check if EntitySensor has an extra attributes dict """
         return self.GetEntitySensorByKey(key).HasExtraAttributes()
 
-    def GetEntitySensorExtraAttributes(self, key) -> dict:
+    def GetEntitySensorExtraAttributes(self, key) -> list[ExtraAttribute]:
         """ Get attributes using its entity sensor key if the extra attributes are present (else raise an exception) """
         if not self.GetEntitySensorByKey(key).HasExtraAttributes():
             raise Exception(
                 "The Entity sensor you asked for hasn't got extra attributes")
         return self.GetEntitySensorByKey(key).GetExtraAttributes()
 
-    def SetEntitySensorExtraAttribute(self, sensorDataKey, name, value, valueFormatterOptions=None) -> None:
+    def SetEntitySensorExtraAttribute(self, sensorDataKey, attributeKey, attributeValue, valueFormatterOptions=None) -> None:
         """ Set the extra attribute for an entity sensor """
         self.GetEntitySensorByKey(sensorDataKey).SetExtraAttribute(
-            name, value, valueFormatterOptions)
+            attributeKey, attributeValue, valueFormatterOptions)
 
     def SetUpdateTimeout(self, timeout) -> None:
         """ Set how much time to wait between 2 updates """
@@ -130,10 +131,11 @@ class Entity(LogObject, ConfiguratorObject):
         return self.entityCommands.copy() + unconnected_sensors.copy()
 
     def GetEntitySensorByKey(self, key) -> EntitySensor:
-        for sensor in self.entitySensors:
-            if sensor.GetKey() == key:
-                return sensor
-        raise UnknownEntityKeyException
+        try:
+            sensor = next((s for s in self.entitySensors if s.GetKey() == key))
+            return sensor
+        except StopIteration:
+            raise UnknownEntityKeyException
 
     def GetEntityName(self) -> str:
         """ Return entity name """

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from threading import Thread
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject

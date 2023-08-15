@@ -1,3 +1,4 @@
+from __future__ import annotations
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
