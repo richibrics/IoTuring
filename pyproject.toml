@@ -31,6 +31,11 @@ dependencies = [
   "tinyWinToast; sys_platform == 'win32'"
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest"
+]
+
 [project.urls]
 homepage = "https://github.com/richibrics/IoTuring"
 documentation = "https://github.com/richibrics/IoTuring"
