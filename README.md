@@ -187,6 +187,14 @@ The project uses [calendar versioning](https://calver.org/):
 - `M`: Month: 1, 2 ... 11, 12
 - `n`: Build number in the month: 1, 2 ...
 
+### Tests
+
+To run tests in docker:
+
+```shell
+docker run --rm -it -v .:/srv/IoTuring:ro python:3.8.17-slim-bullseye /srv/IoTuring/tests/run_tests.sh
+```
+
 ## Contributors
 
 - [@richibrics](https://github.com/richibrics): Riccardo Briccola - Author
