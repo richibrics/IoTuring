@@ -1,28 +1,21 @@
+import re
+import subprocess
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
 
 
-# Linux dep
-try:
-    import re
-    from subprocess import PIPE, Popen
-    linux_support = True
-except BaseException:
-    linux_support = False
-
-
 # Windows dep
 try:
-    from win32gui import GetWindowText, GetForegroundWindow
+    from win32gui import GetWindowText, GetForegroundWindow  # type: ignore
     windows_support = True
 except BaseException:
     windows_support = False
 
 # macOS dep
 try:
-    from AppKit import NSWorkspace
+    from AppKit import NSWorkspace  # type: ignore
     macos_support = True
 except BaseException:
     macos_support = False
@@ -42,15 +35,15 @@ class ActiveWindow(Entity):
         if OsD.IsLinux():
             if De.IsWayland():
                 raise Exception("Wayland is not supported")
-            elif linux_support:
-                self.UpdateSpecificFunction = self.GetActiveWindow_Linux
             else:
-                raise Exception("Unsatisfied dependencies for this entity")
+                self.UpdateSpecificFunction = self.GetActiveWindow_Linux
+
         elif OsD.IsWindows():
             if windows_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Windows
             else:
                 raise Exception("Unsatisfied dependencies for this entity")
+
         elif OsD.IsMacos():
             if macos_support:
                 self.UpdateSpecificFunction = self.GetActiveWindow_macOS
@@ -64,7 +57,8 @@ class ActiveWindow(Entity):
             self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def Update(self):
-        self.SetEntitySensorValue(KEY, str(self.UpdateSpecificFunction()))
+        if self.UpdateSpecificFunction:
+            self.SetEntitySensorValue(KEY, str(self.UpdateSpecificFunction()))
 
     def GetActiveWindow_macOS(self):
         try:
@@ -77,19 +71,29 @@ class ActiveWindow(Entity):
     def GetActiveWindow_Windows(self):
         return GetWindowText(GetForegroundWindow())
 
-    def GetActiveWindow_Linux(self):
-        root = Popen(['xprop', '-root', '_NET_ACTIVE_WINDOW'], stdout=PIPE)
-        stdout, stderr = root.communicate()
+    def GetActiveWindow_Linux(self) -> str:
+        p = subprocess.run(
+            ['xprop', '-root', '_NET_ACTIVE_WINDOW'], capture_output=True)
 
-        m = re.search(b'^_NET_ACTIVE_WINDOW.* ([\\w]+)$', stdout)
+        if p.stdout:
+            m = re.search(b'^_NET_ACTIVE_WINDOW.* ([\\w]+)$', p.stdout)
 
-        if m is not None:
-            window_id = m.group(1)
-            window = Popen(['xprop', '-id', window_id, 'WM_NAME'], stdout=PIPE)
-            stdout, stderr = window.communicate()
+            if m is not None:
+                window_id = m.group(1)
 
-            match = re.match(b'WM_NAME\\(\\w+\\) = (?P<name>.+)$', stdout)
-            if match is not None:
-                return match.group('name').decode('UTF-8').strip('"')
+                if window_id.decode() == '0x0':
+                    return 'Unknown'
+
+                w = subprocess.run(
+                    ['xprop', '-id', window_id, 'WM_NAME'], capture_output=True)
+
+                if w.stderr:
+                    return w.stderr.decode()
+
+                match = re.match(
+                    b'WM_NAME\\(\\w+\\) = (?P<name>.+)$', w.stdout)
+
+                if match is not None:
+                    return match.group('name').decode('UTF-8').strip('"')
 
         return 'Inactive'

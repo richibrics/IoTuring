@@ -1,5 +1,4 @@
 import os
-from IoTuring.Entity.Entity import Entity
 from pathlib import Path
 from os import path
 import importlib.util
@@ -7,7 +6,8 @@ import importlib.machinery
 import sys
 import inspect
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.ClassManager import consts
+
+# from IoTuring.ClassManager import consts
 
 # This is a parent class
 
@@ -25,8 +25,11 @@ from IoTuring.ClassManager import consts
 class ClassManager(LogObject):
     def __init__(self):
         self.modulesFilename = []
-        self.mainPath = path.dirname(path.abspath(
-            sys.modules[self.__class__.__module__].__file__))
+        module_path = sys.modules[self.__class__.__module__].__file__
+        if not module_path:
+            raise Exception("Error getting path: " + str(module_path))
+        else:
+            self.mainPath = path.dirname(path.abspath(module_path))
         # THIS MUST BE IMPLEMENTED IN SUBCLASSES, IS THE CLASS I WANT TO SEARCH !!!!
         self.baseClass = None
 

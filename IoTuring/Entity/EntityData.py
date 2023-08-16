@@ -1,18 +1,24 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Entity.Entity import Entity
+
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Entity.ValueFormat import ValueFormatter
 
 # EntitySensor extra attribute aren't read from all the warehouses
 
 
 class EntityData(LogObject):
 
-    def __init__(self, entity, key, customPayload = {}):
+    def __init__(self, entity: Entity, key, customPayload={}) -> None:
         self.entityId = entity.GetEntityId()
         self.id = self.entityId + "." + key
         self.key = key
         self.entity = entity
         self.customPayload = customPayload
 
-    def GetEntity(self):
+    def GetEntity(self) -> Entity:
         return self.entity
 
     def GetId(self):
@@ -30,6 +36,9 @@ class EntityData(LogObject):
 
 class EntitySensor(EntityData):
 
+    value: str | int | float
+    extraAttributes: list[ExtraAttribute]
+
     def __init__(self, entity, key,
                  valueFormatterOptions=None,
                  supportsExtraAttributes=False,
@@ -41,52 +50,58 @@ class EntitySensor(EntityData):
         """
         EntityData.__init__(self, entity, key, customPayload)
         self.supportsExtraAttributes = supportsExtraAttributes
-        self.value = None
-        self.extraAttributes = None
         self.valueFormatterOptions = valueFormatterOptions
 
-    def DoesSupportExtraAttributes(self):
+    def DoesSupportExtraAttributes(self) -> bool:
         return self.supportsExtraAttributes
 
     def GetValueFormatterOptions(self):
         return self.valueFormatterOptions
 
-    def GetValue(self):
-        return self.value
+    def GetValue(self) -> str | int | float:
+        if self.HasValue():
+            return self.value
+        else:
+            raise Exception("No value for this sensor!")
 
-    def SetValue(self, value):
+    def SetValue(self, value) -> None:
         self.Log(self.LOG_DEBUG, "Set to " + str(value))
         self.value = value
-        return self.value
 
-    def HasValue(self):
+    def HasValue(self) -> bool:
         """ True if self.value isn't empty """
-        return self.value is not None
+        return hasattr(self, "value")
 
-    def GetExtraAttributes(self):
-        if self.supportsExtraAttributes == False:
+    def GetExtraAttributes(self) -> list[ExtraAttribute]:
+        """ Get extra attribute objects as a list """
+        if not self.supportsExtraAttributes:
             raise Exception(
                 "This entity sensor does not support extra attributes. Please specify it when initializing the sensor.")
+        elif not self.HasExtraAttributes():
+            raise Exception(
+                "No extra attribute set yet!"
+            )
         return self.extraAttributes
 
     def HasExtraAttributes(self):
         """ True if self.extraAttributes isn't empty """
-        return self.extraAttributes is not None
+        return hasattr(self, "extraAttributes")
 
-    def SetExtraAttribute(self, name, value, valueFormatterOptions=None):
-        if self.supportsExtraAttributes == False:
+    def SetExtraAttribute(self, attribute_name, attribute_value, valueFormatterOptions=None):
+        if not self.supportsExtraAttributes:
             raise Exception(
                 "This entity sensor does not support extra attributes. Please specify it when initializing the sensor.")
-        if self.extraAttributes is None:
+        if not self.HasExtraAttributes():
             self.extraAttributes = []
+
         # If the Attribute does not already exists, create it, otherwise update it
         extraAttributeObj = next(
-            (attr for attr in self.extraAttributes if attr.GetName() == name), None)
-        if (extraAttributeObj is None):
+            (attr for attr in self.extraAttributes if attr.GetName() == attribute_name), None)
+        if not extraAttributeObj:
             self.extraAttributes.append(ExtraAttribute(
-                name, value, valueFormatterOptions))
+                attribute_name, attribute_value, valueFormatterOptions))
         else:
-            extraAttributeObj.SetValue(value)
+            extraAttributeObj.SetValue(attribute_value)
 
 
 class EntityCommand(EntityData):
@@ -105,7 +120,7 @@ class EntityCommand(EntityData):
     def SupportsState(self):
         return self.connectedEntitySensorKey is not None
 
-    def GetConnectedEntitySensor(self):
+    def GetConnectedEntitySensor(self) -> EntitySensor:
         """ Returns the entity sensor connected to this command, if this command supports state.
             Otherwise returns None. """
         return self.GetEntity().GetEntitySensorByKey(self.connectedEntitySensorKey)

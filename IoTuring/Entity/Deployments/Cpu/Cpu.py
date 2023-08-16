@@ -89,12 +89,12 @@ class Cpu(Entity):
             value=MHZ * psutil.cpu_freq()[0])
         # Extra data
         self.SetEntitySensorExtraAttribute(
-            KEY_FREQ_CURRENT,
-            EXTRA_KEY_FREQ_MIN,
-            value=MHZ * psutil.cpu_freq()[1],
+            sensorDataKey=KEY_FREQ_CURRENT,
+            attributeKey=EXTRA_KEY_FREQ_MIN,
+            attributeValue=MHZ * psutil.cpu_freq()[1],
             valueFormatterOptions=VALUEFORMATOPTIONS_CPU_FREQUENCY_MHZ)
         self.SetEntitySensorExtraAttribute(
-            KEY_FREQ_CURRENT,
-            EXTRA_KEY_FREQ_MAX,
-            value=MHZ * psutil.cpu_freq()[2],
+            sensorDataKey=KEY_FREQ_CURRENT,
+            attributeKey=EXTRA_KEY_FREQ_MAX,
+            attributeValue=MHZ * psutil.cpu_freq()[2],
             valueFormatterOptions=VALUEFORMATOPTIONS_CPU_FREQUENCY_MHZ)

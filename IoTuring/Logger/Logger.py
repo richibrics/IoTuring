@@ -1,19 +1,28 @@
 from io import TextIOWrapper
-import IoTuring.Logger.consts as consts
-from IoTuring.Logger.Colors import Colors
+from IoTuring.Logger import consts
+from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 import sys
-import os  # to access directory functions
-import inspect  # to get this file path
-from datetime import datetime  # for logging purpose and filename
-import json  # to print a dict easily
-import threading  # to lock the file descriptor
-# Singleton pattern used
+import os
+import inspect
+from datetime import datetime
+import json
+import threading
 
 
-class Logger():
+class Singleton(type):
+    """ Metaclass for singleton classes """
 
-    from IoTuring.Logger.consts import LOG_INFO, LOG_MESSAGE, LOG_ERROR, LOG_DEBUG, LOG_DEVELOPMENT, LOG_WARNING
-    __instance = None
+    # https://stackoverflow.com/questions/6760685/creating-a-singleton-in-python/6798042#6798042
+
+    _instances = {}
+
+    def __call__(cls):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__()
+        return cls._instances[cls]
+
+
+class Logger(LogLevelObject, metaclass=Singleton):
 
     lock = threading.Lock()
 
@@ -21,15 +30,9 @@ class Logger():
     log_file_descriptor = None
 
     def __init__(self) -> None:
-        # Prepare the singleton
-        if Logger.__instance != None:
-            raise Exception(
-                "This class is a singleton, use .getInstance() to access it!")
-        else:
-            Logger.__instance = self
 
         self.terminalSupportsColors = Logger.checkTerminalSupportsColors()
-        
+
         # Prepare the log
         self.SetLogFilename()
         # Open the file descriptor
@@ -57,12 +60,14 @@ class Logger():
 
     # LOG
 
-    def Log(self, messageType, source, message, printToConsole=True, writeToFile=True) -> None:
+    def Log(self, loglevel: LogLevel, source: str, message, printToConsole=True, writeToFile=True) -> None:
         if type(message) == dict:
-            self.LogDict(messageType, source, message, printToConsole, writeToFile)
+            self.LogDict(loglevel, source, message,
+                         printToConsole, writeToFile)
             return  # Log dict will call this function so I don't need to go down at the moment
         elif type(message) == list:
-            self.LogList(messageType, source, message, printToConsole, writeToFile)
+            self.LogList(loglevel, source, message,
+                         printToConsole, writeToFile)
             return  # Log list will call this function so I don't need to go down at the moment
 
         message = str(message)
@@ -70,26 +75,12 @@ class Logger():
         messageLines = message.split("\n")
         if len(messageLines) > 1:
             for line in messageLines:
-                self.Log(messageType, source, line, printToConsole, writeToFile)
+                self.Log(loglevel, source, line,
+                         printToConsole, writeToFile)
             return  # Stop the function then because I've already called this function from each line so I don't have to go down here
 
-        if messageType == self.LOG_INFO:
-            messageTypeString = 'Info'
-        elif messageType == self.LOG_ERROR:
-            messageTypeString = 'Error'
-        elif messageType == self.LOG_WARNING:
-            messageTypeString = 'Warning'
-        elif messageType == self.LOG_DEBUG:
-            messageTypeString = 'Debug'
-        elif messageType == self.LOG_MESSAGE:
-            messageTypeString = 'Message'
-        elif messageType == self.LOG_DEVELOPMENT:
-            messageTypeString = 'Dev'
-        else:
-            messageTypeString = 'Logger'
-
-        prestring = '[ '+self.GetMessageDatetimeString()+' | '+messageTypeString.center(consts.STRINGS_LENGTH[0]) + ' | ' + source.center(consts.STRINGS_LENGTH[1])+']' + \
-            consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '  # justify
+        prestring = f"[ {self.GetMessageDatetimeString()} | {str(loglevel).center(consts.STRINGS_LENGTH[0])} | " \
+            + f"{source.center(consts.STRINGS_LENGTH[1])}]{consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '}"  # justify
 
         # Manage string to print in more lines if it's too long
         while len(message) > 0:
@@ -97,61 +88,62 @@ class Logger():
             # Cut for next iteration if message is longer than a line
             message = message[consts.MESSAGE_WIDTH:]
             # then I add the dash to the row
-            if(len(message) > 0 and string[-1] != " " and string[-1] != "." and string[-1] != ","):
+            if (len(message) > 0 and string[-1] != " " and string[-1] != "." and string[-1] != ","):
                 string = string + '-'  # Print new line indicator if I will go down in the next iteration
-            self.PrintAndSave(string, messageType, printToConsole, writeToFile)
+            self.PrintAndSave(string, loglevel, printToConsole, writeToFile)
             # -1 + space cause if the char in the prestring isn't a space, it will be directly attached to my message without a space
 
             prestring = (len(prestring)-consts.PRESTRING_MESSAGE_SEPARATOR_LEN) * \
                 consts.LONG_MESSAGE_PRESTRING_CHAR+consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '
 
-    def LogDict(self, messageLevel, source, dict):
+    def LogDict(self, loglevel, source, message_dict: dict, *args):
         try:
-            string = json.dumps(dict, indent=4, sort_keys=False,
+            string = json.dumps(message_dict, indent=4, sort_keys=False,
                                 default=lambda o: '<not serializable>')
             lines = string.splitlines()
             for line in lines:
-                self.Log(messageLevel, source, "> "+line)
+                self.Log(loglevel, source, "> "+line, *args)
         except Exception as e:
             self.Log(self.LOG_ERROR, source, "Can't print dictionary content")
 
-    def LogList(self, messageLevel, source, _list):
+    def LogList(self, loglevel, source, message_list: list, *args):
         try:
-            for index, item in enumerate(_list):
+            for index, item in enumerate(message_list):
                 if type(item) == dict or type(item) == list:
-                    self.Log(messageLevel, source, "Item #"+str(index))
-                    self.Log(messageLevel, source, item)
+                    self.Log(loglevel, source, "Item #"+str(index), *args)
+                    self.Log(loglevel, source, item, *args)
                 else:
-                    self.Log(messageLevel, source, str(
-                        index) + ": " + str(item))
+                    self.Log(loglevel, source,
+                             f"{str(index)}: {str(item)}", *args)
 
         except:
             self.Log(self.LOG_ERROR, source, "Can't print dictionary content")
 
     # Both print and save to file
+    def PrintAndSave(self, string, loglevel: LogLevel, printToConsole=True, writeToFile=True) -> None:
+        # Override log level from envvar:
+        console_level = consts.CONSOLE_LOG_LEVEL
+        if os.getenv("IOTURING_LOG_LEVEL"):
+            console_level = str(os.getenv("IOTURING_LOG_LEVEL"))
 
-    def PrintAndSave(self, string, level, printToConsole=True, writeToFile=True) -> None:
-        if printToConsole and level <= consts.CONSOLE_LOG_LEVEL:
-            self.ColoredPrint(string, level)
-        if writeToFile and level <= consts.FILE_LOG_LEVEL:
+        console_log_level = LogLevel(console_level)
+        file_log_level = LogLevel(consts.FILE_LOG_LEVEL)
+
+        if printToConsole and int(loglevel) <= int(console_log_level):
+            self.ColoredPrint(string, loglevel)
+
+        if writeToFile and int(loglevel) <= int(file_log_level):
             # acquire the lock
             with self.lock:
                 self.GetLogFileDescriptor().write(string+' \n')
-            self.GetLogFileDescriptor().flush() # so I can see the log in real time from a reader
+            # so I can see the log in real time from a reader
+            self.GetLogFileDescriptor().flush()
 
-    def ColoredPrint(self, string, level) -> None:
+    def ColoredPrint(self, string, loglevel: LogLevel) -> None:
         if not self.terminalSupportsColors:
             print(string)
-        elif level == self.LOG_INFO:
-            print(string)
-        elif level == self.LOG_WARNING:
-            print(Colors.yellow + string + Colors.reset)
-        elif level == self.LOG_ERROR:
-            print(Colors.red + string + Colors.reset)
-        elif level == self.LOG_MESSAGE:
-            print(Colors.green + string + Colors.reset)
         else:
-            print(string)
+            print(loglevel.get_colored_string(string))
 
     def GetLogFileDescriptor(self) -> TextIOWrapper:
         if self.log_file_descriptor is None:
@@ -164,14 +156,6 @@ class Logger():
             self.log_file_descriptor.close()
             self.log_file_descriptor = None
 
-    # Singleton method
-    @staticmethod
-    def getInstance():
-        """ Static access method. """
-        if Logger.__instance == None:
-            Logger()
-        return Logger.__instance
-
     @staticmethod
     def checkTerminalSupportsColors():
         """
@@ -180,7 +164,7 @@ class Logger():
         """
         plat = sys.platform
         supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                    'ANSICON' in os.environ)
+                                                      'ANSICON' in os.environ)
         # isatty is not always implemented, #6223.
         is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         return supported_platform and is_a_tty
