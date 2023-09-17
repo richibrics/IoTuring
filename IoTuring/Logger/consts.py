@@ -3,12 +3,44 @@ LOG_FILENAME_FORMAT = "Log_%Y-%m-%d_%H:%M:%S.log"
 MESSAGE_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-LOG_MESSAGE = 0
-LOG_ERROR = 1
-LOG_WARNING = 2
-LOG_INFO = 3
-LOG_DEBUG = 4
-LOG_DEVELOPMENT = 5
+LOG_LEVELS = [
+    {
+        "const": "LOG_MESSAGE",
+        "string": "Message",
+        "number": 0,
+        "color": "green"
+    },
+    {
+        "const": "LOG_ERROR",
+        "string": "Error",
+        "number": 1,
+        "color": "red"
+    },
+    {
+        "const": "LOG_WARNING",
+        "string": "Warning",
+        "number": 2,
+        "color": "yellow"
+    },
+    {
+        "const": "LOG_INFO",
+        "string": "Info",
+        "number": 3,
+
+    },
+    {
+        "const": "LOG_DEBUG",
+        "string": "Debug",
+        "number": 4,
+
+    },
+    {
+        "const": "LOG_DEVELOPMENT",
+        "string": "Dev",
+        "number": 5,
+
+    }
+]
 
 
 # On/off states as strings:
@@ -24,7 +56,7 @@ PRESTRING_MESSAGE_SEPARATOR_LEN = 2
 # before those spaces I add this string
 LONG_MESSAGE_PRESTRING_CHAR = ' '
 
-CONSOLE_LOG_LEVEL = LOG_INFO
-FILE_LOG_LEVEL = LOG_INFO
+CONSOLE_LOG_LEVEL = "LOG_INFO"
+FILE_LOG_LEVEL = "LOG_INFO"
 
 MESSAGE_WIDTH = 95

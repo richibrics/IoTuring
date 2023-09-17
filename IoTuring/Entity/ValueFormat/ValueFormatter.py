@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 
@@ -23,14 +24,15 @@ class ValueFormatter():
     
     # includeUnit: isn't in the option as it's chosen by each warehouse and not by the entity itself
     @staticmethod
-    def FormatValue(value, options: ValueFormatterOptions, includeUnit: bool):
+    def FormatValue(value, options: ValueFormatterOptions | None, includeUnit: bool):
         """
         Format the value according to the options. Returns value as string.
         IncludeUnit: True if the unit has to be included in the value
         """
         return str(ValueFormatter._ParseValue(value, options, includeUnit))
     
-    def _ParseValue(value, options: ValueFormatterOptions, includeUnit: bool):
+    @staticmethod
+    def _ParseValue(value, options: ValueFormatterOptions | None, includeUnit: bool):
         if options is None:
             return value
         valueType = options.get_value_type()

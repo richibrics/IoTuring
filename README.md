@@ -177,6 +177,14 @@ Then run it like in the non-editable mode.
 
 Warning: sometimes to run the module in editable mode you need to cd into the upper IoTuring folder.
 
+### Debug log
+
+Overwrite log level with the `IOTURING_LOG_LEVEL` environment variable. For example to run IoTuring with debug log:
+
+```shell
+env IOTURING_LOG_LEVEL=LOG_DEBUG IoTuring
+```
+
 ### Versioning
 
 The project uses [calendar versioning](https://calver.org/):
