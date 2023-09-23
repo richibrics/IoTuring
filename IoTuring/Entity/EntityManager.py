@@ -4,7 +4,6 @@ if TYPE_CHECKING:
     from IoTuring.Entity.Entity import Entity
 
 from threading import Thread
-from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Logger.Logger import Singleton
 
