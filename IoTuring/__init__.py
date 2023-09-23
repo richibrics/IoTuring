@@ -4,7 +4,8 @@ from IoTuring.MyApp.App import App
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
-from IoTuring.Logger.Logger import Logger, Colors
+from IoTuring.Logger.Logger import Logger
+from IoTuring.Logger.Colors import Colors
 import sys
 import signal
 import os

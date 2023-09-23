@@ -1,4 +1,3 @@
-import inspect
 import os
 import json
 import yaml
@@ -55,6 +54,7 @@ class HomeAssistantEntityBase(LogObject):
     state_topic: str
     json_attributes_topic: str
     command_topic: str
+    discovery_topic: str
 
     def __init__(self,
                  wh: "HomeAssistantWarehouse",
@@ -99,6 +99,8 @@ class HomeAssistantEntityBase(LogObject):
         if self.data_type in ["binary_sensor", "switch"]:
             self.SetDefaultDiscoveryPayload("payload_on", PAYLOAD_ON)
             self.SetDefaultDiscoveryPayload("payload_off", PAYLOAD_OFF)
+        # Set discovery topic here, data_type is finalized:
+        self.SetDiscoveryTopic()
 
     def SetDefaultDiscoveryPayload(self, key: str, value: str) -> None:
         """ Set value if not set already """
@@ -109,15 +111,10 @@ class HomeAssistantEntityBase(LogObject):
 
     def SetDiscoveryPayloadName(self) -> None:
         """ Set the name in the discovery payload if not set already """
-        if "name" in self.discovery_payload:
-            payload_name = self.discovery_payload["name"]
-        else:
-            payload_name = self.name
+        self.SetDefaultDiscoveryPayload("name", self.name)
 
         if self.wh.addNameToEntityName:
-            self.discovery_payload["name"] = f"{self.wh.clientName} {payload_name}"
-        else:
-            self.discovery_payload['name'] = payload_name
+            self.discovery_payload["name"] = f"{self.wh.clientName} {self.discovery_payload['name']}"
 
     def AddTopic(self, topic_name: str, topic_path: str = ""):
         """ Add topic to the HA entity """
@@ -132,9 +129,9 @@ class HomeAssistantEntityBase(LogObject):
     def SendTopicData(self, topic, data) -> None:
         self.wh.client.SendTopicData(topic, data)
 
-    def GetDiscoveryTopic(self) -> str:
-        """ Get the discovery topic """
-        return self.wh.NormalizeTopic(TOPIC_AUTODISCOVERY_FORMAT.format(
+    def SetDiscoveryTopic(self) -> None:
+        """ Set the discovery topic attribute"""
+        self.discovery_topic = self.wh.NormalizeTopic(TOPIC_AUTODISCOVERY_FORMAT.format(
             self.data_type, App.getName(), self.unique_id.replace(".", "_")))
 
     def GetEntityDataCustomConfigurations(self, entityDataName) -> dict:
@@ -145,7 +142,6 @@ class HomeAssistantEntityBase(LogObject):
             __file__)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)
         with open(config_path) as yaml_data:
 
-            # with open(os.path.join(os.path.dirname(inspect.getfile(HomeAssistantWarehouse)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)) as yaml_data:
             data = yaml.safe_load(yaml_data.read())
 
             # Try exact match:
@@ -204,11 +200,15 @@ class HomeAssistantEntity(HomeAssistantEntityBase):
                 len(self.entity.GetAllUnconnectedEntityData()) > 1:
 
             formatted_key = self.entityData.GetKey().capitalize().replace("_", " ")
-            self.discovery_payload["name"] = f"{self.entity.GetEntityName()} - {formatted_key}"
+
+            self.SetDefaultDiscoveryPayload(
+                "name", self.entity.GetEntityName())
+            self.discovery_payload["name"] += f" - {formatted_key}"
 
         else:
             # Default name:
-            self.discovery_payload["name"] = self.entity.GetEntityNameWithTag()
+            self.SetDefaultDiscoveryPayload(
+                "name", self.entity.GetEntityNameWithTag())
 
         return super().SetDiscoveryPayloadName()
 
@@ -322,6 +322,8 @@ class LwtSensor(HomeAssistantEntityBase):
         self.discovery_payload["payload_on"] = LWT_PAYLOAD_ONLINE
         self.discovery_payload["payload_off"] = LWT_PAYLOAD_OFFLINE
 
+        self.SetDiscoveryTopic()
+
     def SendValues(self):
         self.SendTopicData(self.state_topic, LWT_PAYLOAD_ONLINE)
 
@@ -418,8 +420,8 @@ class HomeAssistantWarehouse(Warehouse):
     def SendEntityDataConfigurations(self):
         """ Send discovery """
         for hassentity in self.homeAssistantEntities["commands"] + self.homeAssistantEntities["sensors"]:
+            topic = hassentity.discovery_topic
             payload = hassentity.discovery_payload
-            topic = hassentity.GetDiscoveryTopic()
 
             self.client.SendTopicData(topic, json.dumps(payload))
 
