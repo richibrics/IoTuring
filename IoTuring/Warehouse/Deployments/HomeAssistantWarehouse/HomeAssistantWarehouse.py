@@ -195,20 +195,20 @@ class HomeAssistantEntity(HomeAssistantEntityBase):
         if self.wh.useTagAsEntityName and self.entity.GetEntityTag():
             self.discovery_payload["name"] = self.entity.GetEntityTag()
 
-        # Add key only if more than one entityData, and it doesn't have a tag:
-        elif not self.entity.GetEntityTag() and \
-                len(self.entity.GetAllUnconnectedEntityData()) > 1:
-
-            formatted_key = self.entityData.GetKey().capitalize().replace("_", " ")
-
-            self.SetDefaultDiscoveryPayload(
-                "name", self.entity.GetEntityName())
-            self.discovery_payload["name"] += f" - {formatted_key}"
-
         else:
-            # Default name:
-            self.SetDefaultDiscoveryPayload(
-                "name", self.entity.GetEntityNameWithTag())
+            # Add key only if more than one entityData, and it doesn't have a tag:
+            if not self.entity.GetEntityTag() and \
+                    len(self.entity.GetAllUnconnectedEntityData()) > 1:
+
+                formatted_key = self.entityData.GetKey().capitalize().replace("_", " ")
+
+                payload_name = f"{self.entity.GetEntityName()} - {formatted_key}"
+
+            else:
+                # Default name:
+                payload_name = self.entity.GetEntityNameWithTag()
+
+            self.SetDefaultDiscoveryPayload("name", payload_name)
 
         return super().SetDiscoveryPayloadName()
 
