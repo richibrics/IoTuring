@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import json
 import yaml
@@ -432,6 +433,8 @@ class HomeAssistantWarehouse(Warehouse):
     @staticmethod
     def NormalizeTopic(topicstring: str) -> str:
         """ Home assistant requires stricter topic names """
+        # Remove non ascii characters:
+        topicstring=topicstring.encode("ascii", "ignore").decode()
         return MQTTClient.NormalizeTopic(topicstring).replace(" ", "_")
 
     @classmethod
