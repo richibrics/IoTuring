@@ -31,6 +31,7 @@ class ValueFormatter():
         """
         return str(ValueFormatter._ParseValue(value, options, includeUnit))
     
+    @staticmethod
     def _ParseValue(value, options: ValueFormatterOptions | None, includeUnit: bool):
         if options is None:
             return value

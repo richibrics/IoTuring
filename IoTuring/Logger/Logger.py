@@ -1,6 +1,5 @@
 from io import TextIOWrapper
 from IoTuring.Logger import consts
-from IoTuring.Logger.Colors import Colors
 from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 import sys
 import os

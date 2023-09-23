@@ -1,7 +1,10 @@
 ---
 name: "Test"
 
-on: push
+on: 
+  pull_request:
+  workflow_dispatch:
+  push:
 
 jobs:
   pytest:
@@ -17,9 +20,6 @@ jobs:
     - name: Install linux dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install .
-    - name: Install pytest
-      run: |
-        pip install pytest
+        pip install .[test]
     - name: Test
       run: python -m pytest

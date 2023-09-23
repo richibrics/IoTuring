@@ -1,4 +1,8 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Entity.Entity import Entity
+
 from threading import Thread
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject

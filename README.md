@@ -177,6 +177,14 @@ Then run it like in the non-editable mode.
 
 Warning: sometimes to run the module in editable mode you need to cd into the upper IoTuring folder.
 
+### Debug log
+
+Overwrite log level with the `IOTURING_LOG_LEVEL` environment variable. For example to run IoTuring with debug log:
+
+```shell
+env IOTURING_LOG_LEVEL=LOG_DEBUG IoTuring
+```
+
 ### Versioning
 
 The project uses [calendar versioning](https://calver.org/):
@@ -186,6 +194,14 @@ The project uses [calendar versioning](https://calver.org/):
 - `YYYY`: Full year: 2022, 2023 ...
 - `M`: Month: 1, 2 ... 11, 12
 - `n`: Build number in the month: 1, 2 ...
+
+### Tests
+
+To run tests in docker:
+
+```shell
+docker run --rm -it -v .:/srv/IoTuring:ro python:3.8.17-slim-bullseye /srv/IoTuring/tests/run_tests.sh
+```
 
 ## Contributors
 

@@ -1,5 +1,4 @@
 import os
-from IoTuring.Entity.Entity import Entity
 from pathlib import Path
 from os import path
 import importlib.util
@@ -7,7 +6,8 @@ import importlib.machinery
 import sys
 import inspect
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.ClassManager import consts
+
+# from IoTuring.ClassManager import consts
 
 # This is a parent class
 
