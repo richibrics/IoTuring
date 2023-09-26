@@ -104,6 +104,23 @@ or this one
 python -m IoTuring
 ```
 
+## Docker
+
+Run the configurator:
+
+```shell
+docker run -it -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest IoTuring -c
+```
+
+Enable the `Console Warehose` to see logs!
+
+Run detached after configuration:
+
+```shell
+docker run -d -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest
+```
+
+For a docker compose example see [docker-compose.yaml](./docker-compose.yaml). Create configuration manually or with the command above!
 
 ## HomeAssistant demo
 
@@ -201,6 +218,14 @@ To run tests in docker:
 
 ```shell
 docker run --rm -it -v .:/srv/IoTuring:ro python:3.8.17-slim-bullseye /srv/IoTuring/tests/run_tests.sh
+```
+
+### Docker
+
+To build docker image:
+
+```
+docker build -t ioturing:latest .
 ```
 
 ## Contributors

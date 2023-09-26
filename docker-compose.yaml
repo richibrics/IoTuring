@@ -1,0 +1,9 @@
+services:
+  ioturing:
+    image: ghcr.io/richibrics/ioturing:latest
+    container_name: ioturing
+    volumes:
+      - ~/.config/IoTuring/:/config
+    environment:
+      - TZ=Europe/Budapest
+    restart: unless-stopped

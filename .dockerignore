@@ -1,0 +1,13 @@
+*/*/*.pyc
+IoTuring/Logger/Logs
+IoTuring/Configurator/configurations.json*
+IoTuring/Configurator/dontmoveconf.itg*
+commands_topic.txt
+.vscode
+.venv
+build
+docs
+*/*/.DS_Store
+IoTuring.egg-info
+.pytest_cache
+docker-compose.yaml

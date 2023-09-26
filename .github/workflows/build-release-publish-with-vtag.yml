@@ -33,3 +33,21 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+  build-docker:
+    name: "Build Docker"
+    needs: tagged-release
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: actions/checkout@v3
+        name: Check out code
+
+      - uses: mr-smithers-excellent/docker-build-push@v6
+        name: Build & push Docker image
+        with:
+          image: ioturing
+          addLatest: true
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
