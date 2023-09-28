@@ -35,6 +35,8 @@ class ActiveWindow(Entity):
         if OsD.IsLinux():
             if De.IsWayland():
                 raise Exception("Wayland is not supported")
+            elif not OsD.CommandExists("xprop"):
+                raise Exception("No xprop command found!")
             else:
                 self.UpdateSpecificFunction = self.GetActiveWindow_Linux
 
