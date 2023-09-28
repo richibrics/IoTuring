@@ -112,7 +112,7 @@ Run the configurator:
 docker run -it -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest IoTuring -c
 ```
 
-Enable the `Console Warehose` to see logs!
+Enable the `Console Warehouse` to see logs!
 
 Run detached after configuration:
 
