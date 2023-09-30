@@ -9,8 +9,8 @@ Battery - charging:
   name: Battery State
   custom_type: binary_sensor
   device_class: battery_charging
-  payload_on: True
-  payload_off: False
+  payload_on: "True"
+  payload_off: "False"
 OperatingSystem:
   name: Operating System
   icon: mdi:apple-keyboard-command

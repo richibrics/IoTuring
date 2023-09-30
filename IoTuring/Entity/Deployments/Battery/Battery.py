@@ -7,11 +7,9 @@ from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 KEY_PERCENTAGE = 'percentage'
 KEY_CHARGING_STATUS = 'charging'
 
-supports_charge = False
-
-
 class Battery(Entity):
     NAME = "Battery"
+    supports_charge = False
 
     def Initialize(self):
 
@@ -23,7 +21,7 @@ class Battery(Entity):
 
         # Check if charging state working:
         if isinstance(batteryInfo['charging'], bool):
-            supports_charge = True
+            self.supports_charge = True
             self.RegisterEntitySensor(EntitySensor(self, KEY_CHARGING_STATUS))
 
     def Update(self):
@@ -32,7 +30,7 @@ class Battery(Entity):
         self.SetEntitySensorValue(
             KEY_PERCENTAGE, int(batteryInfo['level']))
 
-        if supports_charge:
+        if self.supports_charge:
             self.SetEntitySensorValue(
                 KEY_CHARGING_STATUS, str(batteryInfo['charging']))
 
