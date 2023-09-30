@@ -32,11 +32,11 @@ class AppInfo(Entity):
             
             if not new_version: # signal no update and current version (as its the latest)
                 self.SetEntitySensorValue(
-                    KEY_UPDATE, False)
+                    KEY_UPDATE, "False")
                 self.SetEntitySensorExtraAttribute(KEY_UPDATE, EXTRA_ATTRIBUTE_UPDATE_LATEST, App.getVersion())
             else: # signal update and latest version
                 self.SetEntitySensorValue(
-                    KEY_UPDATE, True)
+                    KEY_UPDATE, "True")
                 self.SetEntitySensorExtraAttribute(KEY_UPDATE, EXTRA_ATTRIBUTE_UPDATE_LATEST, new_version)
         except Exception as e:
             # connection error or pypi name changed or something else

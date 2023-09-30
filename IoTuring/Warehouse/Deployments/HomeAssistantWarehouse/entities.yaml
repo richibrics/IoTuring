@@ -70,8 +70,8 @@ AppInfo - update:
   custom_type: binary_sensor
   icon: mdi:package-up
   device_class: update
-  payload_on: True
-  payload_off: False
+  payload_on: "True"
+  payload_off: "False"
 AppInfo:
   icon: mdi:information-outline
 Temperature:
@@ -88,8 +88,8 @@ DisplayMode:
     - Extend displays
 FileSwitch:
   icon: mdi:file-star
-  payload_on: True
-  payload_off: False
+  payload_on: "True"
+  payload_off: "False"
 Volume:
   icon: mdi:volume-high
   unit_of_measurement: "%"
