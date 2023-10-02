@@ -1,16 +1,20 @@
-import inspect
+from __future__ import annotations
 import os
+import json
+import yaml
+import re
+import time
+from typing import Callable
+
 from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Entity.EntityData import EntityCommand, EntityData, EntitySensor
+from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Protocols.MQTTClient.MQTTClient import MQTTClient
 from IoTuring.Warehouse.Warehouse import Warehouse
 from IoTuring.MyApp.App import App
 from IoTuring.Logger import consts
 from IoTuring.Entity.ValueFormat import ValueFormatter
 
-import json
-import yaml
-import re
-import time
 
 INCLUDE_UNITS_IN_SENSORS = False
 INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES = True
@@ -30,17 +34,299 @@ CONFIG_KEY_NAME = "name"
 CONFIG_KEY_USERNAME = "username"
 CONFIG_KEY_PASSWORD = "password"
 CONFIG_KEY_ADD_NAME_TO_ENTITY = "add_name"
+CONFIG_KEY_USE_TAG_AS_ENTITY_NAME = "use_tag"
 
 CONFIGURATION_SEND_LOOP_SKIP_NUMBER = 10
 
 EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
-EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE = "custom_type"
 
 LWT_TOPIC_SUFFIX = "LWT"
 LWT_PAYLOAD_ONLINE = "ONLINE"
 LWT_PAYLOAD_OFFLINE = "OFFLINE"
 PAYLOAD_ON = consts.STATE_ON
 PAYLOAD_OFF = consts.STATE_OFF
+
+
+class HomeAssistantEntityBase(LogObject):
+    """ Base class for all entities in HomeAssistantWarehouse """
+
+    # Possible topics:
+    availability_topic: str
+    state_topic: str
+    json_attributes_topic: str
+    command_topic: str
+    discovery_topic: str
+
+    def __init__(self,
+                 wh: "HomeAssistantWarehouse",
+                 name: str = "",
+                 id: str = ""
+                 ) -> None:
+
+        self.wh = wh
+        self.name = name
+        self.id = id
+        self.unique_id = self.wh.clientName + "." + self.id
+
+        self.supports_extra_attributes = False
+
+        # Get custom info to the entity data, reading it from external file and accessing the information using the entity data name
+        self.discovery_payload = \
+            self.GetEntityDataCustomConfigurations(self.name)
+
+        # Get data type:
+        if "custom_type" in self.discovery_payload:
+            self.data_type = self.discovery_payload.pop("custom_type")
+        else:
+            self.data_type = ""
+
+        # Set name:
+        self.SetDiscoveryPayloadName()
+
+        # Set device info:
+        device_info = {}
+        device_info['name'] = self.wh.clientName
+        device_info['model'] = self.wh.clientName
+        device_info['identifiers'] = self.wh.clientName
+        device_info['manufacturer'] = App.getName() + " by " + App.getVendor()
+        device_info['sw_version'] = App.getVersion()
+
+        self.discovery_payload['device'] = device_info
+        self.discovery_payload['unique_id'] = self.unique_id
+
+    def SetDefaultDataType(self, data_type: str) -> None:
+        """ Set data type if not set previously """
+        self.data_type = self.data_type or data_type
+        if self.data_type in ["binary_sensor", "switch"]:
+            self.SetDefaultDiscoveryPayload("payload_on", PAYLOAD_ON)
+            self.SetDefaultDiscoveryPayload("payload_off", PAYLOAD_OFF)
+        # Set discovery topic here, data_type is finalized:
+        self.SetDiscoveryTopic()
+
+    def SetDefaultDiscoveryPayload(self, key: str, value: str) -> None:
+        """ Set value if not set already """
+        if key in self.discovery_payload:
+            self.discovery_payload[key] = self.discovery_payload[key] or value
+        else:
+            self.discovery_payload[key] = value
+
+    def SetDiscoveryPayloadName(self) -> None:
+        """ Set the name in the discovery payload if not set already """
+        self.SetDefaultDiscoveryPayload("name", self.name)
+
+        if self.wh.addNameToEntityName:
+            self.discovery_payload["name"] = f"{self.wh.clientName} {self.discovery_payload['name']}"
+
+    def AddTopic(self, topic_name: str, topic_path: str = ""):
+        """ Add topic to the HA entity """
+        if not topic_path:
+            topic_path = getattr(self, "default_topics")[topic_name]
+
+        # Add as an attribute:
+        setattr(self, topic_name, topic_path)
+        # Add to the discovery payload:
+        self.discovery_payload[topic_name] = topic_path
+
+    def SendTopicData(self, topic, data) -> None:
+        self.wh.client.SendTopicData(topic, data)
+
+    def SetDiscoveryTopic(self) -> None:
+        """ Set the discovery topic attribute"""
+        self.discovery_topic = self.wh.NormalizeTopic(TOPIC_AUTODISCOVERY_FORMAT.format(
+            self.data_type, App.getName(), self.unique_id.replace(".", "_")))
+
+    def GetEntityDataCustomConfigurations(self, entityDataName) -> dict:
+        """ Add custom info to the entity data, reading it from external file and accessing the information using the entity data name """
+
+        # if resource_file:
+        config_path = os.path.join(os.path.dirname(os.path.abspath(
+            __file__)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)
+        with open(config_path) as yaml_data:
+
+            data = yaml.safe_load(yaml_data.read())
+
+            # Try exact match:
+            try:
+                return data[entityDataName]
+            except KeyError:
+                # No exact match, try regex:
+                for entityData, entityDataConfiguration in data.items():
+                    # entityData may be the correct name, or a regex expression that should return something applied to the real name
+                    if re.search(entityData, entityDataName):
+                        # merge payload and additional configurations
+                        return entityDataConfiguration
+        return {}  # if nothing found
+
+
+class HomeAssistantEntity(HomeAssistantEntityBase):
+    """ Base class for entity based sensors and commands in HomeAssistantWarehouse """
+
+    def __init__(self, entityData: EntityData, wh: "HomeAssistantWarehouse") -> None:
+
+        self.entityData = entityData
+        self.entity = self.entityData.GetEntity()
+
+        super().__init__(
+            wh=wh,
+            name=self.entity.GetEntityNameWithTag() + " - " +
+            self.entityData.GetKey(),
+            id=self.entityData.GetId()
+        )
+
+        # Custom payload from entities:
+        self.discovery_payload.update(self.entityData.GetCustomPayload())
+
+        # Default topics:
+        self.default_topics = {
+            "availability_topic": self.wh.MakeValuesTopic(LWT_TOPIC_SUFFIX),
+            "state_topic": self.MakeEntityDataTopic(self.entityData),
+            "json_attributes_topic": self.MakeEntityDataExtraAttributesTopic(self.entityData),
+            "command_topic": self.MakeEntityDataTopic(self.entityData)
+        }
+
+        # Availability:
+        self.AddTopic("availability_topic")
+        self.discovery_payload["payload_available"] = LWT_PAYLOAD_ONLINE
+        self.discovery_payload["payload_not_available"] = LWT_PAYLOAD_OFFLINE
+
+    def SetDiscoveryPayloadName(self) -> None:
+        """ Set discovery payload name """
+
+        # Use Tag only as name:
+        if self.wh.useTagAsEntityName and self.entity.GetEntityTag():
+            self.discovery_payload["name"] = self.entity.GetEntityTag()
+
+        else:
+            # Add key only if more than one entityData, and it doesn't have a tag:
+            if not self.entity.GetEntityTag() and \
+                    len(self.entity.GetAllUnconnectedEntityData()) > 1:
+
+                formatted_key = self.entityData.GetKey().capitalize().replace("_", " ")
+
+                payload_name = f"{self.entity.GetEntityName()} - {formatted_key}"
+
+            else:
+                # Default name:
+                payload_name = self.entity.GetEntityNameWithTag()
+
+            self.SetDefaultDiscoveryPayload("name", payload_name)
+
+        return super().SetDiscoveryPayloadName()
+
+    def MakeEntityDataTopic(self, entityData: EntityData) -> str:
+        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
+        return self.wh.MakeValuesTopic(entityData.GetId())
+
+    def MakeEntityDataExtraAttributesTopic(self, entityData: EntityData) -> str:
+        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
+            the extra attrbiutes from the original value """
+        return self.wh.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
+
+
+class HomeAssistantSensor(HomeAssistantEntity):
+
+    def __init__(self,  entityData: EntitySensor, wh: "HomeAssistantWarehouse") -> None:
+        super().__init__(entityData=entityData, wh=wh)
+
+        self.entitySensor = entityData
+        self.supports_extra_attributes = self.entitySensor.DoesSupportExtraAttributes()
+
+        # Default data type:
+        self.SetDefaultDataType("sensor")
+
+        # State topic for all sensors
+        self.AddTopic("state_topic")
+
+        if self.supports_extra_attributes:
+            self.AddTopic("json_attributes_topic")
+
+        # Extra payload for sensors:
+        self.discovery_payload['expire_after'] = 600  # TODO Improve
+
+    def SendValues(self):
+        """ Send values of the sensor to the state topic """
+        if self.entitySensor.HasValue():
+            sensor_value = ValueFormatter.FormatValue(
+                self.entitySensor.GetValue(),
+                self.entitySensor.GetValueFormatterOptions(),
+                INCLUDE_UNITS_IN_SENSORS)
+
+            self.SendTopicData(self.state_topic, sensor_value)
+
+            if self.supports_extra_attributes and \
+                    self.entitySensor.HasExtraAttributes():
+                formattedExtraAttributes = self.entitySensor.GetFormattedExtraAtributes(
+                    INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
+                self.SendTopicData(
+                    self.json_attributes_topic,
+                    json.dumps(formattedExtraAttributes))
+
+
+class HomeAssistantCommand(HomeAssistantEntity):
+    def __init__(self, entityData: EntityCommand, wh: "HomeAssistantWarehouse") -> None:
+        super().__init__(entityData=entityData, wh=wh)
+
+        self.entityCommand = entityData
+
+        self.AddTopic("availability_topic")
+        self.AddTopic("command_topic")
+
+        self.connected_sensor = self.GetConnectedSensor()
+
+        if self.connected_sensor:
+            self.SetDefaultDataType("switch")
+            # Get discovery payload from connected sensor?
+            for payload_key in self.connected_sensor.discovery_payload:
+                if payload_key not in self.discovery_payload:
+                    self.discovery_payload[payload_key] = self.connected_sensor.discovery_payload[payload_key]
+        else:
+            # Button as default data type:
+            self.SetDefaultDataType("button")
+
+        self.command_callback = self.GenerateCommandCallback()
+
+    def GetConnectedSensor(self) -> HomeAssistantSensor | None:
+        """ Get the connected sensor of this command """
+        if self.entityCommand.SupportsState():
+            return HomeAssistantSensor(
+                entityData=self.entityCommand.GetConnectedEntitySensor(),
+                wh=self.wh)
+        else:
+            return None
+
+    def GenerateCommandCallback(self) -> Callable:
+        """ Generate the callback function """
+        def CommandCallback(message):
+            status = self.entityCommand.CallCallback(message)
+            if status and self.wh.client.IsConnected():
+                if self.connected_sensor:
+                    # Only set value if it was already set, to exclude optimistic switches
+                    if self.connected_sensor.entitySensor.HasValue():
+                        self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
+                                 self.connected_sensor.state_topic)
+                        self.SendTopicData(
+                            self.connected_sensor.state_topic, message.payload.decode('utf-8'))
+        return CommandCallback
+
+
+class LwtSensor(HomeAssistantEntityBase):
+    def __init__(self, wh: "HomeAssistantWarehouse") -> None:
+        super().__init__(
+            wh=wh,
+            name="Connectivity",
+            id="connectivity"
+        )
+
+        # topics:
+        self.AddTopic("state_topic", self.wh.MakeValuesTopic(LWT_TOPIC_SUFFIX))
+
+        self.discovery_payload["payload_on"] = LWT_PAYLOAD_ONLINE
+        self.discovery_payload["payload_off"] = LWT_PAYLOAD_OFFLINE
+
+        self.SetDiscoveryTopic()
+
+    def SendValues(self):
+        self.SendTopicData(self.state_topic, LWT_PAYLOAD_ONLINE)
 
 
 class HomeAssistantWarehouse(Warehouse):
@@ -63,45 +349,59 @@ class HomeAssistantWarehouse(Warehouse):
         self.addNameToEntityName = self.GetTrueOrFalseFromConfigurations(
             CONFIG_KEY_ADD_NAME_TO_ENTITY)
 
+        self.useTagAsEntityName = self.GetTrueOrFalseFromConfigurations(
+            CONFIG_KEY_USE_TAG_AS_ENTITY_NAME)
+
+        # Entities store:
+        self.homeAssistantEntities = {
+            "commands": [],
+            "sensors": [],
+            "connected_sensors": []
+        }
+
+        self.CollectEntityData()
+
         self.RegisterEntityCommands()
 
         self.loopCounter = 0
 
         super().Start()  # Then run other inits (start the Loop method for example)
 
+    def CollectEntityData(self) -> None:
+        """ Collect entities and save them ass hass entities """
+
+        # Add the Lwt sensor:
+        self.homeAssistantEntities["sensors"].append(LwtSensor(self))
+
+        # Add real entities:
+        for entity in self.GetEntities():
+            for entityData in entity.GetAllUnconnectedEntityData():
+
+                # It's a command:
+                if isinstance(entityData, EntityCommand):
+                    hasscommand = HomeAssistantCommand(entityData, self)
+                    if hasscommand.connected_sensor:
+                        self.homeAssistantEntities["connected_sensors"].append(
+                            hasscommand.connected_sensor)
+                    self.homeAssistantEntities["commands"].append(hasscommand)
+
+                # It's a sensor:
+                elif isinstance(entityData, EntitySensor):
+                    self.homeAssistantEntities["sensors"].append(
+                        HomeAssistantSensor(entityData, self))
+
+                else:
+                    raise Exception(f"Unkown EntityData! {entityData}")
+
     def RegisterEntityCommands(self):
         """ Add EntityCommands to the MQTT client (subscribe to them) """
-        for entity in self.GetEntities():
-            for entityCommand in entity.GetEntityCommands():
-                self.client.AddNewTopicToSubscribeTo(
-                    self.MakeEntityDataTopic(entityCommand), self.GenerateCommandCallback(entityCommand))
-                self.Log(self.LOG_DEBUG, entityCommand.GetId(
-                ) + " subscribed to " + self.MakeEntityDataTopic(entityCommand))
-
-    def GenerateCommandCallback(self, entityCommand):
-        """ Generates a lambda function that will become the command callback.
-            Obviously this lamda will call the default callback of the command.
-            But will also send the state to the state topic of the sensor relative to the command,
-            in case the command has a sensor connected to it (= is a switch).
-            This is needed to avoid status blinking on HA."""
-        def CommandCallback(message):
-            status = entityCommand.CallCallback(
-                message)  # True: success, False: error
-            if status and self.client.IsConnected():
-                if entityCommand.SupportsState():
-
-                    connected_sensor = entityCommand.GetConnectedEntitySensor()
-                    # Only set value if it was already set, to exclude optimistic switches
-                    if connected_sensor.HasValue():
-                        sensor_topic = self.MakeEntityDataTopic(connected_sensor)
-                        self.Log(self.LOG_DEBUG, "Switch callback: sending state to " + sensor_topic)
-                        self.client.SendTopicData(sensor_topic, message.payload.decode('utf-8'))
-        return CommandCallback
+        for hasscommand in self.homeAssistantEntities["commands"]:
+            self.client.AddNewTopicToSubscribeTo(
+                hasscommand.command_topic, hasscommand.command_callback)
+            self.Log(
+                self.LOG_DEBUG, f"{hasscommand.id} subscribed to {hasscommand.command_topic}")
 
     def Loop(self):
-        # Send online state
-        self.client.SendTopicData(self.MakeValuesTopic(
-            LWT_TOPIC_SUFFIX), LWT_PAYLOAD_ONLINE)
 
         while (not self.client.IsConnected()):
             time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
@@ -114,198 +414,28 @@ class HomeAssistantWarehouse(Warehouse):
         self.loopCounter = (
             self.loopCounter+1) % CONFIGURATION_SEND_LOOP_SKIP_NUMBER
 
-        # Sensor value
-        self.SendSensorsValues()
-
-    def SendSensorsValues(self):
-        """ Here I send sensor's data (command callbacks are not managed here) """
-        for entity in self.GetEntities():
-            for entitySensor in entity.GetEntitySensors():
-                if (entitySensor.HasValue()):
-                    topic = self.MakeEntityDataTopic(entitySensor)
-                    value = ValueFormatter.FormatValue(entitySensor.GetValue(), entitySensor.GetValueFormatterOptions(), INCLUDE_UNITS_IN_SENSORS)
-                    self.client.SendTopicData(topic, value)  # send
-                if (entitySensor.HasExtraAttributes()):
-                    self.client.SendTopicData(self.MakeEntityDataExtraAttributesTopic(entitySensor),
-                                              json.dumps(self.PrepareExtraAttributes(entitySensor)))
-
-    def PrepareExtraAttributes(self, entitySensor):
-        """ Prepare extra attributes to send to HA """
-        extraAttributesDict = {}
-        extraAttributes = entitySensor.GetExtraAttributes()
-        for extraAttribute in extraAttributes:
-            formatted_value = ValueFormatter.FormatValue(extraAttribute.GetValue(), extraAttribute.GetValueFormatterOptions(), INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
-            extraAttributesDict[extraAttribute.GetName()] = formatted_value
-        return extraAttributesDict
+        # Send sensor values:
+        for hasssensor in self.homeAssistantEntities["sensors"] + self.homeAssistantEntities["connected_sensors"]:
+            hasssensor.SendValues()
 
     def SendEntityDataConfigurations(self):
-        self.SendLwtSensorConfiguration()
-        for entity in self.GetEntities():
+        """ Send discovery """
+        for hassentity in self.homeAssistantEntities["commands"] + self.homeAssistantEntities["sensors"]:
+            topic = hassentity.discovery_topic
+            payload = hassentity.discovery_payload
 
-            # Get sensors entity data linked to commands so they are not configured as sensor but
-            # will be set in command state which will be a switch
-            keys_of_sensors_connected_to_commands = \
-                [command.GetConnectedEntitySensor().GetKey()
-                    for command in entity.GetEntityCommands()
-                    if command.SupportsState()]
+            self.client.SendTopicData(topic, json.dumps(payload))
 
-            for entityData in entity.GetAllEntityData():
-
-                # if I found a sensor data that will be configured only after, together with
-                # its command (as a switch)
-                if entityData.GetKey() in keys_of_sensors_connected_to_commands:
-                    continue  # it's a sensor linked to a command, so skip
-
-                connected_sensor = None
-                is_entity_sensor = False
-                data_type = ""
-                autoDiscoverySendTopic = ""
-                payload = {}
-                payload['name'] = entity.GetEntityNameWithTag() + " - " + \
-                    entityData.GetKey()
-
-                if entityData in entity.GetEntitySensors():  # it's an EntitySensorData
-                    data_type = "sensor"
-                    is_entity_sensor = True
-                elif entityData.SupportsState():  # it's a EntityCommandData: has it a state ?
-                    data_type = "switch"
-                    connected_sensor = entityData.GetConnectedEntitySensor()
-                else:
-                    data_type = "button"
-
-                # add custom info to the entity data, reading it from external file and accessing the information using the entity data name
-                payload = self.AddEntityDataCustomConfigurations(
-                    payload['name'], payload)
-                # check if custom configs have a new data type
-                if EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE in payload:
-                    data_type = payload[EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE]
-                    payload.pop(
-                        EXTERNAL_ENTITY_DATA_CONFIGURATION_KEY_CUSTOM_TYPE)
-
-                if self.addNameToEntityName:
-                    payload['name'] = self.clientName + " " + payload['name']
-
-                payload['device'] = self.MakeApplicationConfiguration()
-                payload['unique_id'] = self.clientName + \
-                    "." + entityData.GetId()
-
-                # add configurations about sensors or switches (both have a state)
-                if is_entity_sensor or connected_sensor:
-                    # If the sensor supports extra attributes, send them as JSON.
-                    # So here I have to specify also the topic for those attributes
-                    # - for sensors that became switches: entityData is the command
-                    # so I need to retrieve the sensor and check there if supports extra attributes
-                    # and get from there the topic
-
-                    # select the sensor for data:
-                    if connected_sensor:
-                        data_sensor = connected_sensor
-                    else:
-                        data_sensor = entityData
-
-                    # extra attributes
-                    if data_sensor.DoesSupportExtraAttributes():
-                        payload["json_attributes_topic"] = self.MakeEntityDataExtraAttributesTopic(
-                            data_sensor)
-                    
-                    payload['expire_after'] = 600  # TODO Improve
-
-                    payload['state_topic'] = self.MakeEntityDataTopic(data_sensor)
-
-                # Add default payloads (only for ON/OFF entities)
-                if data_type in ["binary_sensor", "switch"]:
-                    if not 'payload_on' in payload:
-                        payload['payload_on'] = PAYLOAD_ON
-                    if not 'payload_off' in payload:
-                        payload['payload_off'] = PAYLOAD_OFF
-
-                # if it's a command (so button or switch), configure the topic where the command will be called
-                if entityData in entity.GetEntityCommands():
-                    payload['command_topic'] = self.MakeEntityDataTopic(
-                        entityData)
-
-                autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
-                    data_type, App.getName(), payload['unique_id'].replace(".", "_"))
-
-                # Add availability configuration
-                payload["availability_topic"] = self.MakeValuesTopic(
-                    LWT_TOPIC_SUFFIX)
-                payload["payload_available"] = LWT_PAYLOAD_ONLINE
-                payload["payload_not_available"] = LWT_PAYLOAD_OFFLINE
-
-                # Override from custom entity payload config:
-                custom_payload = entityData.GetCustomPayload()
-                if connected_sensor:
-                    custom_payload = {**custom_payload, **connected_sensor.GetCustomPayload()}
-                payload.update(custom_payload)
-                
-                # Send
-                self.client.SendTopicData(
-                    autoDiscoverySendTopic, json.dumps(payload))
-
-    def SendLwtSensorConfiguration(self):
-        """ Sends the same configuration as any other entity, but for the lwt message value (so we have
-            a message with a value that isn't from an entity and we want to send discovery data for it) """
-        lwt_discovery = {}
-        lwt_discovery['name'] = "Connectivity"
-
-        if self.addNameToEntityName:
-            lwt_discovery['name'] = self.clientName + \
-                " " + lwt_discovery['name']
-
-        lwt_discovery['device'] = self.MakeApplicationConfiguration()
-        lwt_discovery['unique_id'] = self.clientName + ".connectivity"
-        lwt_discovery["device_class"] = "connectivity"
-        lwt_discovery['state_topic'] = self.MakeValuesTopic(LWT_TOPIC_SUFFIX)
-
-        lwt_discovery["payload_on"] = LWT_PAYLOAD_ONLINE
-        lwt_discovery["payload_off"] = LWT_PAYLOAD_OFFLINE
-
-        autoDiscoverySendTopic = TOPIC_AUTODISCOVERY_FORMAT.format(
-            "binary_sensor", App.getName(), lwt_discovery['unique_id'].replace(".", "_"))
-
-        # send
-        self.client.SendTopicData(
-            autoDiscoverySendTopic, json.dumps(lwt_discovery))
-
-    def AddEntityDataCustomConfigurations(self, entityDataName, payload):
-        """ Add custom info to the entity data, reading it from external file and accessing the information using the entity data name """
-        with open(os.path.join(os.path.dirname(inspect.getfile(HomeAssistantWarehouse)), EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME)) as yaml_data:
-            data = yaml.safe_load(yaml_data.read())
-            
-            # Try exact match:
-            try:            
-                return {**payload, **data[entityDataName]}
-            except KeyError:
-                # No exact match, try regex:
-                for entityData, entityDataConfiguration in data.items():
-                    # entityData may be the correct name, or a regex expression that should return something applied to the real name
-                    if re.search(entityData, entityDataName):
-                        # merge payload and additional configurations
-                        return {**payload, **entityDataConfiguration}
-        return payload  # if nothing found
-
-    def MakeEntityDataTopic(self, entityData):
-        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
-        return self.MakeValuesTopic(entityData.GetId())
-
-    def MakeEntityDataExtraAttributesTopic(self, entityData):
-        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
-            the extra attrbiutes from the original value """
-        return self.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
-
-    def MakeValuesTopic(self, topic_suffix):
+    def MakeValuesTopic(self, topic_suffix: str) -> str:
         """ Prepares a topic, including the app name, the client name and finally a passed id """
-        return MQTTClient.NormalizeTopic(TOPIC_DATA_FORMAT.format(App.getName(), self.clientName, topic_suffix))
+        return self.NormalizeTopic(TOPIC_DATA_FORMAT.format(App.getName(), self.clientName, topic_suffix))
 
-    def MakeApplicationConfiguration(self):  # Add device information
-        device = {}
-        device['name'] = self.clientName
-        device['model'] = self.clientName
-        device['identifiers'] = self.clientName
-        device['manufacturer'] = App.getName() + " by " + App.getVendor()
-        device['sw_version'] = App.getVersion()
-        return device
+    @staticmethod
+    def NormalizeTopic(topicstring: str) -> str:
+        """ Home assistant requires stricter topic names """
+        # Remove non ascii characters:
+        topicstring=topicstring.encode("ascii", "ignore").decode()
+        return MQTTClient.NormalizeTopic(topicstring).replace(" ", "_")
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -318,4 +448,6 @@ class HomeAssistantWarehouse(Warehouse):
         preset.AddEntry("Password", CONFIG_KEY_PASSWORD, default="")
         preset.AddEntry("Add computer name to entity name ? Y/N",
                         CONFIG_KEY_ADD_NAME_TO_ENTITY, default="Y")
+        preset.AddEntry("Use tag as entity name for multi instance entities? Y/N",
+                        CONFIG_KEY_USE_TAG_AS_ENTITY_NAME, default="N")
         return preset

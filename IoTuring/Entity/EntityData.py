@@ -83,6 +83,17 @@ class EntitySensor(EntityData):
             )
         return self.extraAttributes
 
+    def GetFormattedExtraAtributes(self, includeUnit: bool) -> dict[str, str]:
+        """ Get extra attributes names and formatted values as a dict """
+        formattedExtraAttributes = {}
+        for extraAttr in self.GetExtraAttributes():
+            formatted_value = ValueFormatter.FormatValue(
+                extraAttr.GetValue(),
+                extraAttr.GetValueFormatterOptions(),
+                includeUnit)
+            formattedExtraAttributes[extraAttr.GetName()] = formatted_value
+        return formattedExtraAttributes
+
     def HasExtraAttributes(self):
         """ True if self.extraAttributes isn't empty """
         return hasattr(self, "extraAttributes")

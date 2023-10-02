@@ -1,74 +1,85 @@
+Connectivity: #LWT
+  custom_type: binary_sensor
+  device_class: connectivity
 Battery - percentage:
+  name: Battery Level
   unit_of_measurement: "%"
   device_class: battery
 Battery - charging:
+  name: Battery State
   custom_type: binary_sensor
-  device_class: "battery_charging"
+  device_class: battery_charging
   payload_on: "True"
   payload_off: "False"
-OperatingSystem - operating_system:
-  icon: "mdi:apple-keyboard-command"
-ActiveWindow - active_window:
-  icon: "mdi:window-restore"
+OperatingSystem:
+  name: Operating System
+  icon: mdi:apple-keyboard-command
+ActiveWindow:
+  name: Active Window
+  icon: mdi:window-restore
 BootTime:
-  icon: "mdi:clock"
+  name: Boot Time
+  icon: mdi:clock
 UpTime:
-  unit_of_measurement: "min"
-  icon: "mdi:clock"
-DesktopEnvironment - desktop_environment:
-  icon: "mdi:window-maximize"
-Username - username:
-  icon: "mdi:account-supervisor-circle"
-Lock - lock:
-  icon: "mdi:lock"
+  name: Uptime
+  unit_of_measurement: min
+  icon: mdi:clock
+DesktopEnvironment:
+  name: Desktop Environment
+  icon: mdi:window-maximize
+Username:
+  icon: mdi:account-supervisor-circle
+Lock:
+  icon: mdi:lock
 NotifyPayload:
-  icon: "mdi:forum"
+  icon: mdi:forum
   custom_type: text
 Notify:
-  icon: "mdi:forum"
+  icon: mdi:forum
 Hostname:
-  icon: "mdi:form-textbox"
+  icon: mdi:form-textbox
 Power - shutdown:
-  icon: "mdi:power"
+  icon: mdi:power
 Power - reboot:
-  icon: "mdi:restart"
+  icon: mdi:restart
 Power - sleep:
-  icon: "mdi:power-sleep"
+  icon: mdi:power-sleep
 Disk:
   unit_of_measurement: "%"
-  icon: "mdi:harddisk"
+  icon: mdi:harddisk
 Ram .*(free|total|available|used):
-  unit_of_measurement: "MB"
-  icon: "mdi:memory"
+  unit_of_measurement: MB
+  icon: mdi:memory
 Ram .*percentage:
   unit_of_measurement: "%"
-  icon: "mdi:memory"
+  icon: mdi:memory
 Cpu .*percentage:
   unit_of_measurement: "%"
-  icon: "mdi:calculator-variant"
+  icon: mdi:calculator-variant
 Cpu .*freq.*:
-  unit_of_measurement: "MHz"
-  icon: "mdi:calculator-variant"
+  unit_of_measurement: MHz
+  icon: mdi:calculator-variant
 Cpu: # if no matches with above CPU patterns, set this
-  icon: "mdi:calculator-variant"
+  icon: mdi:calculator-variant
 Time:
-  icon: "mdi:clock"
+  icon: mdi:clock
 Monitor:
-  icon: "mdi:monitor-shimmer"
+  icon: mdi:monitor-shimmer
   custom_type: switch
 AppInfo - update:
   custom_type: binary_sensor
-  icon: "mdi:package-up"
-  device_class: "update"
+  icon: mdi:package-up
+  device_class: update
   payload_on: "True"
   payload_off: "False"
 AppInfo:
-  icon: "mdi:information-outline"
+  icon: mdi:information-outline
 Temperature:
-  icon: "mdi:thermometer-lines"
-  unit_of_measurement: "°C"
+  icon: mdi:thermometer-lines
+  unit_of_measurement: °C
 DisplayMode:
-  icon: "mdi:monitor-multiple"
+  name: Display Mode
+  icon: mdi:monitor-multiple
   custom_type: select
   options:
     - Only internal display
@@ -84,23 +95,29 @@ Volume:
   unit_of_measurement: "%"
   custom_type: number
 TerminalPayloadCommand:
+  name: Terminal Command
   icon: mdi:console-line
   custom_type: text
 TerminalSwitch:
+  name: Terminal Switch
   icon: mdi:console
   custom_type: switch
 TerminalSensor:
+  name: Terminal Sensor
   icon: mdi:console
   custom_type: sensor
 TerminalBinarySensor:
+  name: Terminal Binary Sensor
   icon: mdi:console
   custom_type: binary_sensor
 TerminalCover:
-  icon: mdi:console
+  name: Terminal Cover
+  icon: mdi:window-shutter
   custom_type: cover
   state_closing: CLOSE
   state_opening: OPEN
   state_stopped: STOP
 TerminalButton:
+  name: Terminal Button
   icon: mdi:console
   custom_type: button
