@@ -162,14 +162,14 @@ All sensors and switches will be available to be added to your dashboard in your
 | Username           | shares the name of the user who is working on the machine                   | ![win](https://github.com/richibrics/IoTuring/blob/main/docs/images/win.png?raw=true) ![mac](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/mac.png) ![linux](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/linux.png) |
 | Volume             | control audio volume                                                        | ![mac](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/mac.png) ![linux](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/linux.png)                                                             |
 
+
 \* To use the features from Power entity on Linux and macOS you need to give permissions to your user to shutdown and reboot without sudo password.
-You can easily do that by adding the following line at the end of the "/etc/sudoers" file (you can use the following command: sudo nano /etc/sudoers):
+You can easily do that by using the following terminal command:
 
-```
-YOURUSERNAMEHERE ALL=(ALL) NOPASSWD: /sbin/poweroff, /sbin/reboot, /sbin/shutdown
+```shell
+sudo sh -c "echo '$USER ALL=(ALL) NOPASSWD: /sbin/poweroff, /sbin/reboot, /sbin/shutdown' >> /etc/sudoers"
 ```
 
-Change **YOURUSERNAMEHERE** with the user that runs the script.
 
 ### Available warehouses
 
