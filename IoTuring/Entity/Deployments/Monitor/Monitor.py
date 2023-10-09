@@ -16,30 +16,26 @@ class Monitor(Entity):
     NAME = "Monitor"
 
     def Initialize(self):
-        supports_linux = False
+
         if OsD.IsLinux():
             if De.IsWayland():
                 raise Exception("Wayland is not supported")
-            elif not OsD.CommandExists("xset"):
-                raise Exception("xset command not found!")
             else:
-                # Check if xset is working:
-                p = subprocess.run(['xset', 'dpms'], capture_output=True, shell=False)
-                if p.stderr:
-                    raise Exception(f"Xset dpms error: {p.stderr.decode()}")
-                elif not OsD.GetEnv('DISPLAY'):
-                    raise Exception('No $DISPLAY environment variable!')
-                else:
-                    supports_linux = True
+                try:
+                    De.CheckXsetSupport()
+                except Exception as e:
+                    raise Exception(f'Xset not supported: {str(e)}')
 
-        if OsD.IsWindows():
+                self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
+                self.RegisterEntityCommand(EntityCommand(
+                    self, KEY_CMD, self.Callback, KEY_STATE))
+
+        elif OsD.IsWindows():
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_CMD, self.Callback))
-        elif supports_linux: # True only if linux and command is working
-            # Support for sending state on linux
-            self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
-            self.RegisterEntityCommand(EntityCommand(
-                self, KEY_CMD, self.Callback, KEY_STATE))
+
+        else:
+            raise Exception("Operating System not supported!")
 
     def Callback(self, message):
         payloadString = message.payload.decode('utf-8')

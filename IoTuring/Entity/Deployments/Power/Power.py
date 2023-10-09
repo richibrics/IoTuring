@@ -1,8 +1,9 @@
 import subprocess
-import os as sys_os
+
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD # don't name Os as could be a problem with old configurations that used the Os entity
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
 
 
 KEY_SHUTDOWN = 'shutdown'
@@ -12,18 +13,20 @@ KEY_SLEEP = 'sleep'
 commands_shutdown = {
     'Windows': 'shutdown /s /t 0',
     'macOS': 'sudo shutdown -h now',
-    'Linux': 'sudo shutdown -h now'
+    'Linux': 'poweroff'
 }
+
 
 commands_reboot = {
     'Windows': 'shutdown /r',
     'macOS': 'sudo reboot',
-    'Linux': 'sudo reboot'
+    'Linux': 'reboot'
 }
 
 commands_sleep = {
     'Windows': 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
-    'Linux_X11': 'xset dpms force standby'
+    'Linux': 'systemctl suspend',
+    'Linux_X11': 'xset dpms force standby',
 }
 
 
@@ -31,40 +34,65 @@ class Power(Entity):
     NAME = "Power"
 
     def Initialize(self):
-        self.sleep_command = ""
+        self.commands = {}
 
         self.os = OsD.GetOs()
         # Check if commands are available for this OS/DE combo, then register them
 
         # Shutdown
         if self.os in commands_shutdown:
+            self.commands[KEY_SHUTDOWN] = commands_shutdown[self.os]
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_SHUTDOWN, self.CallbackShutdown))
 
         # Reboot
         if self.os in commands_reboot:
+            self.commands[KEY_REBOOT] = commands_reboot[self.os]
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_REBOOT, self.CallbackReboot))
 
+        # Try if command works without sudo, add if it's not working:
+        if OsD.IsLinux():
+            for commandtype in self.commands:
+                testcommand = self.commands[commandtype] + " --wtmp-only"
+                if not subprocess.run(testcommand.split(), capture_output=True).returncode == 0:
+                    self.commands[commandtype] = "sudo " + \
+                        self.commands[commandtype]
+
         # Sleep
-        # TODO Update TurnOffMonitors, TurnOnMonitors, LockCommand to use prefix lookup below
-        # Additional linux checking to find Window Manager: check running X11 for linux
-        prefix = ''
-        if OsD.IsLinux() and sys_os.environ.get('DISPLAY'):
-            prefix = '_X11'
-        lookup_key = self.os + prefix
-        if lookup_key in commands_sleep:
-            self.sleep_command = commands_sleep[lookup_key]
+        if self.os in commands_sleep:
+            self.commands[KEY_SLEEP] = commands_sleep[self.os]
+
+            # Fallback to xset, if supported:
+            if OsD.IsLinux() and not De.IsWayland():
+                try:
+                    De.CheckXsetSupport()
+                    self.commands[KEY_SLEEP] = commands_sleep["Linux_X11"]
+                except Exception as e:
+                    self.Log(self.LOG_DEBUG, f'Xset not supported: {str(e)}')
+
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_SLEEP, self.CallbackSleep))
 
+    def CallCommand(self, command_key: str) -> None:
+        # Log if a command not working:
+        try:
+            p = subprocess.run(
+                self.commands[command_key].split(), capture_output=True)
+            self.Log(self.LOG_DEBUG, f"Called {command_key} command: {p}")
+
+            if p.stderr:
+                self.Log(self.LOG_ERROR,
+                         f"Error during system {command_key}: {p.stderr}")
+
+        except Exception as e:
+            raise Exception(f'Error during system {command_key}: {str(e)}')
+
     def CallbackShutdown(self, message):
-        subprocess.Popen(
-            commands_shutdown[self.os].split(), stdout=subprocess.PIPE)
+        self.CallCommand(KEY_SHUTDOWN)
 
     def CallbackReboot(self, message):
-        subprocess.Popen(
-            commands_reboot[self.os].split(), stdout=subprocess.PIPE)
+        self.CallCommand(KEY_REBOOT)
 
     def CallbackSleep(self, message):
-        subprocess.Popen(self.sleep_command.split(), stdout=subprocess.PIPE)
+        self.CallCommand(KEY_SLEEP)

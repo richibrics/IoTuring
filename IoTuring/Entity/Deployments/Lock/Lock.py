@@ -61,7 +61,7 @@ class Lock(Entity):
 
             if p.stderr:
                 self.Log(self.LOG_ERROR,
-                         f"Error during system lock: {p.stdout}")
+                         f"Error during system lock: {p.stderr.decode()}")
 
         except Exception as e:
             raise Exception('Error during system lock: ' + str(e))
