@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 import platform
 import os
 import psutil
 import shutil
 from IoTuring.MyApp.SystemConsts import consts
 
+
 class OperatingSystemDetection():
     OS_NAME = platform.system()
-    
+
     from .consts import OS_FIXED_VALUE_LINUX, OS_FIXED_VALUE_MACOS, OS_FIXED_VALUE_WINDOWS
 
     @staticmethod
     def GetOs() -> str:
-        if OperatingSystemDetection.IsMacos():  
+        if OperatingSystemDetection.IsMacos():
             return OperatingSystemDetection.OS_FIXED_VALUE_MACOS
         elif OperatingSystemDetection.IsLinux():
             return OperatingSystemDetection.OS_FIXED_VALUE_LINUX
@@ -24,14 +27,14 @@ class OperatingSystemDetection():
     @staticmethod
     def IsLinux() -> bool:
         return bool(OperatingSystemDetection.OS_NAME == 'Linux')
-    
+
     @staticmethod
     def IsWindows() -> bool:
         return bool(OperatingSystemDetection.OS_NAME == 'Windows')
 
     @staticmethod
     def IsMacos() -> bool:
-        return bool(OperatingSystemDetection.OS_NAME == 'Darwin') # It's macOS
+        return bool(OperatingSystemDetection.OS_NAME == 'Darwin')  # It's macOS
 
     @staticmethod
     def GetEnv(envvar) -> str:
@@ -42,7 +45,8 @@ class OperatingSystemDetection():
             if not e:
                 try:
                     # Try if there is another tty with gui:
-                    session_pid = next((u.pid for u in psutil.users() if u.host and "tty" in u.host), None) 
+                    session_pid = next(
+                        (u.pid for u in psutil.users() if u.host and "tty" in u.host), None)
                     if session_pid:
                         p = psutil.Process(int(session_pid))
                         with p.oneshot():
@@ -53,7 +57,7 @@ class OperatingSystemDetection():
                 env_value = e
 
         return env_value
-            
+
     @staticmethod
     def CommandExists(command) -> bool:
         """Check if a command exists"""

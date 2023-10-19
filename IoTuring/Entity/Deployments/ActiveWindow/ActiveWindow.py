@@ -1,5 +1,4 @@
 import re
-import subprocess
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
@@ -74,28 +73,26 @@ class ActiveWindow(Entity):
         return GetWindowText(GetForegroundWindow())
 
     def GetActiveWindow_Linux(self) -> str:
-        p = subprocess.run(
-            ['xprop', '-root', '_NET_ACTIVE_WINDOW'], capture_output=True)
+        p = self.RunCommand("xprop -root _NET_ACTIVE_WINDOW")
 
         if p.stdout:
-            m = re.search(b'^_NET_ACTIVE_WINDOW.* ([\\w]+)$', p.stdout)
+            m = re.search('^_NET_ACTIVE_WINDOW.* ([\\w]+)$', p.stdout)
 
             if m is not None:
                 window_id = m.group(1)
 
-                if window_id.decode() == '0x0':
+                if window_id == '0x0':
                     return 'Unknown'
 
-                w = subprocess.run(
-                    ['xprop', '-id', window_id, 'WM_NAME'], capture_output=True)
+                w = self.RunCommand(f"xprop -id {window_id} WM_NAME")
 
                 if w.stderr:
-                    return w.stderr.decode()
+                    return w.stderr
 
                 match = re.match(
-                    b'WM_NAME\\(\\w+\\) = (?P<name>.+)$', w.stdout)
+                    'WM_NAME\\(\\w+\\) = (?P<name>.+)$', w.stdout)
 
                 if match is not None:
-                    return match.group('name').decode('UTF-8').strip('"')
+                    return match.group('name').strip('"')
 
         return 'Inactive'

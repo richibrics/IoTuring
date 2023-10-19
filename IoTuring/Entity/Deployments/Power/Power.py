@@ -1,5 +1,3 @@
-import subprocess
-
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
@@ -55,7 +53,7 @@ class Power(Entity):
         if OsD.IsLinux():
             for commandtype in self.commands:
                 testcommand = self.commands[commandtype] + " --wtmp-only"
-                if not subprocess.run(testcommand.split(), capture_output=True).returncode == 0:
+                if not self.RunCommand(testcommand).returncode == 0:
                     self.commands[commandtype] = "sudo " + \
                         self.commands[commandtype]
 
@@ -74,25 +72,20 @@ class Power(Entity):
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_SLEEP, self.CallbackSleep))
 
-    def CallCommand(self, command_key: str) -> None:
-        # Log if a command not working:
-        try:
-            p = subprocess.run(
-                self.commands[command_key].split(), capture_output=True)
-            self.Log(self.LOG_DEBUG, f"Called {command_key} command: {p}")
-
-            if p.stderr:
-                self.Log(self.LOG_ERROR,
-                         f"Error during system {command_key}: {p.stderr}")
-
-        except Exception as e:
-            raise Exception(f'Error during system {command_key}: {str(e)}')
-
     def CallbackShutdown(self, message):
-        self.CallCommand(KEY_SHUTDOWN)
+        self.RunCommand(
+            command=self.commands[KEY_SHUTDOWN],
+            command_name=KEY_SHUTDOWN
+        )
 
     def CallbackReboot(self, message):
-        self.CallCommand(KEY_REBOOT)
+        self.RunCommand(
+            command=self.commands[KEY_REBOOT],
+            command_name=KEY_REBOOT
+        )
 
     def CallbackSleep(self, message):
-        self.CallCommand(KEY_SLEEP)
+        self.RunCommand(
+            command=self.commands[KEY_SLEEP],
+            command_name=KEY_SLEEP
+        )
