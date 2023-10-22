@@ -4,18 +4,18 @@ from IoTuring.MyApp.App import App
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
-import json
-
 import os
+import json
+import subprocess
 
 supports_win = True
 try:
-    import tinyWinToast.tinyWinToast as twt
+    import tinyWinToast.tinyWinToast as twt  # type: ignore
 except:
     supports_win = False
 
 commands = {
-    OsD.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}"',
+    OsD.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}" --icon="ICON_PATH"',
     OsD.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
 }
 
@@ -29,11 +29,14 @@ PAYLOAD_SEPARATOR = "|"
 
 CONFIG_KEY_TITLE = "title"
 CONFIG_KEY_MESSAGE = "message"
+CONFIG_KEY_ICON_PATH = "icon_path"
 
-ICON_FILENAME = "icon.png"
+DEFAULT_ICON_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "icon.png")
 
 MODE_DATA_VIA_CONFIG = "data_via_config"
 MODE_DATA_VIA_PAYLOAD = "data_via_payload"
+
 
 class Notify(Entity):
     NAME = "Notify"
@@ -42,11 +45,12 @@ class Notify(Entity):
     # Data is set from configurations if configurations contain both title and message
     # Otherwise, data is set from payload (even if only one of title or message is set)
     def Initialize(self):
-        
+
         # Check if both config is defined or both is empty:
         if not bool(self.GetConfigurations()[CONFIG_KEY_TITLE]) == bool(self.GetConfigurations()[CONFIG_KEY_MESSAGE]):
-            raise Exception("Configuration error: Both title and message should be defined, or both should be empty!")
-        
+            raise Exception(
+                "Configuration error: Both title and message should be defined, or both should be empty!")
+
         try:
             self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
             self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
@@ -62,13 +66,20 @@ class Notify(Entity):
             self.Log(self.LOG_INFO, "Using data from configuration")
         else:
             self.Log(self.LOG_INFO, "Using data from payload")
-            
-        # In addition, if data is from payload, we add this info to entity name
-        # ! Changing the name we recognize the difference in warehouses only using the name 
-        # e.g HomeAssistant warehouse can use the regex syntax with NotifyPaylaod to identify that the component needs the text message
-        self.NAME = self.NAME + ("Payload" if self.data_mode == MODE_DATA_VIA_PAYLOAD else "")
 
-        self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
+        # Set and check icon path:
+        self.config_icon_path = self.GetConfigurations()[CONFIG_KEY_ICON_PATH]
+
+        if not os.path.exists(self.config_icon_path):
+            self.Log(
+                self.LOG_WARNING, f"Using default icon, custom path not found: {self.config_icon_path}")
+            self.config_icon_path = DEFAULT_ICON_PATH
+
+        # In addition, if data is from payload, we add this info to entity name
+        # ! Changing the name we recognize the difference in warehouses only using the name
+        # e.g HomeAssistant warehouse can use the regex syntax with NotifyPaylaod to identify that the component needs the text message
+        self.NAME = self.NAME + \
+            ("Payload" if self.data_mode == MODE_DATA_VIA_PAYLOAD else "")
 
         # Prepare the notification system
         if OsD.IsWindows():
@@ -76,15 +87,24 @@ class Notify(Entity):
                 raise Exception(
                     'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 
-        elif OsD.IsLinux() or OsD.IsMacos():
-            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):            
+        elif OsD.GetOs() in commands:
+            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):
                 raise Exception(
                     f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
-                )  
+                )
+
+            # Add icon to command:
+            if "ICON_PATH" in commands[OsD.GetOs()]:
+                self.command = commands[OsD.GetOs()].replace(
+                    "ICON_PATH", self.config_icon_path)
+            else:
+                self.command = commands[OsD.GetOs()]
+
         else:
             raise Exception(
                 'Notify not available for this platorm!')
-      
+
+        self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     def Callback(self, message):
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:
@@ -106,31 +126,38 @@ class Notify(Entity):
         # Check only the os (if it's that os, it's supported because if it wasn't supported,
         # an exception would be thrown in post-inits)
         if OsD.IsWindows():
-            toast_icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ICON_FILENAME)
             twt.getToast(
-                title=self.notification_title, 
+                title=self.notification_title,
                 message=self.notification_message,
-                icon=toast_icon_path,
+                icon=self.config_icon_path,
                 appId=App.getName(),
                 isMute=False).show()
 
-        elif OsD.IsLinux():
-            os.system(commands[OsD.GetOs()]
-                .format(self.notification_title,self.notification_message))
-
-        elif OsD.IsMacos():
-            os.system(commands[OsD.GetOs()]
-                .format(self.notification_message,self.notification_title))
-
         else:
-            self.Log(self.LOG_WARNING, "No notify command available for this operating system (" +
-                     str(OsD.GetOs()) + ")... Aborting")
+
+            command = self.command.format(
+                self.notification_title, self.notification_message)
+            try:
+                p = subprocess.run(command, capture_output=True, shell=True)
+                self.Log(self.LOG_DEBUG, f"Called notify command: {p}")
+
+                if p.stderr:
+                    self.Log(self.LOG_ERROR,
+                             f"Error during notify: {p.stderr.decode()}")
+
+            except Exception as e:
+                raise Exception('Error during notify: ' + str(e))
+
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
-        preset.AddEntry("Notification title - leave empty to send this data via remote message", CONFIG_KEY_TITLE, mandatory=False)
+        preset.AddEntry("Notification title - leave empty to send this data via remote message",
+                        CONFIG_KEY_TITLE, mandatory=False)
         # ask for the message only if the title is provided, otherwise don't ask (use display_if_key_value)
-        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE, 
-            display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
+        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE,
+                        display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
+        # Icon for notification, mac is not supported :(
+        preset.AddEntry("Path to icon", CONFIG_KEY_ICON_PATH,
+                        mandatory=False, default=DEFAULT_ICON_PATH)
         return preset
