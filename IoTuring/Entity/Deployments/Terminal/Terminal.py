@@ -2,8 +2,7 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
-from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
-import subprocess
+from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 import re
 
 KEY = "terminal"
@@ -213,8 +212,8 @@ class Terminal(Entity):
         self.last_command = self.command
 
         # Run the command, collect output for update:
-        command = self.RunCommand(self.command)
-        self.last_output = command["message"]
+        command = self.RunCommand(self.command, shell=True)
+        self.last_output = f"Error: {command.stderr}" if command.stderr else command.stdout
 
     def Update(self):
 
@@ -222,23 +221,24 @@ class Terminal(Entity):
 
             # Run the command, do not log error on binary sensor:
             command = self.RunCommand(self.config_command_state,
-                                      log_errors=not self.has_binary_state)
+                                      log_errors=not self.has_binary_state,
+                                      shell=True)
 
             if self.has_binary_state:
-                self.state = STATE_ON if command["returncode"] == 0 else STATE_OFF
+                self.state = STATE_ON if command.returncode == 0 else STATE_OFF
 
             elif self.has_state:
 
                 if self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
-                    cmdout = command["stdout"].lower()
+                    cmdout = command.stdout.lower()
                     if cmdout in COVER_STATES.keys():
                         self.state = COVER_STATES[cmdout]
                     else:
                         self.Log(self.LOG_ERROR,
-                                 f"Invalid state: {command['stdout']}")
+                                 f"Invalid state: {cmdout}")
 
                 else:
-                    self.state = command["stdout"]
+                    self.state = command.stdout
 
                     # Parse state
                     try:
@@ -249,8 +249,10 @@ class Terminal(Entity):
                                      f"Invalid state: {self.state}")
 
             self.SetEntitySensorValue(KEY_STATE, self.state)
+
             self.SetEntitySensorExtraAttribute(
-                KEY_STATE, "Last state command output", command["message"])
+                KEY_STATE, "Last state command output",
+                f"Error: {command.stderr}" if command.stderr else command.stdout)
 
         if self.has_command:
             # Set extra attributes:
@@ -258,31 +260,6 @@ class Terminal(Entity):
                 KEY_STATE, "Last command", self.last_command)
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE, "Last output", self.last_output)
-
-    def RunCommand(self, command, log_errors=True):
-        """Run a command, log, collect output"""
-
-        # Run the command:
-        p = subprocess.run(command, capture_output=True,
-                           shell=True, universal_newlines=True)
-
-        output = {
-            "returncode": p.returncode,
-            "stdout": p.stdout,
-            "message": ""
-        }
-
-        # Log output and error:
-        if p.stderr:
-            output["message"] = "Error: " + p.stderr
-            loglevel = self.LOG_ERROR if log_errors else self.LOG_DEBUG
-            self.Log(loglevel,
-                     f"Error running command '{command}': {p.stderr}")
-        else:
-            output["message"] = p.stdout
-            self.Log(self.LOG_DEBUG,
-                     f"Command '{command}' run, stdout: {p.stdout}")
-        return output
 
     @classmethod
     def ConfigurationPreset(cls):

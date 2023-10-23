@@ -6,7 +6,6 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 import os
 import json
-import subprocess
 
 supports_win = True
 try:
@@ -137,17 +136,8 @@ class Notify(Entity):
 
             command = self.command.format(
                 self.notification_title, self.notification_message)
-            try:
-                p = subprocess.run(command, capture_output=True, shell=True)
-                self.Log(self.LOG_DEBUG, f"Called notify command: {p}")
 
-                if p.stderr:
-                    self.Log(self.LOG_ERROR,
-                             f"Error during notify: {p.stderr.decode()}")
-
-            except Exception as e:
-                raise Exception('Error during notify: ' + str(e))
-
+            self.RunCommand(command=command, shell=True)
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
