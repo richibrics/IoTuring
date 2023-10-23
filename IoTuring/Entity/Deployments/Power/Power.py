@@ -9,21 +9,21 @@ KEY_REBOOT = 'reboot'
 KEY_SLEEP = 'sleep'
 
 commands_shutdown = {
-    'Windows': 'shutdown /s /t 0',
-    'macOS': 'sudo shutdown -h now',
-    'Linux': 'poweroff'
+    OsD.WINDOWS: 'shutdown /s /t 0',
+    OsD.MACOS: 'sudo shutdown -h now',
+    OsD.LINUX: 'poweroff'
 }
 
 
 commands_reboot = {
-    'Windows': 'shutdown /r',
-    'macOS': 'sudo reboot',
-    'Linux': 'reboot'
+    OsD.WINDOWS: 'shutdown /r',
+    OsD.MACOS: 'sudo reboot',
+    OsD.LINUX: 'reboot'
 }
 
 commands_sleep = {
-    'Windows': 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
-    'Linux': 'systemctl suspend',
+    OsD.WINDOWS: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
+    OsD.LINUX: 'systemctl suspend',
     'Linux_X11': 'xset dpms force standby',
 }
 

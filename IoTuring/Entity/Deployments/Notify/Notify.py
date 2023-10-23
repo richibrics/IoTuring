@@ -14,8 +14,8 @@ except:
     supports_win = False
 
 commands = {
-    OsD.OS_FIXED_VALUE_LINUX: 'notify-send "{}" "{}" --icon="ICON_PATH"',
-    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+    OsD.LINUX: 'notify-send "{}" "{}" --icon="ICON_PATH"',
+    OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
 }
 
 

@@ -6,13 +6,13 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 KEY_LOCK = 'lock'
 
 commands = {
-    'Windows': {
+    OsD.WINDOWS: {
         'base': 'rundll32.exe user32.dll,LockWorkStation'
     },
-    'macOS': {
+    OsD.MACOS: {
         'base': 'pmset displaysleepnow'
     },
-    'Linux': {
+    OsD.LINUX: {
         'gnome': 'gnome-screensaver-command -l',
         'cinnamon': 'cinnamon-screensaver-command -a',
         'i3': 'i3lock',

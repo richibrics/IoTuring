@@ -1,8 +1,4 @@
-import inspect
-from IoTuring.Logger.Logger import Logger
 from importlib_metadata import metadata
-import os
-
 
 class App():
     METADATA = metadata('IoTuring')
