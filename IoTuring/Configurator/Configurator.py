@@ -255,7 +255,9 @@ class Configurator(LogObject):
 
     def AddActiveEntity(self, entityName, ecm: EntityClassManager):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
+        print(entityName)
         entityClass = ecm.GetClassFromName(entityName)
+        print(entityClass)
         try:
             preset = entityClass.ConfigurationPreset()
 
