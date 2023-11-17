@@ -6,6 +6,7 @@ class ValueFormatterOptions():
     TYPE_FREQUENCY = 4
     TYPE_MILLISECONDS = 5
     TYPE_TEMPERATURE = 6
+    TYPE_FANSPEED= 7
 
     DO_NOT_TOUCH_DECIMALS = -1
       
