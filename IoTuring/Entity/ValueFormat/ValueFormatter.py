@@ -17,7 +17,7 @@ TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 CELSIUS_UNIT = '°C'
-ROTATION = 'rpm'
+ROTATION = ['rpm']
 
 SPACE_BEFORE_UNIT = ' '
 
@@ -165,7 +165,7 @@ class ValueFormatter():
         result = str(value)
         
         if includeUnit:
-            result = result + SPACE_BEFORE_UNIT + ROUNDS_PER_MINUTE 
+            result = result + SPACE_BEFORE_UNIT + ROTATION[0]
         return result
 
     @staticmethod
