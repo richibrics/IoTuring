@@ -24,7 +24,7 @@ FANSPEED_DECIMALS = 0
 class Fanspeed(Entity):
     NAME= "Fanspeed"
     def Initialize(self):
-        self.fanspeedFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_FANSPEED, decimals=FANSPEED_DECIMALS)
+        self.fanspeedFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=FANSPEED_DECIMALS)
 
         self.specificInitialize = None
         self.specificUpdate= None
@@ -36,11 +36,9 @@ class Fanspeed(Entity):
         self.specificInitialize()
         
     def InitLinux(self):
-        print("initlinux")
         self.registeredPackages = []
         sensors = psutil.sensors_fans()
         index = 1
-        print(sensors)
         for pkgName, data in sensors.items():
 
             if pkgName == None or pkgName == "":
