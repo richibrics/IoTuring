@@ -9,6 +9,11 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Configurator.MenuPreset import MenuPreset
+
+
+
 
 supports_win_fanspeed = False
 supports_linux_fanspeed = True 
@@ -17,12 +22,17 @@ supports_macos_fanspeed = False
 KEY_FANSPEED = 'fanspeed'
 KEY_FANLABEL = 'fanlabel'
 
+CONFIG_KEY_CONTROLLER = 'controller'
+
 KEY_SENSOR_FORMAT = "{}"
 
 FANSPEED_DECIMALS = 0
 
 class Fanspeed(Entity):
     NAME= "Fanspeed"
+    ALLOW_MULTI_INSTANCE = True
+
+
     def Initialize(self):
         self.fanspeedFormatOptions = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=FANSPEED_DECIMALS)
 
@@ -30,7 +40,6 @@ class Fanspeed(Entity):
         self.specificUpdate= None
 
         if OsD.IsLinux():
-            print("os is linux")
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
         self.specificInitialize()
@@ -38,16 +47,18 @@ class Fanspeed(Entity):
     def InitLinux(self):
         self.registeredPackages = []
         sensors = psutil.sensors_fans()
+        self.Log(self.LOG_DEBUG, f"found fancontrollers:{sensors}")
         index = 1
+        self.registeredPackages.append(self.GetConfigurations()[CONFIG_KEY_CONTROLLER])
+        self.Log(self.LOG_DEBUG, f"registered controllers:{self.registeredPackages}")
         for pkgName, data in sensors.items():
 
-            if pkgName == None or pkgName == "":
-                pkgName = FALLBACK_PACKAGE_LABEL.format(index) # TODO
-            package = psutilFanspeedPackage(pkgName, data)
-            if package.hasCurrent():
-                self.registeredPackages.append(package.getLabel())
-                self.RegisterEntitySensor(EntitySensor(
-                    self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True, valueFormatterOptions=self.fanspeedFormatOptions))
+            if pkgName in self.registeredPackages:
+                package = psutilFanspeedPackage(pkgName, data)
+                if package.hasCurrent():
+                    self.registeredPackages.append(package.getLabel())
+                    self.RegisterEntitySensor(EntitySensor(
+                        self, self.packageNameToEntitySensorKey(package.getLabel()), supportsExtraAttributes=True, valueFormatterOptions=self.fanspeedFormatOptions))
             index += 1
         
     def Update(self):
@@ -76,10 +87,12 @@ class Fanspeed(Entity):
             if pkgName == None or pkgName == "":
                 pkgName = FALLBACK_PACKAGE_LABEL.format(index) # TODO
             package = psutilFanspeedPackage(pkgName, data)
+            self.Log(self.LOG_DEBUG, f"trying to update {package.getLabel()}")
             if package.getLabel() in self.registeredPackages:
-                # Set main value = current of the package
+                self.Log(self.LOG_DEBUG, f"{package.getLabel()} was in registeredPackages")
+                # Set main value = currently use amount of fans as entity state
                 self.SetEntitySensorValue(self.packageNameToEntitySensorKey(
-                    # package.getLabel()), package.getCurrent())
+                    # package.getLabel()), package.getCurrent()) # use some fanspeed as entity state
                     package.getLabel()), len(package.getSensors()))
 
                 # Set extra attributes
@@ -91,6 +104,23 @@ class Fanspeed(Entity):
 
     def packageNameToEntitySensorKey(self, packageName):
         return KEY_SENSOR_FORMAT.format(packageName)
+
+    def prettyprint_controllers(controller_dict):
+        output = "\n"
+        indent = '\t'
+        for controller in controller_dict.items():
+            output += controller[0] + '\n'
+            for fan in controller[1]:
+                output += indent + fan[0] + ' @ ' + str(fan[1]) + 'rpm\n'
+        return output
+
+    @classmethod
+    def ConfigurationPreset(cls) -> MenuPreset:
+        preset = MenuPreset()
+        controllers = psutil.sensors_fans()
+        preset.AddEntry("which controller to watch\ncontrollers:" + Fanspeed.prettyprint_controllers(controllers),
+                        CONFIG_KEY_CONTROLLER, mandatory=True)
+        return preset
 
 
 class psutilFanspeedPackage():
