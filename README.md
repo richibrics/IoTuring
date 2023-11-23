@@ -20,6 +20,18 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 **CHANGELOG**: available in [Releases](https://github.com/richibrics/IoTuring/releases) page
 
+## HomeAssistant demo
+
+Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
+The device will also have some properties like connectivity and battery status.
+
+You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
+
+
+![device](https://github.com/richibrics/IoTuring/blob/main/docs/images/homeassistant-demo.gif?raw=true)
+
+All sensors and switches will be available to be added to your dashboard in your favourite cards !
+
 ## Install
 
 ### Who knows how it works
@@ -121,18 +133,6 @@ docker run -d -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest
 ```
 
 For a docker compose example see [docker-compose.yaml](./docker-compose.yaml). Create configuration manually or with the command above!
-
-## HomeAssistant demo
-
-Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
-The device will also have some properties like connectivity and battery status.
-
-You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
-
-
-![device](https://github.com/richibrics/IoTuring/blob/main/docs/images/homeassistant-demo.gif?raw=true)
-
-All sensors and switches will be available to be added to your dashboard in your favourite cards !
 
 ## Features
 
