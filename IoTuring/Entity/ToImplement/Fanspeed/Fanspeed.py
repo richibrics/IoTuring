@@ -107,7 +107,7 @@ class Fanspeed(Entity):
         return output
 
     @classmethod
-    def ConfigurationPreset() -> MenuPreset:
+    def ConfigurationPreset(cls) -> MenuPreset:
         """generate the preset for human input, prints the names of available fancontrollers in the terminal
 
         :return: preset
