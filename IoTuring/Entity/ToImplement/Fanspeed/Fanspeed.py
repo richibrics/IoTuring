@@ -1,7 +1,4 @@
-# Wireless strenght method taken from: https://github.com/s7jones/Wifi-Signal-Plotter/
-
 import psutil
-
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
@@ -22,15 +19,16 @@ FALLBACK_SENSOR_LABEL = "fan"
 
 CONFIG_KEY_CONTROLLER = "controller"
 
-#KEY_SENSOR_FORMAT = "{}"
-
 FANSPEED_DECIMALS = 0
 
 
 class Fanspeed(Entity):
+    """Entity to read fanspeed"""
+
     NAME = "Fanspeed"
 
-    def Initialize(self):
+    def Initialize(self) -> None:
+        """Initialize the Class, setup Formatter, determin specificInitialize and specificUpdate depending on OS"""
         self.fanspeedFormatOptions = ValueFormatterOptions(
             value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=FANSPEED_DECIMALS
         )
@@ -43,17 +41,22 @@ class Fanspeed(Entity):
             self.specificUpdate = self.UpdateLinux
         self.specificInitialize()
 
-    def InitLinux(self):
+    def InitLinux(self) -> None:
+        """OS dependant Init for Linux"""
         self.configuredPackages: list[str] = []
-        self.registeredPackages: list[psutilFanspeedPackage] = [] 
+        self.registeredPackages: list[psutilFanspeedPackage] = []
         sensors = psutil.sensors_fans()
-        self.Log(self.LOG_DEBUG, f"found fancontrollers:{sensors}")
-        self.configuredPackages.append(self.GetConfigurations()[CONFIG_KEY_CONTROLLER]) # load all controllers from config
+        self.Log(self.LOG_DEBUG, f"fancontrollers found:{sensors}")
+        # load all controllers from config
+        self.configuredPackages.append(
+            self.GetConfigurations()[CONFIG_KEY_CONTROLLER]
+        )  
         self.Log(self.LOG_DEBUG, f"registered controllers from config:{self.registeredPackages}")
-        for controllerName, data in sensors.items(): # read the controllernames and fanspeeds 
+        
+        for controllerName,data, in sensors.items():  # read the controllernames and fanspeeds
             # build packages from controllernames if they are in the config
             if controllerName in self.configuredPackages:
-                package = psutilFanspeedPackage(controllerName, data) 
+                package = psutilFanspeedPackage(controllerName, data)
                 # register the entity and give it an initial value
                 if package.hasCurrent():
                     # build the list of FanspeedPackage objects and register them as Entitys
@@ -67,33 +70,36 @@ class Fanspeed(Entity):
                         )
                     )
 
-    def Update(self):
+    def Update(self) -> None:
+        """placeholder for OS specificUpdate"""
         self.specificUpdate()
 
-    def UpdateLinux(self):
-        # FanSpeed
-        readout = psutil.sensors_fans()
+    def UpdateLinux(self) -> None:
+        """Updatemethod for Linux"""
         for package in self.registeredPackages:
-            self.SetEntitySensorValue(package.packageName, len(package.sensors))
-            self.Log(
-                self.LOG_DEBUG, f"{package.packageName} was in registeredPackages"
-            )
+            readout = psutil.sensors_fans()
             # Set main value = currently use amount of fans as entity state
             self.SetEntitySensorValue(package.packageName, len(package.sensors))
-
-            # Set extra attributes
-            for fan in package.attributes:
+            # Set extra attributes {fan name : fanspeed in rpm}
+            for i, fan in enumerate(package.attributes):
                 self.SetEntitySensorExtraAttribute(
                     package.packageName,
                     fan,
-                    package.attributes[fan],
+                    readout[package.packageName][i].current,
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
 
-    def prettyprint_controllers(controllers: dict):
+    def prettyprint_controllers(controllers: dict) -> str:
+        """print available controllers
+
+        :param controllers: psutil.sensors_fans()
+        :type controllers: dict
+        :return: formated output as a string
+        :rtype: str
+        """
         output = "\n"
         indent = "\t"
-        
+
         for controller in controllers.items():
             output += controller[0] + "\n"
             for fan in controller[1]:
@@ -101,7 +107,12 @@ class Fanspeed(Entity):
         return output
 
     @classmethod
-    def ConfigurationPreset(cls) -> MenuPreset:
+    def ConfigurationPreset() -> MenuPreset:
+        """generate the preset for human input, prints the names of available fancontrollers in the terminal
+
+        :return: preset
+        :rtype: MenuPreset
+        """
         preset = MenuPreset()
         controllers = psutil.sensors_fans()
         controllerNames = []
@@ -117,8 +128,8 @@ class Fanspeed(Entity):
 
 
 class psutilFanspeedPackage:
-    """FanspeedPackage to pack all fans from a fancontroller
-    """
+    """FanspeedPackage to pack all fans from a fancontroller"""
+
     def __init__(self, packageName: str, packageData: int) -> None:
         """packageData is the value of the the dict returned by psutil.sensors_fans()
 
@@ -149,7 +160,9 @@ class psutilFanspeedPackage:
         :return: list of fanspeedsensors from a fancontroller
         :rtype: list
         """
-        return self._sensors.copy() # Safe return: nobody outside can change the value !
+        return (
+            self._sensors.copy()
+        )  # Safe return: nobody outside can change the value !
 
     @property
     def highest(self):
@@ -175,14 +188,25 @@ class psutilFanspeedPackage:
 
     @property
     def attributes(self):
+        """attributes of the package, contain fans and their speeds
+
+        :return: attributes
+        :rtype: dict
+        """
         for sensor in self.sensors:
-                self._attributes[f"{sensor.label}"] = sensor.current
+            self._attributes[f"{sensor.label}"] = sensor.current
         return self._attributes
 
 
 class psutilFanspeedSensor:
+    """Sensor to pack fans of fancontrollers"""
+
     def __init__(self, sensorData) -> None:
-        """sensorData is an element from the list which is the value of the the dict returned by psutil.sensors_fans()"""
+        """sensorData is an element from the list which is the value of the the dict returned by psutil.sensors_fans()
+
+        :param sensorData: list of sensorData[label, current]
+        :type sensorData: list
+        """
         self._label = sensorData[0]
         self._current = sensorData[1]
 
@@ -197,7 +221,7 @@ class psutilFanspeedSensor:
 
     @property
     def label(self) -> str:
-        """packageName getter
+        """sensor label
 
         :return: packageName
         :rtype: str
