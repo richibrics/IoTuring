@@ -1,23 +1,23 @@
-from IoTuring.Entity.ToImplement.FanSpeed.FanSpeeds import psutilFanspeedPackage, psutilFanspeedSensor
+from IoTuring.Entity.Deployments.Fanspeed.Fanspeed import psutilFanspeedPackage, psutilFanspeedSensor
 
 class TestPsutilFanspeedSensor:
     def testGetters(self):
         sensorData = ["sensorLabel", 1250]
         sensor = psutilFanspeedSensor(sensorData)
-        assert sensor.hasLabel()
-        assert sensor.hasCurrent()
-        assert sensor.getLabel() == "sensorLabel"
-        assert sensor.getCurrent() == 91
+        assert sensor.label
+        assert sensor.current
+        assert sensor.label == "sensorLabel"
+        assert sensor.current == 91
         
         sensorData = [None, 0]
         sensor = psutilFanspeedSensor(sensorData)
-        assert not sensor.hasLabel()
-        assert sensor.hasCurrent()
+        assert not sensor.label
+        assert sensor.current
         
         sensorData = ["sensorLabel", None]
         sensor = psutilFanspeedSensor(sensorData)
-        assert sensor.hasLabel()
-        assert not sensor.hasCurrent()
+        assert sensor.label
+        assert not sensor.current
         
 
 class TestPsutilFanspeedPackage:# TODO
@@ -27,21 +27,24 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", 1250])
         packageData.append(["sensorLabel", 900])
         package = psutilFanspeedPackage("pkg", packageData)
-        assert package.hasCurrent()
+        assert package.current()
+        assert package.hasHighest()
+        assert package.hasCritical()
+            
         
         packageData = []
         packageData.append(["sensorLabel", None])
         packageData.append(["sensorLabel", 90, 99, False])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert package.hasCurrent()
-        assert package.hasHighest()
-        assert package.hasCritical()
+        for sensor in package.sensors:
+            assert sensor.label
+            assert sensor.current
         
         packageData = []
         packageData.append(["sensorLabel", 11, 99, True])
         packageData.append(["sensorLabel", None, None, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert package.hasCurrent()
+        assert package.current()
         assert package.hasHighest()
         assert package.hasCritical()
         
@@ -49,7 +52,7 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", 11, None, True])
         packageData.append(["sensorLabel", None, 156, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert package.hasCurrent()
+        assert package.current()
         assert package.hasHighest()
         assert package.hasCritical()
         
@@ -57,7 +60,7 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", None, None, None])
         packageData.append(["sensorLabel", None, None, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert not package.hasCurrent()
+        assert not package.current()
         assert not package.hasHighest()
         assert not package.hasCritical()
         
@@ -65,7 +68,7 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", 12, None, None])
         packageData.append(["sensorLabel", None, None, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert package.hasCurrent()
+        assert package.current()
         assert not package.hasHighest()
         assert not package.hasCritical()
         
@@ -73,7 +76,7 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", None, None, None])
         packageData.append(["sensorLabel", None, 35, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert not package.hasCurrent()
+        assert not package.current()
         assert package.hasHighest()
         assert not package.hasCritical()
         
@@ -81,7 +84,7 @@ class TestPsutilFanspeedPackage:# TODO
         packageData.append(["sensorLabel", None, None, False])
         packageData.append(["sensorLabel", None, None, None])
         package = psutilTemperaturePackage("pkg", packageData)
-        assert not package.hasCurrent()
+        assert not package.current()
         assert not package.hasHighest()
         assert package.hasCritical()
         
