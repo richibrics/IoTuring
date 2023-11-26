@@ -100,8 +100,17 @@ class Fanspeed(Entity):
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
 
-    def above_threshold(self, fans: list[int], threshold: int) -> int:
-        above_threshold_fans = [num for num in fans if num > threshold]
+    def above_threshold(self, fanspeeds: list[int], threshold: int) -> int:
+        """filters a list of integers for values above a threshold returns amount of values above threshold
+
+        :param fanspeeds: list of fanspeeds
+        :type fans: list[int]
+        :param threshold: threshold to filter values below
+        :type threshold: int
+        :return: amount of fanspeeds above threshold
+        :rtype: int
+        """
+        above_threshold_fans = [num for num in fanspeeds if num > threshold]
         return len(above_threshold_fans)
 
     def prettyprint_controllers(controllers: dict) -> str:
