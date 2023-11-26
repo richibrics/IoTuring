@@ -13,7 +13,9 @@ class Disk(Entity):
     NAME = "Disk"
     ALLOW_MULTI_INSTANCE = True
 
-    def Initialize(self):
+    def Initialize(self) -> None:
+        """Initialise the DiskUsage Entity and Register it
+        """
         self.os = OsD.GetOs()
         if self.os == OsD.OS_FIXED_VALUE_WINDOWS:
             self.Update = self.UpdateWindows
@@ -35,23 +37,46 @@ class Disk(Entity):
             )
         )
 
-    def Update(self):
+    def Update(self) -> None:
+        """Placeholder
+        """
         pass
 
     def UpdateLinux(self) -> None:
+        """UpdateMethod for Linux systems
+        """
         self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentageUnix(self.configuredPath))
 
     def UpdateMacos(self) -> None:
+        """UpdateMethod for Macos
+        """
         self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentageUnix(self.configuredPath))
 
     def UpdateWindows(self) -> None:
+        """UpdateMethod for Windows not implemented
+
+        :raises NotImplementedError: windows not implemented
+        """
         raise NotImplementedError
     
-    def GetDiskUsedPercentageUnix(self, path):    
+    def GetDiskUsedPercentageUnix(self, path: str):
+        """get the current diskusage from a path, only reports for the whole disk
+
+        :param path: path to a disk to get the usage of
+        :type path: str
+        :return: psutil diskusage object from disk on which path resides
+        :rtype: sdiskusage
+        """
         return psutil.disk_usage(path)[3]
 
-    def parsePathfromInput(userInput):
-        disks = psutil.disk_partitions()
+    def parsePathfromInput(userInput) -> str:
+        """User input is an Integer, parse that from list of disks
+
+        :param userInput: userInput from ConfigurationPreset
+        :type userInput: int
+        :return: percentage of diskusage
+        :rtype: str
+        """
         return psutil.disk_partitions()[int(userInput)][1]
 
     def prettyPrintDisks() -> str:
@@ -64,7 +89,9 @@ class Disk(Entity):
         return printString
 
     @classmethod
-    def ConfigurationPreset(cls):
+    def ConfigurationPreset(cls) -> MenuPreset:
+        """Configuration for Disk Entity
+        """
         preset = MenuPreset()
         preset.AddEntry(
             "enter path to check disk usage of [/]\n" + Disk.prettyPrintDisks(), CONFIG_KEY_DU_PATH, mandatory=False, modify_value_callback=Disk.parsePathfromInput
