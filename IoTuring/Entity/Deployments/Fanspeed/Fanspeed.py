@@ -18,6 +18,7 @@ FALLBACK_PACKAGE_LABEL = "controller"
 FALLBACK_SENSOR_LABEL = "fan"
 
 CONFIG_KEY_CONTROLLER = "controller"
+CONFIG_KEY_THRESHOLD = "threshold"
 
 FANSPEED_DECIMALS = 0
 
@@ -45,14 +46,19 @@ class Fanspeed(Entity):
         """OS dependant Init for Linux"""
         self.configuredPackages: list[str] = []
         self.registeredPackages: list[psutilFanspeedPackage] = []
+        self.configuredThreshold: int 
         sensors = psutil.sensors_fans()
         self.Log(self.LOG_DEBUG, f"fancontrollers found:{sensors}")
         # load all controllers from config
+        self.config = self.GetConfigurations()
+        if self.config[CONFIG_KEY_THRESHOLD] is None:
+            self.configuredThreshold = 200
+            self.Log(self.LOG_DEBUG, "threshold is not configured setting it to 200rpm")
         self.configuredPackages.append(
-            self.GetConfigurations()[CONFIG_KEY_CONTROLLER]
+            self.config[CONFIG_KEY_CONTROLLER]
         )  
         self.Log(self.LOG_DEBUG, f"registered controllers from config:{self.registeredPackages}")
-        
+        self.Log(self.LOG_DEBUG, f"got threshold as {self.configuredThreshold}rpm")
         for controllerName,data, in sensors.items():  # read the controllernames and fanspeeds
             # build packages from controllernames if they are in the config
             if controllerName in self.configuredPackages:
@@ -80,10 +86,11 @@ class Fanspeed(Entity):
             readout = psutil.sensors_fans()
             # Set main value = current fans above the configured threshold
             fanspeeds = []
+            controller = package.packageName
             for i, fans in enumerate(package.attributes):
-                fanspeeds.append(readout[package.packageName][i].current)
-            fans_above_threshold = self.above_threshold(fanspeeds)
-            self.SetEntitySensorValue(package.packageName, len(fans_above_threshold))
+                fanspeeds.append(readout[controller][i].current)
+            fans_above_threshold = self.above_threshold(fanspeeds, self.configuredThreshold)
+            self.SetEntitySensorValue(package.packageName, fans_above_threshold)
             # Set extra attributes {fan name : fanspeed in rpm}
             for i, fan in enumerate(package.attributes):
                 self.SetEntitySensorExtraAttribute(
@@ -93,9 +100,9 @@ class Fanspeed(Entity):
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
 
-    def above_threshold(fans: list[int], threshold: int):
-        above_threshold_numbers = [num for num in fans if num > threshold]
-        return above_threshold_numbers
+    def above_threshold(self, fans: list[int], threshold: int) -> int:
+        above_threshold_fans = [num for num in fans if num > threshold]
+        return len(above_threshold_fans)
 
     def prettyprint_controllers(controllers: dict) -> str:
         """print available controllers
@@ -131,6 +138,11 @@ class Fanspeed(Entity):
             + Fanspeed.prettyprint_controllers(controllers),
             CONFIG_KEY_CONTROLLER,
             mandatory=True,
+        )
+        preset.AddEntry(
+            "At what threshold does a fan count as spinning [200]",
+            CONFIG_KEY_THRESHOLD,
+            mandatory=False
         )
         return preset
 
