@@ -51,9 +51,12 @@ class Fanspeed(Entity):
         self.Log(self.LOG_DEBUG, f"fancontrollers found:{sensors}")
         # load all controllers from config
         self.config = self.GetConfigurations()
-        if self.config[CONFIG_KEY_THRESHOLD] is None:
+        self.configuredThreshold = self.config[CONFIG_KEY_THRESHOLD]
+        if self.configuredThreshold is None:
             self.configuredThreshold = 200
-            self.Log(self.LOG_DEBUG, "threshold is not configured setting it to 200rpm")
+            self.Log(self.LOG_DEBUG, "threshold is not configured setting it to default [200]")
+        elif isinstance(self.configuredThreshold, str): # convert to int from configuration string
+            self.configuredThreshold = int(self.configuredThreshold)
         self.configuredPackages.append(
             self.config[CONFIG_KEY_CONTROLLER]
         )  
@@ -72,7 +75,7 @@ class Fanspeed(Entity):
                             self,
                             package.packageName,
                             supportsExtraAttributes=True,
-                            valueFormatterOptions=self.fanspeedFormatOptions,
+                            valueFormatterOptions=None, # give the state no unit since it resembles num of fans spinning above threshold
                         )
                     )
 
