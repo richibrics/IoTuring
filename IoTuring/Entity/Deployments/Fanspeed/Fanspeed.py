@@ -78,8 +78,12 @@ class Fanspeed(Entity):
         """Updatemethod for Linux"""
         for package in self.registeredPackages:
             readout = psutil.sensors_fans()
-            # Set main value = currently use amount of fans as entity state
-            self.SetEntitySensorValue(package.packageName, len(package.sensors))
+            # Set main value = current fans above the configured threshold
+            fanspeeds = []
+            for i, fans in enumerate(package.attributes):
+                fanspeeds.append(readout[package.packageName][i].current)
+            fans_above_threshold = self.above_threshold(fanspeeds)
+            self.SetEntitySensorValue(package.packageName, len(fans_above_threshold))
             # Set extra attributes {fan name : fanspeed in rpm}
             for i, fan in enumerate(package.attributes):
                 self.SetEntitySensorExtraAttribute(
@@ -88,6 +92,10 @@ class Fanspeed(Entity):
                     readout[package.packageName][i].current,
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
+
+    def above_threshold(fans: list[int], threshold: int):
+        above_threshold_numbers = [num for num in fans if num > threshold]
+        return above_threshold_numbers
 
     def prettyprint_controllers(controllers: dict) -> str:
         """print available controllers
