@@ -4,6 +4,7 @@ from InquirerPy import inquirer
 
 from IoTuring.Exceptions.Exceptions import UserCancelledException
 
+
 class QuestionPreset():
 
     def __init__(self,
@@ -134,7 +135,7 @@ class MenuPreset():
         """Ask all questions of this preset"""
         for q_preset in self.presets:
             # if the previous question was cancelled:
-            
+
             if self.cancelled:
                 raise UserCancelledException
 
@@ -172,8 +173,7 @@ class MenuPreset():
                     elif q_preset.question_type == "select":
                         prompt_function = inquirer.select
                         question_options.update({
-                            "choices": q_preset.choices,
-                            "filter": lambda x: x.lower()
+                            "choices": q_preset.choices
                         })
 
                     prompt = prompt_function(
@@ -197,7 +197,6 @@ class MenuPreset():
 
             except Exception as e:
                 print("Error while making the question:", e)
-
 
     def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
         return next((entry for entry in self.results if entry.key == key), None)

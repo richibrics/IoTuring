@@ -8,7 +8,6 @@ from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator import ConfiguratorIO
-
 from IoTuring.Configurator import messages
 
 from InquirerPy import inquirer
@@ -75,16 +74,15 @@ class Configurator(LogObject):
 
             manageEntitiesChoices.sort(key=lambda d: d['name'])
 
-        manageEntitiesChoices.extend([
-            Separator(),
+        manageEntitiesChoices = [
             {"name": "+ Add a new entity", "value": "AddNewEntity"},
-            CHOICE_GO_BACK,
-        ])
+            Separator()
+        ] + manageEntitiesChoices
 
         choice = self.DisplayMenu(
             choices=manageEntitiesChoices,
             message="Manage entities",
-            add_back_choice=False)
+            add_back_choice=True)
 
         if choice == "AddNewEntity":
             self.SelectNewEntity(ecm)
@@ -387,6 +385,9 @@ class Configurator(LogObject):
                 Separator(),
                 CHOICE_GO_BACK
             ])
+
+        if "max_height" not in kwargs:
+            kwargs["max_height"] = "100%"
 
         self.ClearScreen()
         prompt = inquirer.select(
