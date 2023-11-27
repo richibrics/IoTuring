@@ -37,13 +37,18 @@ class Fanspeed(Entity):
         self.specificInitialize = None
         self.specificUpdate = None
 
-        if OsD.IsLinux():
-            self.specificInitialize = self.InitLinux
+        if OsD.IsLinux() or OsD.IsMacos():
+            if not hasattr(psutil, "sensors_fans"):
+                raise Exception("No fan found in system")
+            self.specificInitialize = self.InitUnix
             self.specificUpdate = self.UpdateLinux
+        elif OsD.IsWindows():
+            raise NotImplementedError
+            
         self.specificInitialize()
 
-    def InitLinux(self) -> None:
-        """OS dependant Init for Linux"""
+    def InitUnix(self) -> None:
+        """OS dependant Init for Unix systems"""
         self.configuredPackages: list[str] = []
         self.registeredPackages: list[psutilFanspeedPackage] = []
         self.configuredThreshold: int 
@@ -52,10 +57,7 @@ class Fanspeed(Entity):
         # load all controllers from config
         self.config = self.GetConfigurations()
         self.configuredThreshold = self.config[CONFIG_KEY_THRESHOLD]
-        if self.configuredThreshold is None:
-            self.configuredThreshold = 200
-            self.Log(self.LOG_DEBUG, "threshold is not configured setting it to default [200]")
-        elif isinstance(self.configuredThreshold, str): # convert to int from configuration string
+        if isinstance(self.configuredThreshold, str): # convert to int from configuration string
             self.configuredThreshold = int(self.configuredThreshold)
         self.configuredPackages.append(
             self.config[CONFIG_KEY_CONTROLLER]
@@ -103,7 +105,8 @@ class Fanspeed(Entity):
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
 
-    def above_threshold(self, fanspeeds: list[int], threshold: int) -> int:
+    @staticmethod
+    def above_threshold(fanspeeds: list[int], threshold: int) -> int:
         """filters a list of integers for values above a threshold returns amount of values above threshold
 
         :param fanspeeds: list of fanspeeds
@@ -116,6 +119,7 @@ class Fanspeed(Entity):
         above_threshold_fans = [num for num in fanspeeds if num > threshold]
         return len(above_threshold_fans)
 
+    @staticmethod
     def prettyprint_controllers(controllers: dict) -> str:
         """print available controllers
 
@@ -154,12 +158,13 @@ class Fanspeed(Entity):
         preset.AddEntry(
             "At what threshold does a fan count as spinning [200]",
             CONFIG_KEY_THRESHOLD,
+            default=200,
             mandatory=False
         )
         return preset
 
 
-class psutilFanspeedPackage:
+class psutilFanspeedPackage():
     """FanspeedPackage to pack all fans from a fancontroller"""
 
     def __init__(self, packageName: str, packageData: int) -> None:
@@ -225,26 +230,32 @@ class psutilFanspeedPackage:
         :return: attributes
         :rtype: dict
         """
-        for sensor in self.sensors:
+        for sensor in self._sensors:
             self._attributes[f"{sensor.label}"] = sensor.current
         return self._attributes
 
 
-class psutilFanspeedSensor:
+class psutilFanspeedSensor():
     """Sensor to pack fans of fancontrollers"""
 
-    def __init__(self, sensorData) -> None:
+    def __init__(self, sensorData: psutil._common.sfan) -> None:
         """sensorData is an element from the list which is the value of the the dict returned by psutil.sensors_fans()
 
         :param sensorData: list of sensorData[label, current]
         :type sensorData: list
         """
-        self._label = sensorData[0]
-        self._current = sensorData[1]
+        if not hasattr(sensorData, "label"):
+            # controller has no label for fan, using fallback
+            self._label = FALLBACK_SENSOR_LABEL
+        else: 
+            self._label = sensorData.label
+        if not hasattr(sensorData, "current"):
+            raise KeyError("fan has no speed reported")
+        self._current = sensorData.current
 
     @property
     def current(self) -> int:
-        """current fanspeed getter
+        """current fanspeed
 
         :return: current
         :rtype: int

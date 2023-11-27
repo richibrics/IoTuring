@@ -77,9 +77,8 @@ AppInfo:
 Temperature:
   icon: mdi:thermometer-lines
   unit_of_measurement: °C
-#Fanspeed:
-#  icon: mdi:fan
-#  unit_of_measurement: rpm
+Fanspeed:
+  icon: mdi:fan
 DisplayMode:
   name: Display Mode
   icon: mdi:monitor-multiple
