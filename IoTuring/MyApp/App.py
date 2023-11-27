@@ -1,4 +1,4 @@
-from importlib_metadata import metadata
+from importlib.metadata import metadata
 
 class App():
     METADATA = metadata('IoTuring')
