@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from os import path
@@ -33,7 +35,7 @@ class ClassManager(LogObject):
         # THIS MUST BE IMPLEMENTED IN SUBCLASSES, IS THE CLASS I WANT TO SEARCH !!!!
         self.baseClass = None
 
-    def GetClassFromName(self, wantedName) -> type|None:
+    def GetClassFromName(self, wantedName) -> type | None:
         # From name, load the correct module and extract the class
         for module in self.modulesFilename:  # Search the module file
             moduleName = self.ModuleNameFromPath(module)
