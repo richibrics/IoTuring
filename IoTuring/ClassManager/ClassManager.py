@@ -33,7 +33,7 @@ class ClassManager(LogObject):
         # THIS MUST BE IMPLEMENTED IN SUBCLASSES, IS THE CLASS I WANT TO SEARCH !!!!
         self.baseClass = None
 
-    def GetClassFromName(self, wantedName) -> type:
+    def GetClassFromName(self, wantedName) -> type|None:
         # From name, load the correct module and extract the class
         for module in self.modulesFilename:  # Search the module file
             moduleName = self.ModuleNameFromPath(module)
@@ -43,7 +43,7 @@ class ClassManager(LogObject):
                 loadedModule = self.LoadModule(module)
                 # Now get the class
                 return self.GetClassFromModule(loadedModule)
-        raise Exception(f"No class found: {wantedName}")
+        return None
 
     def LoadModule(self, path):  # Get module and load it from the path
         try:

@@ -1,6 +1,8 @@
 import os
 
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Exceptions.Exceptions import UserCancelledException
+
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
@@ -54,7 +56,7 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=mainMenuChoices,
-            message="IoTuring configuration",
+            message="IoTuring configurator",
             add_back_choice=False
         )
         choice()
@@ -202,8 +204,15 @@ class Configurator(LogObject):
         entityList = ecm.ListAvailableClassesNames()
         # Now I remove the entities that are active and that do not allow multi instances
         for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
-            if not ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])\
-                    .AllowMultiInstance():  # type: ignore
+            # Malformed entities, from different versions in config, just skip
+            entityClass = ecm.GetClassFromName(
+                activeEntity[KEY_ENTITY_TYPE])
+
+            if entityClass is None:
+                continue
+
+            # not multi, remove:
+            if not entityClass.AllowMultiInstance():  # type: ignore
                 entityList.remove(activeEntity[KEY_ENTITY_TYPE])
 
         choice = self.DisplayMenu(
@@ -238,6 +247,9 @@ class Configurator(LogObject):
                     "No configuration needed for this Entity :)")
 
             self.EntityMenuPresetToConfiguration(entityName, preset)
+        except UserCancelledException:
+            self.DisplayMessage("Configuration cancelled", force_clear=True)
+
         except Exception as e:
             print("Error during entity preset loading: " + str(e))
 
@@ -290,6 +302,10 @@ class Configurator(LogObject):
 
             # Save added settings
             self.WarehouseMenuPresetToConfiguration(warehouseName, preset)
+
+        except UserCancelledException:
+            self.DisplayMessage("Configuration cancelled", force_clear=True)
+
         except Exception as e:
             print("Error during warehouse preset loading: " + str(e))
 
@@ -373,16 +389,27 @@ class Configurator(LogObject):
             ])
 
         self.ClearScreen()
-        choice = inquirer.select(
-            message=message, choices=choices, **kwargs).execute()
+        prompt = inquirer.select(
+            message=message, choices=choices, **kwargs)
+
+        if CHOICE_GO_BACK in choices:
+            @prompt.register_kb("escape")
+            def _handle_esc(event):
+                prompt.content_control.selection["value"] = CHOICE_GO_BACK
+                prompt._handle_enter(event)
+
+        choice = prompt.execute()
         return choice
 
-    def DisplayMessage(self, message: str):
+    def DisplayMessage(self, message: str, force_clear=False):
         """Display a message on the top of the screen, above menus
 
         Args:
             message (str): The message to display
+            force_clear (bool): clear screen regardless previous
         """
+        if force_clear:
+            self.pinned_message = False
         self.ClearScreen(pin_next_message=True)
         print(message)
         print()

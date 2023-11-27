@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from InquirerPy import inquirer
 
+from IoTuring.Exceptions.Exceptions import UserCancelledException
+
 class QuestionPreset():
 
     def __init__(self,
@@ -75,6 +77,7 @@ class MenuPreset():
     def __init__(self) -> None:
         self.presets: list[QuestionPreset] = []
         self.results: list[QuestionPreset] = []
+        self.cancelled = False
 
     def HasQuestions(self) -> bool:
         """Check if this preset has any questions to ask"""
@@ -130,6 +133,11 @@ class MenuPreset():
     def AskQuestions(self) -> None:
         """Ask all questions of this preset"""
         for q_preset in self.presets:
+            # if the previous question was cancelled:
+            
+            if self.cancelled:
+                raise UserCancelledException
+
             try:
 
                 # It should be displayed, ask question:
@@ -148,7 +156,7 @@ class MenuPreset():
                     prompt_function = inquirer.text
 
                     question_options["message"] = q_preset.question + ":"
-                    
+
                     if q_preset.default is not None:
                         question_options["default"] = q_preset.default
 
@@ -168,10 +176,19 @@ class MenuPreset():
                             "filter": lambda x: x.lower()
                         })
 
-                    value = prompt_function(
+                    prompt = prompt_function(
                         instruction=q_preset.instruction,
                         **question_options
-                    ).execute()
+                    )
+
+                    @prompt.register_kb("escape")
+                    def _handle_esc(event):
+                        prompt._mandatory = False
+                        prompt._handle_skip(event)
+                        # exception raised here catched by inquirer.
+                        self.cancelled = True
+
+                    value = prompt.execute()
 
                     if value:
                         q_preset.value = value
@@ -180,6 +197,7 @@ class MenuPreset():
 
             except Exception as e:
                 print("Error while making the question:", e)
+
 
     def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
         return next((entry for entry in self.results if entry.key == key), None)
