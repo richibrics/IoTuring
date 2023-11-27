@@ -1,4 +1,5 @@
 import os
+
 from IoTuring.Configurator.MenuPreset import QuestionPreset
 
 from IoTuring.Logger.LogObject import LogObject
@@ -81,16 +82,15 @@ class Configurator(LogObject):
 
             manageEntitiesChoices.sort(key=lambda d: d['name'])
 
-        manageEntitiesChoices.extend([
-            Separator(),
+        manageEntitiesChoices = [
             {"name": "+ Add a new entity", "value": "AddNewEntity"},
-            CHOICE_GO_BACK,
-        ])
+            Separator()
+        ] + manageEntitiesChoices
 
         choice = self.DisplayMenu(
             choices=manageEntitiesChoices,
             message="Manage entities",
-            add_back_choice=False)
+            add_back_choice=True)
 
         if choice == "AddNewEntity":
             self.SelectNewEntity(ecm)
