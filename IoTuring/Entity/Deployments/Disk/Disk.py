@@ -10,19 +10,16 @@ CONFIG_KEY_DU_PATH = "path"
 
 
 class Disk(Entity):
+
     NAME = "Disk"
     ALLOW_MULTI_INSTANCE = True
+    CONFIG_QUESTION = "which Drive shall be checked"
+    DEFAULT_PATH_UNIX = "/"
+    DEFAULT_PATH_WINDOWS = "C://"
 
     def Initialize(self) -> None:
         """Initialise the DiskUsage Entity and Register it
         """
-        self.os = OsD.GetOs()
-        if self.os == OsD.OS_FIXED_VALUE_WINDOWS:
-            self.Update = self.UpdateWindows
-        elif self.os == OsD.OS_FIXED_VALUE_LINUX:
-            self.Update = self.UpdateLinux
-        elif self.os == OsD.OS_FIXED_VALUE_MACOS:
-            self.Update = self.UpdateMacos
 
         self.config = self.GetConfigurations()
         self.configuredPath = self.config[CONFIG_KEY_DU_PATH]
@@ -38,28 +35,11 @@ class Disk(Entity):
         )
 
     def Update(self) -> None:
-        """Placeholder
+        """UpdateMethod, psutil does not need separate behaviour on any os
         """
-        pass
-
-    def UpdateLinux(self) -> None:
-        """UpdateMethod for Linux systems
-        """
-        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentageUnix(self.configuredPath))
-
-    def UpdateMacos(self) -> None:
-        """UpdateMethod for Macos
-        """
-        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentageUnix(self.configuredPath))
-
-    def UpdateWindows(self) -> None:
-        """UpdateMethod for Windows not implemented
-
-        :raises NotImplementedError: windows not implemented
-        """
-        raise NotImplementedError
+        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage(self.configuredPath))
     
-    def GetDiskUsedPercentageUnix(self, path: str):
+    def GetDiskUsedPercentage(self, path: str):
         """get the current diskusage from a path, only reports for the whole disk
 
         :param path: path to a disk to get the usage of
@@ -69,6 +49,7 @@ class Disk(Entity):
         """
         return psutil.disk_usage(path)[3]
 
+    @staticmethod
     def parsePathfromInput(userInput) -> str:
         """User input is an Integer, parse that from list of disks
 
@@ -79,7 +60,8 @@ class Disk(Entity):
         """
         return psutil.disk_partitions()[int(userInput)][1]
 
-    def prettyPrintDisks() -> str:
+    @staticmethod
+    def prettyPrintDisksUnix() -> str:
         disks = psutil.disk_partitions()
         printString = ""
         for i, disk in enumerate(disks):
@@ -87,13 +69,32 @@ class Disk(Entity):
             mountpoint = disk[1]
             printString += f"{i}: {devname}, mounted in {mountpoint}\n"
         return printString
+    
+    @staticmethod
+    def prettyPrintDisksWindows() -> str:
+        disks = psutil.disk_partitions()
+        printString = ""
+        for i, disk in enumerate(disks):
+            driveletter = disk.device
+            printString += f"\n{i}: Drive with Driveletter {driveletter}"
+        return printString
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
-        """Configuration for Disk Entity
-        """
+
+        OS = OsD.GetOs()
+        if OS == OsD.OS_FIXED_VALUE_WINDOWS:
+            DEFAULT_PATH = Disk.DEFAULT_PATH_WINDOWS
+            prettyPrintDisks = Disk.prettyPrintDisksWindows
+        
+        elif OS == OsD.OS_FIXED_VALUE_LINUX:
+            DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
+
+        elif OS == OsD.OS_FIXED_VALUE_MACOS:
+            DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
+
         preset = MenuPreset()
         preset.AddEntry(
-            "enter path to check disk usage of [/]\n" + Disk.prettyPrintDisks(), CONFIG_KEY_DU_PATH, mandatory=False, modify_value_callback=Disk.parsePathfromInput
+            Disk.CONFIG_QUESTION + prettyPrintDisks(), CONFIG_KEY_DU_PATH, mandatory=False, modify_value_callback=Disk.parsePathfromInput, default=DEFAULT_PATH
         )
         return preset
