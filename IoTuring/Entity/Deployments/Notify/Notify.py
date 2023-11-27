@@ -142,12 +142,12 @@ class Notify(Entity):
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
-        preset.AddEntry("Notification title - leave empty to send this data via remote message",
-                        CONFIG_KEY_TITLE, mandatory=False)
+        preset.AddEntry(name="Notification title", key=CONFIG_KEY_TITLE,
+                        instruction="Leave empty to send this data via remote message", mandatory=False)
         # ask for the message only if the title is provided, otherwise don't ask (use display_if_key_value)
-        preset.AddEntry("Notification message", CONFIG_KEY_MESSAGE,
+        preset.AddEntry(name="Notification message", key=CONFIG_KEY_MESSAGE,
                         display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
         # Icon for notification, mac is not supported :(
-        preset.AddEntry("Path to icon", CONFIG_KEY_ICON_PATH,
+        preset.AddEntry(name="Path to icon", key=CONFIG_KEY_ICON_PATH,
                         mandatory=False, default=DEFAULT_ICON_PATH)
         return preset

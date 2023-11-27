@@ -1,32 +1,41 @@
 from __future__ import annotations
 
+from InquirerPy import inquirer
+
 class QuestionPreset():
 
-    def __init__(self, name, key, default=None, mandatory=False, dependsOn={}, modify_value_callback=None) -> None:
+    def __init__(self,
+                 name,
+                 key,
+                 default=None,
+                 mandatory=False,
+                 dependsOn={},
+                 instruction="",
+                 question_type="text",
+                 choices=[]
+                 ) -> None:
         self.name = name
         self.key = key
         self.default = default
         self.mandatory = mandatory
         self.dependsOn = dependsOn
-        self.modify_value_callback = modify_value_callback
+        self.instruction = instruction
+        self.question_type = question_type
+        self.choices = choices
         self.value = None
 
-        # Build the question:
-        question_parts = [f'Add value for "{self.name}"']
+        self.question = self.name
         if mandatory:
-            question_parts.append("{!}")
+            self.question += " {!}"
+
         if default is not None:
-            question_parts.append(f"[{str(default)}]")
-
-        self.question = " ".join(question_parts) + ": "
-
-    def SetValue(self, value) -> None:
-        """Sanitize and set value for this question"""
-
-        if value and self.modify_value_callback:
-            value = self.modify_value_callback(value)
-
-        self.value = value
+            if self.question_type == "yesno":
+                self.default = bool(
+                    default.lower() in BooleanAnswers.TRUE_ANSWERS)
+            else:
+                self.default = str(default)
+        else:
+            self.default = default
 
     def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
         """Check if this question should be displayed"""
@@ -45,7 +54,7 @@ class QuestionPreset():
 
                     # Value is True or False:
                     if isinstance(value, bool):
-                        if (answered.value == answered.default) != value:
+                        if answered.value:
                             dependency_ok = True
 
                     # Value must match:
@@ -71,7 +80,15 @@ class MenuPreset():
         """Check if this preset has any questions to ask"""
         return bool(self.presets)
 
-    def AddEntry(self, name, key, default=None, mandatory=False, display_if_key_value={}, modify_value_callback=None) -> None:
+    def AddEntry(self,
+                 name,
+                 key,
+                 default=None,
+                 mandatory=False,
+                 display_if_key_value={},
+                 instruction="",
+                 question_type="text",
+                 choices=[]) -> None:
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
@@ -86,8 +103,16 @@ class MenuPreset():
           * If the value if False, it will be displayed, if nothing was answered to that question.
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
-        - modify_value_callback: a callback to modify the value before it's set in the dict (called also for a default value). The callback must have the following signature: NAME(value) -> value
+        - instruction: more text to show
+        - question_type: text, secret, select or yesno
+        - choices: only for select question type
         """
+
+        if question_type not in ["text", "secret", "select", "yesno"]:
+            raise Exception(f"Unknown question type: {question_type}")
+
+        if question_type == "select" and not choices:
+            raise Exception(f"Missing choices for question: {name}")
 
         # Add question to presets:
         self.presets.append(
@@ -97,42 +122,61 @@ class MenuPreset():
                 default=default,
                 mandatory=mandatory,
                 dependsOn=display_if_key_value,
-                modify_value_callback=modify_value_callback
+                instruction=instruction,
+                question_type=question_type,
+                choices=choices
             ))
 
     def AskQuestions(self) -> None:
         """Ask all questions of this preset"""
         for q_preset in self.presets:
             try:
-                value = None
 
                 # It should be displayed, ask question:
                 if q_preset.ShouldDisplay(self):
-                    value = input(q_preset.question)
 
-                    # Mandatory loop:
-                    while value == "" and q_preset.mandatory:
-                        value = input(
-                            "You must provide a value for this key: ")
+                    question_options = {}
 
-                    # Set default:
-                    if value == "":
-                        value = q_preset.default
+                    if q_preset.mandatory:
+                        def validate(x): return bool(x)
+                        question_options.update({
+                            "validate": validate,
+                            "invalid_message": "You must provide a value for this key"
+                        })
 
-                # It should not be displayed:
-                else:
-                    # It's already answered:
-                    if self.GetAnsweredPresetByKey(q_preset.key):
-                        continue
+                    # text:
+                    prompt_function = inquirer.text
 
-                    # Set default value otherwise:
-                    else:
-                        value = q_preset.default
+                    question_options["message"] = q_preset.question + ":"
+                    
+                    if q_preset.default is not None:
+                        question_options["default"] = q_preset.default
 
-                # Set and sanitize the value:
-                q_preset.SetValue(value)
-                # Add to answered questions:
-                self.results.append(q_preset)
+                    if q_preset.question_type == "secret":
+                        prompt_function = inquirer.secret
+
+                    elif q_preset.question_type == "yesno":
+                        prompt_function = inquirer.confirm
+                        question_options.update({
+                            "filter": lambda x: "Y" if x else "N"
+                        })
+
+                    elif q_preset.question_type == "select":
+                        prompt_function = inquirer.select
+                        question_options.update({
+                            "choices": q_preset.choices,
+                            "filter": lambda x: x.lower()
+                        })
+
+                    value = prompt_function(
+                        instruction=q_preset.instruction,
+                        **question_options
+                    ).execute()
+
+                    if value:
+                        q_preset.value = value
+                        # Add to answered questions:
+                        self.results.append(q_preset)
 
             except Exception as e:
                 print("Error while making the question:", e)
@@ -148,39 +192,11 @@ class MenuPreset():
         """ Get a dict of default values of keys """
         return {entry.key: entry.default for entry in self.presets}
 
-    @staticmethod
-    def PrintRules() -> None:
-        """ Print configuration rules, like a legend for complusory symbol and default values """
-        print("\n\t-- Rules --")
-        print("\t\tIf you see {!} then the value is complusory")
-        print(
-            "\t\tIf you see [ ] then the value in the brackets is the default one: leave blank the input to use that value")
-        print(
-            "\t\tIf a tag is asked, it is an alias for the entity to recognize it in configurations and warehouses")
-        print("\t-- End of rules --\n")
-
     def AddTagQuestion(self):
         """ Add a Tag question (compulsory, no default) to the preset.
             Useful for entities that must have a tag because of their multi-instance possibility """
-        self.AddEntry("Tag", "tag", mandatory=True,
-                      modify_value_callback=normalize_tag)
-
-    @staticmethod
-    def Callback_NormalizeBoolean(value):
-        """ Normalize a boolean value to be used, given a string from user input. To be used as MenuPreset callback. """
-        if value.lower() in BooleanAnswers.TRUE_ANSWERS:
-            return True
-        return False
-
-    @staticmethod
-    def Callback_LowerAndStripString(value) -> str:
-        """ Remove spaces from a string end, make lowercase """
-        return str(value).lower().strip()
-
-
-def normalize_tag(tag):
-    """ Normalize a tag to be used safely"""
-    return tag.lower().replace(" ", "_")
+        self.AddEntry(name="Tag", key="tag", mandatory=True,
+                      instruction="Alias, to recognize entity in configurations and warehouses")
 
 
 class BooleanAnswers:

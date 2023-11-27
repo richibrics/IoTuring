@@ -264,59 +264,64 @@ class Terminal(Entity):
     @classmethod
     def ConfigurationPreset(cls):
         preset = MenuPreset()
-        preset.AddEntry("Entity type (payload command, sensor, binary sensor, button, switch or cover)",
-                        CONFIG_KEY_ENTITY_TYPE, mandatory=True, modify_value_callback=MenuPreset.Callback_LowerAndStripString)
+        preset.AddEntry(name="Select entity type",
+                        key=CONFIG_KEY_ENTITY_TYPE, mandatory=True,
+                        question_type="select", choices=["Payload command", "Sensor", "Binary sensor", "Button", "Switch", "Cover"])
 
         # payload command
-        preset.AddEntry("Regex for filter the incoming payload: Use ^ as the first and $ as the last character",
-                        CONFIG_KEY_COMMAND_REGEX, mandatory=True,
+        preset.AddEntry(name="Regex for filter the incoming payload:",
+                        key=CONFIG_KEY_COMMAND_REGEX, mandatory=True,
+                        instruction="Use ^ as the first and $ as the last character",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
-        preset.AddEntry("Maximum command length", CONFIG_KEY_LENGTH, mandatory=False, default="inf",
+        preset.AddEntry(name="Maximum command length",
+                        key=CONFIG_KEY_LENGTH, mandatory=False, default="inf",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
 
         # button
-        preset.AddEntry("Terminal command to run",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+        preset.AddEntry(name="Terminal command to run",
+                        key=CONFIG_KEY_COMMAND_ON, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "button"})
 
         # switch
-        preset.AddEntry("Terminal command to switch ON",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+        preset.AddEntry(name="Terminal command to switch ON",
+                        key=CONFIG_KEY_COMMAND_ON, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
-        preset.AddEntry("Terminal command to switch OFF",
-                        CONFIG_KEY_COMMAND_OFF, mandatory=True,
+        preset.AddEntry(name="Terminal command to switch OFF",
+                        key=CONFIG_KEY_COMMAND_OFF, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
-        preset.AddEntry("Terminal command for STATE of the switch, leave empty for an optimistic switch. The command must return 0 for ON state",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=False,
+        preset.AddEntry(name="Terminal command for STATE of the switch, leave empty for an optimistic switch.",
+                        instruction="The command must return 0 for ON state.",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
 
         # sensor
-        preset.AddEntry("Terminal command to get the sensor value",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+        preset.AddEntry(name="Terminal command to get the sensor value",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
-        preset.AddEntry("Unit of measurement",
-                        CONFIG_KEY_UNIT, mandatory=False,
+        preset.AddEntry(name="Unit of measurement",
+                        key=CONFIG_KEY_UNIT, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
-        preset.AddEntry("Number of decimals",
-                        CONFIG_KEY_DECIMALS, mandatory=False,
+        preset.AddEntry(name="Number of decimals",
+                        key=CONFIG_KEY_DECIMALS, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
 
         # binary sensor
-        preset.AddEntry("Terminal command, exit code must be 0 for ON state",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+        preset.AddEntry(name="Terminal command, exit code must be 0 for ON state",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "binary sensor"})
 
         # cover
-        preset.AddEntry("Terminal command to OPEN",
-                        CONFIG_KEY_COMMAND_OPEN, mandatory=True,
+        preset.AddEntry(name="Terminal command to OPEN",
+                        key=CONFIG_KEY_COMMAND_OPEN, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command to CLOSE",
-                        CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
+        preset.AddEntry(name="Terminal command to CLOSE",
+                        key=CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command to STOP",
-                        CONFIG_KEY_COMMAND_STOP, mandatory=False,
+        preset.AddEntry(name="Terminal command to STOP",
+                        key=CONFIG_KEY_COMMAND_STOP, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command for STATE, leave empty for optimistic. Command must return 'opening', 'closing' or 'stopped'",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=False,
+        preset.AddEntry(name="Terminal command for STATE, leave empty for optimistic.",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=False,
+                        instruction="Command must return 'opening', 'closing' or 'stopped'",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         return preset

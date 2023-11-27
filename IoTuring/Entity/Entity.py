@@ -174,10 +174,30 @@ class Entity(LogObject, ConfiguratorObject):
                    command: str | list,
                    command_name: str = "",
                    log_errors: bool = True,
-                   capture_output: bool = True,
-                   text: bool = True,
-                   shell: bool = False, **kwargs) -> subprocess.CompletedProcess:
-        """Safely call a subprocess. Kwargs are other Subprocess options"""
+                   shell: bool = False,
+                   **kwargs) -> subprocess.CompletedProcess:
+        """Safely call a subprocess. Kwargs are other Subprocess options
+
+        Args:
+            command (str | list): The command to call
+            command_name (str, optional): For logging, if empty entity name will be used.
+            log_errors (bool, optional): Log stderr of command. Use False when failure is expected. Defaults to True.
+            shell (bool, optional): Run in shell. Defaults to False.
+            **kwargs: subprocess args
+
+        Returns:
+            subprocess.CompletedProcess: See subprocess docs
+        """
+
+        # different defaults than in subprocess:
+        defaults = {
+            "capture_output": True,
+            "text": True
+        }
+
+        for param, value in defaults.items():
+            if param not in kwargs:
+                kwargs[param] = value
 
         try:
             if shell == False and isinstance(command, str):
@@ -191,7 +211,7 @@ class Entity(LogObject, ConfiguratorObject):
                 command_name = self.NAME
 
             p = subprocess.run(
-                runcommand, capture_output=capture_output, shell=shell, text=text, **kwargs)
+                runcommand, shell=shell, **kwargs)
 
             self.Log(self.LOG_DEBUG, f"Called {command_name} command: {p}")
 

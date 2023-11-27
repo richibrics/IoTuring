@@ -1,6 +1,6 @@
 [project]
 name = "IoTuring"
-version = "2023.10.1"
+version = "2023.11.1"
 description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -26,6 +26,7 @@ dependencies = [
   "PyYAML",
   "importlib_metadata",
   "requests",
+  "InquirerPy",
   "PyObjC; sys_platform == 'darwin'",
   "IoTuring-applesmc; sys_platform == 'darwin'",
   "tinyWinToast; sys_platform == 'win32'"

@@ -73,6 +73,7 @@ class Power(Entity):
                 self, KEY_SLEEP, self.Callback))
 
     def Callback(self, message):
+        # From the topic we can find the command:
         key = message.topic.split("/")[-1]
         self.RunCommand(
             command=self.commands[key],
