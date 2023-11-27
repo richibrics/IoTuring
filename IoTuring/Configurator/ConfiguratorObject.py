@@ -1,5 +1,4 @@
-from IoTuring.Configurator.MenuPreset import BooleanAnswers
-from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Configurator.MenuPreset import BooleanAnswers, MenuPreset
 
 
 class ConfiguratorObject:

@@ -4,6 +4,7 @@ from InquirerPy import inquirer
 
 from IoTuring.Exceptions.Exceptions import UserCancelledException
 
+
 class QuestionPreset():
 
     def __init__(self,
@@ -71,6 +72,58 @@ class QuestionPreset():
 
         return should_display
 
+    def Ask(self, menupreset: "MenuPreset | None" = None):
+        """Ask a single question preset"""
+
+        question_options = {}
+
+        if self.mandatory:
+            def validate(x): return bool(x)
+            question_options.update({
+                "validate": validate,
+                "invalid_message": "You must provide a value for this key"
+            })
+
+        # text:
+        prompt_function = inquirer.text
+
+        question_options["message"] = self.question + ":"
+
+        if self.default is not None:
+            question_options["default"] = self.default
+
+        if self.question_type == "secret":
+            prompt_function = inquirer.secret
+
+        elif self.question_type == "yesno":
+            prompt_function = inquirer.confirm
+            question_options.update({
+                "filter": lambda x: "Y" if x else "N"
+            })
+
+        elif self.question_type == "select":
+            prompt_function = inquirer.select
+            question_options.update({
+                "choices": self.choices
+            })
+
+        prompt = prompt_function(
+            instruction=self.instruction,
+            **question_options
+        )
+
+        @prompt.register_kb("escape")
+        def _handle_esc(event):
+            prompt._mandatory = False
+            prompt._handle_skip(event)
+            # exception raised here catched by inquirer.
+            if menupreset:
+                menupreset.cancelled = True
+
+        value = prompt.execute()
+
+        return value
+
 
 class MenuPreset():
 
@@ -133,62 +186,16 @@ class MenuPreset():
     def AskQuestions(self) -> None:
         """Ask all questions of this preset"""
         for q_preset in self.presets:
+
             # if the previous question was cancelled:
-            
             if self.cancelled:
                 raise UserCancelledException
 
             try:
-
                 # It should be displayed, ask question:
                 if q_preset.ShouldDisplay(self):
 
-                    question_options = {}
-
-                    if q_preset.mandatory:
-                        def validate(x): return bool(x)
-                        question_options.update({
-                            "validate": validate,
-                            "invalid_message": "You must provide a value for this key"
-                        })
-
-                    # text:
-                    prompt_function = inquirer.text
-
-                    question_options["message"] = q_preset.question + ":"
-
-                    if q_preset.default is not None:
-                        question_options["default"] = q_preset.default
-
-                    if q_preset.question_type == "secret":
-                        prompt_function = inquirer.secret
-
-                    elif q_preset.question_type == "yesno":
-                        prompt_function = inquirer.confirm
-                        question_options.update({
-                            "filter": lambda x: "Y" if x else "N"
-                        })
-
-                    elif q_preset.question_type == "select":
-                        prompt_function = inquirer.select
-                        question_options.update({
-                            "choices": q_preset.choices,
-                            "filter": lambda x: x.lower()
-                        })
-
-                    prompt = prompt_function(
-                        instruction=q_preset.instruction,
-                        **question_options
-                    )
-
-                    @prompt.register_kb("escape")
-                    def _handle_esc(event):
-                        prompt._mandatory = False
-                        prompt._handle_skip(event)
-                        # exception raised here catched by inquirer.
-                        self.cancelled = True
-
-                    value = prompt.execute()
+                    value = q_preset.Ask(self)
 
                     if value:
                         q_preset.value = value
@@ -198,9 +205,11 @@ class MenuPreset():
             except Exception as e:
                 print("Error while making the question:", e)
 
-
     def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
         return next((entry for entry in self.results if entry.key == key), None)
+
+    def GetPresetByKey(self, key: str) -> QuestionPreset | None:
+        return next((entry for entry in self.presets if entry.key == key), None)
 
     def GetDict(self) -> dict:
         """ Get a dict with keys and responses"""

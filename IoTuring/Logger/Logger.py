@@ -8,6 +8,9 @@ from datetime import datetime
 import json
 import threading
 
+from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_CONSOLE_LOG_LEVEL, CONFIG_KEY_FILE_LOG_LEVEL
+
+
 
 class Singleton(type):
     """ Metaclass for singleton classes """
@@ -122,12 +125,12 @@ class Logger(LogLevelObject, metaclass=Singleton):
     # Both print and save to file
     def PrintAndSave(self, string, loglevel: LogLevel, printToConsole=True, writeToFile=True) -> None:
         # Override log level from envvar:
-        console_level = consts.CONSOLE_LOG_LEVEL
+        console_level = AppSettings.Settings[CONFIG_KEY_CONSOLE_LOG_LEVEL]
         if os.getenv("IOTURING_LOG_LEVEL"):
             console_level = str(os.getenv("IOTURING_LOG_LEVEL"))
 
         console_log_level = LogLevel(console_level)
-        file_log_level = LogLevel(consts.FILE_LOG_LEVEL)
+        file_log_level = LogLevel(AppSettings.Settings[CONFIG_KEY_FILE_LOG_LEVEL])
 
         if printToConsole and int(loglevel) <= int(console_log_level):
             self.ColoredPrint(string, loglevel)

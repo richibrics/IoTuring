@@ -51,6 +51,9 @@ def loop():
 
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
+    # Load AppSettings:
+    ConfiguratorLoader(configurator).LoadAppSettings()
+
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",
                "Run the script with -c to enter configuration mode")
