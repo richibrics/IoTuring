@@ -65,9 +65,7 @@ class Disk(Entity):
         disks = psutil.disk_partitions()
         printString = ""
         for i, disk in enumerate(disks):
-            devname = disk[0]
-            mountpoint = disk[1]
-            printString += f"{i}: {devname}, mounted in {mountpoint}\n"
+            printString += f"\n{i}: {disk.device}, mounted in {disk.mountpoint}"
         return printString
     
     @staticmethod
@@ -75,8 +73,7 @@ class Disk(Entity):
         disks = psutil.disk_partitions()
         printString = ""
         for i, disk in enumerate(disks):
-            driveletter = disk.device
-            printString += f"\n{i}: Drive with Driveletter {driveletter}"
+            printString += f"\n{i}: Drive with Driveletter {disk.device}"
         return printString
 
     @classmethod
@@ -89,9 +86,11 @@ class Disk(Entity):
         
         elif OS == OsD.OS_FIXED_VALUE_LINUX:
             DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
+            prettyPrintDisks = Disk.prettyPrintDisksUnix
 
         elif OS == OsD.OS_FIXED_VALUE_MACOS:
             DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
+            prettyPrintDisks = Disk.prettyPrintDisksUnix
 
         preset = MenuPreset()
         preset.AddEntry(
