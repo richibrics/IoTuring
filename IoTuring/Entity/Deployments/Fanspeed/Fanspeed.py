@@ -156,7 +156,7 @@ class Fanspeed(Entity):
             mandatory=True,
         )
         preset.AddEntry(
-            "At what threshold does a fan count as spinning [200]",
+            "At what threshold does a fan count as spinning",
             CONFIG_KEY_THRESHOLD,
             default=200,
             mandatory=False
@@ -244,14 +244,14 @@ class psutilFanspeedSensor():
         :param sensorData: list of sensorData[label, current]
         :type sensorData: list
         """
-        if not hasattr(sensorData, "label"):
-            # controller has no label for fan, using fallback
+        if sensorData.label == '':
             self._label = FALLBACK_SENSOR_LABEL
         else: 
             self._label = sensorData.label
-        if not hasattr(sensorData, "current"):
-            raise KeyError("fan has no speed reported")
-        self._current = sensorData.current
+        if sensorData.current == '':
+            raise Exception("fanspeed is not reported")
+        else:
+            self._current = sensorData.current
 
     @property
     def current(self) -> int:
