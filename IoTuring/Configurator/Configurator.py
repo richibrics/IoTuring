@@ -210,7 +210,7 @@ class Configurator(LogObject):
                 continue
 
             # If the Allow Multi Instance option was changed:
-            if activeEntity[KEY_ENTITY_TYPE] in entityList:
+            if activeEntity[KEY_ENTITY_TYPE] not in entityList:
                 continue
 
             # not multi, remove:

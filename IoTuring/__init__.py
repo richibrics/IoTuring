@@ -16,6 +16,7 @@ entities = []
 
 
 def loop():
+    signal.signal(signal.SIGINT, Exit_SIGINT_handler)
     
     # Start logger:
     logger = Logger()
@@ -32,7 +33,6 @@ def loop():
             logger.Log(Logger.LOG_WARNING, "Configurator", "Configuration NOT saved")
             Exit_SIGINT_handler()
     
-    signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",
