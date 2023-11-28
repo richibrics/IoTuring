@@ -149,5 +149,6 @@ class Notify(Entity):
                         display_if_key_value={CONFIG_KEY_TITLE: True}, mandatory=True)
         # Icon for notification, mac is not supported :(
         preset.AddEntry(name="Path to icon", key=CONFIG_KEY_ICON_PATH,
-                        mandatory=False, default=DEFAULT_ICON_PATH)
+                        mandatory=False, default=DEFAULT_ICON_PATH,
+                        question_type="filepath")
         return preset

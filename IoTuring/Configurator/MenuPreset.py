@@ -99,11 +99,11 @@ class MenuPreset():
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
         - instruction: more text to show
-        - question_type: text, secret, integer, select or yesno
+        - question_type: text, secret, integer, filepath, select or yesno
         - choices: only for select question type
         """
 
-        if question_type not in ["text", "secret", "select", "yesno", "integer"]:
+        if question_type not in ["text", "secret", "select", "yesno", "integer", "filepath"]:
             raise Exception(f"Unknown question type: {question_type}")
 
         if question_type == "select" and not choices:
@@ -126,9 +126,6 @@ class MenuPreset():
         """Ask all questions of this preset"""
         for q_preset in self.presets:
             # if the previous question was cancelled:
-
-            if self.cancelled:
-                raise UserCancelledException
 
             try:
 
@@ -183,6 +180,9 @@ class MenuPreset():
                         prompt_function = inquirer.number
                         question_options["float_allowed"] = False
 
+                    elif q_preset.question_type == "filepath":
+                        prompt_function = inquirer.filepath
+
                     # Create the prompt:
                     prompt = prompt_function(
                         instruction=q_preset.instruction,
@@ -199,13 +199,18 @@ class MenuPreset():
 
                     value = prompt.execute()
 
+                    if self.cancelled:
+                        raise UserCancelledException
+
                     if value:
                         q_preset.value = value
                         # Add to answered questions:
                         self.results.append(q_preset)
 
+            except UserCancelledException:
+                raise UserCancelledException
             except Exception as e:
-                print("Error while making the question:", e)
+                print(f"Error while making question for {q_preset.name}:", e)
 
     def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
         return next((entry for entry in self.results if entry.key == key), None)
