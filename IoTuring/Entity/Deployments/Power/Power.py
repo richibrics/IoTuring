@@ -1,5 +1,3 @@
-import subprocess
-
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
@@ -11,21 +9,21 @@ KEY_REBOOT = 'reboot'
 KEY_SLEEP = 'sleep'
 
 commands_shutdown = {
-    'Windows': 'shutdown /s /t 0',
-    'macOS': 'sudo shutdown -h now',
-    'Linux': 'poweroff'
+    OsD.WINDOWS: 'shutdown /s /t 0',
+    OsD.MACOS: 'sudo shutdown -h now',
+    OsD.LINUX: 'poweroff'
 }
 
 
 commands_reboot = {
-    'Windows': 'shutdown /r',
-    'macOS': 'sudo reboot',
-    'Linux': 'reboot'
+    OsD.WINDOWS: 'shutdown /r',
+    OsD.MACOS: 'sudo reboot',
+    OsD.LINUX: 'reboot'
 }
 
 commands_sleep = {
-    'Windows': 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
-    'Linux': 'systemctl suspend',
+    OsD.WINDOWS: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
+    OsD.LINUX: 'systemctl suspend',
     'Linux_X11': 'xset dpms force standby',
 }
 
@@ -43,19 +41,19 @@ class Power(Entity):
         if self.os in commands_shutdown:
             self.commands[KEY_SHUTDOWN] = commands_shutdown[self.os]
             self.RegisterEntityCommand(EntityCommand(
-                self, KEY_SHUTDOWN, self.CallbackShutdown))
+                self, KEY_SHUTDOWN, self.Callback))
 
         # Reboot
         if self.os in commands_reboot:
             self.commands[KEY_REBOOT] = commands_reboot[self.os]
             self.RegisterEntityCommand(EntityCommand(
-                self, KEY_REBOOT, self.CallbackReboot))
+                self, KEY_REBOOT, self.Callback))
 
         # Try if command works without sudo, add if it's not working:
         if OsD.IsLinux():
             for commandtype in self.commands:
                 testcommand = self.commands[commandtype] + " --wtmp-only"
-                if not subprocess.run(testcommand.split(), capture_output=True).returncode == 0:
+                if not self.RunCommand(testcommand).returncode == 0:
                     self.commands[commandtype] = "sudo " + \
                         self.commands[commandtype]
 
@@ -72,27 +70,12 @@ class Power(Entity):
                     self.Log(self.LOG_DEBUG, f'Xset not supported: {str(e)}')
 
             self.RegisterEntityCommand(EntityCommand(
-                self, KEY_SLEEP, self.CallbackSleep))
+                self, KEY_SLEEP, self.Callback))
 
-    def CallCommand(self, command_key: str) -> None:
-        # Log if a command not working:
-        try:
-            p = subprocess.run(
-                self.commands[command_key].split(), capture_output=True)
-            self.Log(self.LOG_DEBUG, f"Called {command_key} command: {p}")
-
-            if p.stderr:
-                self.Log(self.LOG_ERROR,
-                         f"Error during system {command_key}: {p.stderr}")
-
-        except Exception as e:
-            raise Exception(f'Error during system {command_key}: {str(e)}')
-
-    def CallbackShutdown(self, message):
-        self.CallCommand(KEY_SHUTDOWN)
-
-    def CallbackReboot(self, message):
-        self.CallCommand(KEY_REBOOT)
-
-    def CallbackSleep(self, message):
-        self.CallCommand(KEY_SLEEP)
+    def Callback(self, message):
+        # From the topic we can find the command:
+        key = message.topic.split("/")[-1]
+        self.RunCommand(
+            command=self.commands[key],
+            command_name=key
+        )

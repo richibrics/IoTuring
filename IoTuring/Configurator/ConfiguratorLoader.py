@@ -31,6 +31,7 @@ class ConfiguratorLoader(LogObject):
                          activeWarehouse[KEY_WAREHOUSE_TYPE] + " warehouse, check your configurations.")
             else:
                 whClass(activeWarehouse).AddMissingDefaultConfigs()
+                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {whClass(activeWarehouse).configurations}")
                 warehouses.append(whClass(activeWarehouse))
         return warehouses
 
@@ -50,6 +51,7 @@ class ConfiguratorLoader(LogObject):
                          activeEntity[KEY_ENTITY_TYPE] + " entity, check your configurations.")
             else:
                 entityClass(activeEntity).AddMissingDefaultConfigs()
+                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {entityClass(activeEntity).configurations}")
                 entities.append(entityClass(activeEntity))  # Entity instance
         return entities
 

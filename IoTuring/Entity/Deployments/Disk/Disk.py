@@ -2,98 +2,124 @@ import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
+from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_USED_PERCENTAGE = "space_used_percentage"
 CONFIG_KEY_DU_PATH = "path"
 
+EXTRA_KEY_DISK_MOUNTPOINT = "Mountpoint"
+EXTRA_KEY_DISK_FSTYPE = "Filesystem"
+EXTRA_KEY_DISK_DEVICE = "Device"
+EXTRA_KEY_DISK_TOTAL = "Total"
+EXTRA_KEY_DISK_USED = "Used"
+EXTRA_KEY_DISK_FREE = "Free"
+
+VALUEFORMATOPTIONS_DISK_GB = ValueFormatterOptions(
+    ValueFormatterOptions.TYPE_BYTE, 0, "GB")
+
+
+DEFAULT_PATH = {
+    OsD.WINDOWS: "C:\\",
+    OsD.MACOS: "/",
+    OsD.LINUX: "/"
+}
+
+DISK_CHOICE_STRING = {
+    OsD.WINDOWS: "Drive with Driveletter {}",
+    OsD.MACOS: "{}, mounted in {}",
+    OsD.LINUX: "{}, mounted in {}"
+}
+
 
 class Disk(Entity):
-
     NAME = "Disk"
     ALLOW_MULTI_INSTANCE = True
-    CONFIG_QUESTION = "which Drive shall be checked"
-    DEFAULT_PATH_UNIX = "/"
-    DEFAULT_PATH_WINDOWS = "C:\\"
 
     def Initialize(self) -> None:
         """Initialise the DiskUsage Entity and Register it
         """
 
-        self.config = self.GetConfigurations()
-        self.configuredPath = self.config[CONFIG_KEY_DU_PATH]
-        self.disks = psutil.disk_partitions()
+        self.configuredPath = self.GetFromConfigurations(CONFIG_KEY_DU_PATH)
+
+        try:
+            # Get partision info for extra attributes:
+            self.disk_partition = next(
+                (d for d in psutil.disk_partitions() if d.mountpoint == self.configuredPath))
+        except StopIteration:
+            raise Exception(f"Device not found: {self.configuredPath}")
+
         self.RegisterEntitySensor(
             EntitySensor(
                 self,
                 KEY_USED_PERCENTAGE,
+                supportsExtraAttributes=True,
                 valueFormatterOptions=ValueFormatterOptions(
                     ValueFormatterOptions.TYPE_PERCENTAGE
-                ),
+                )
             )
         )
+
+        self.SetEntitySensorExtraAttribute(
+            sensorDataKey=KEY_USED_PERCENTAGE,
+            attributeKey=EXTRA_KEY_DISK_MOUNTPOINT,
+            attributeValue=self.disk_partition.mountpoint)
+
+        self.SetEntitySensorExtraAttribute(
+            sensorDataKey=KEY_USED_PERCENTAGE,
+            attributeKey=EXTRA_KEY_DISK_FSTYPE,
+            attributeValue=self.disk_partition.fstype)
+
+        if not OsD.IsWindows():
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_DEVICE,
+                attributeValue=self.disk_partition.device)
 
     def Update(self) -> None:
         """UpdateMethod, psutil does not need separate behaviour on any os
         """
-        self.SetEntitySensorValue(KEY_USED_PERCENTAGE, self.GetDiskUsedPercentage(self.configuredPath))
-    
-    def GetDiskUsedPercentage(self, path: str):
-        """get the current diskusage from a path, only reports for the whole disk
 
-        :param path: path to a disk to get the usage of
-        :type path: str
-        :return: psutil diskusage object from disk on which path resides
-        :rtype: sdiskusage
-        """
-        return psutil.disk_usage(path)[3]
+        usage = psutil.disk_usage(self.configuredPath)
 
-    @staticmethod
-    def parsePathfromInput(userInput) -> str:
-        """User input is an Integer, parse that from list of disks
+        self.SetEntitySensorValue(
+            key=KEY_USED_PERCENTAGE,
+            value=usage.percent)
 
-        :param userInput: userInput from ConfigurationPreset
-        :type userInput: int
-        :return: percentage of diskusage
-        :rtype: str
-        """
-        return psutil.disk_partitions()[int(userInput)][1]
+        self.SetEntitySensorExtraAttribute(
+            sensorDataKey=KEY_USED_PERCENTAGE,
+            attributeKey=EXTRA_KEY_DISK_TOTAL,
+            attributeValue=usage.total,
+            valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
 
-    @staticmethod
-    def prettyPrintDisksUnix() -> str:
-        disks = psutil.disk_partitions()
-        printString = ""
-        for i, disk in enumerate(disks):
-            printString += f"\n{i}: {disk.device}, mounted in {disk.mountpoint}"
-        return printString
-    
-    @staticmethod
-    def prettyPrintDisksWindows() -> str:
-        disks = psutil.disk_partitions()
-        printString = ""
-        for i, disk in enumerate(disks):
-            printString += f"\n{i}: Drive with Driveletter {disk.device}"
-        return printString
+        self.SetEntitySensorExtraAttribute(
+            sensorDataKey=KEY_USED_PERCENTAGE,
+            attributeKey=EXTRA_KEY_DISK_USED,
+            attributeValue=usage.used,
+            valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
+
+        self.SetEntitySensorExtraAttribute(
+            sensorDataKey=KEY_USED_PERCENTAGE,
+            attributeKey=EXTRA_KEY_DISK_FREE,
+            attributeValue=usage.free,
+            valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
 
-        OS = OsD.GetOs()
-        if OS == OsD.OS_FIXED_VALUE_WINDOWS:
-            DEFAULT_PATH = Disk.DEFAULT_PATH_WINDOWS
-            prettyPrintDisks = Disk.prettyPrintDisksWindows
-        
-        elif OS == OsD.OS_FIXED_VALUE_LINUX:
-            DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
-            prettyPrintDisks = Disk.prettyPrintDisksUnix
+        # Get the choices for menu:
+        DISK_CHOICES = []
 
-        elif OS == OsD.OS_FIXED_VALUE_MACOS:
-            DEFAULT_PATH = Disk.DEFAULT_PATH_UNIX
-            prettyPrintDisks = Disk.prettyPrintDisksUnix
+        for disk in psutil.disk_partitions():
+            DISK_CHOICES.append(
+                {"name":
+                 DISK_CHOICE_STRING[OsD.GetOs()].format(
+                     disk.device, disk.mountpoint),
+                 "value": disk.mountpoint}
+            )
 
         preset = MenuPreset()
-        preset.AddEntry(
-            Disk.CONFIG_QUESTION + prettyPrintDisks(), CONFIG_KEY_DU_PATH, mandatory=False, modify_value_callback=Disk.parsePathfromInput, default=DEFAULT_PATH
-        )
+        preset.AddEntry(name="Drive to check",
+                        key=CONFIG_KEY_DU_PATH, mandatory=False,
+                        question_type="select", choices=DISK_CHOICES)
         return preset

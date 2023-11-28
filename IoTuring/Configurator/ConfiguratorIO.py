@@ -9,8 +9,8 @@ from IoTuring.MyApp.App import App # App name
 
 # macOS dep (in PyObjC)
 try:
-    from AppKit import *
-    from Foundation import *
+    from AppKit import * # type:ignore
+    from Foundation import * # type:ignore
     macos_support = True
 except:
     macos_support = False
@@ -42,7 +42,7 @@ class ConfiguratorIO(LogObject):
         """ Writes configuration data in its file """
         self.createFolderPathIfDoesNotExist()
         with open(self.getFilePath(), "w") as f:
-            f.write(json.dumps(data))
+            f.write(json.dumps(data, indent=4))
         self.Log(self.LOG_MESSAGE, "Saved \"" + self.getFilePath() + "\"")
         
     def checkConfigurationFileExists(self):
@@ -94,8 +94,8 @@ class ConfiguratorIO(LogObject):
     
     # https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/MacOSXDirectories/MacOSXDirectories.html
     def macOSFolderPath(self):
-        paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,True)
-        basePath = (len(paths) > 0 and paths[0]) or NSTemporaryDirectory()
+        paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,True) # type: ignore
+        basePath = (len(paths) > 0 and paths[0]) or NSTemporaryDirectory() # type: ignore
         return basePath
     
     # https://docs.microsoft.com/en-us/windows/win32/shell/knownfolderid

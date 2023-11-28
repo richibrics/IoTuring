@@ -1,4 +1,3 @@
-import subprocess
 import ctypes
 import re
 
@@ -11,6 +10,7 @@ from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
 
 KEY_STATE = 'monitor_state'
 KEY_CMD = 'monitor'
+
 
 class Monitor(Entity):
     NAME = "Monitor"
@@ -42,26 +42,23 @@ class Monitor(Entity):
 
         if payloadString == STATE_ON:
             if OsD.IsWindows():
-                ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, -1)
+                ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, -1) # type:ignore
             elif OsD.IsLinux():
-                command = 'xset dpms force on'
-                subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                self.RunCommand(command='xset dpms force on')
 
         elif payloadString == STATE_OFF:
             if OsD.IsWindows():
-                ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, 2)
+                ctypes.windll.user32.SendMessageA(0xFFFF, 0x0112, 0xF170, 2) # type:ignore
             elif OsD.IsLinux():
-                command = 'xset dpms force off'
-                subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                self.RunCommand(command='xset dpms force off')
         else:
             raise Exception('Incorrect payload!')
 
     def Update(self):
         if OsD.IsLinux():
-            p = subprocess.run(['xset', 'q'], capture_output=True, shell=False)
-            outputString = p.stdout.decode()
+            p = self.RunCommand(command="xset q")
             monitorState = re.findall(
-                'Monitor is (.{2,3})', outputString)[0].upper()
+                'Monitor is (.{2,3})', p.stdout)[0].upper()
             if monitorState in [STATE_OFF, STATE_ON]:
                 self.SetEntitySensorValue(KEY_STATE, monitorState)
             else:

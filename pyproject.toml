@@ -26,6 +26,7 @@ dependencies = [
   "PyYAML",
   "importlib_metadata",
   "requests",
+  "InquirerPy",
   "PyObjC; sys_platform == 'darwin'",
   "IoTuring-applesmc; sys_platform == 'darwin'",
   "tinyWinToast; sys_platform == 'win32'"

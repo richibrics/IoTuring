@@ -2,8 +2,7 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
-from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
-import subprocess
+from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 import re
 
 KEY = "terminal"
@@ -39,6 +38,15 @@ ENTITY_TYPE_KEYS = {
     "BINARY_SENSOR": "binary_sensor",
     "COVER": "cover"
 }
+
+ENTITY_TYPE_CHOICES = [
+    {"name": "Payload command", "value": "payload command"},
+    {"name": "Sensor", "value": "sensor"},
+    {"name": "Binary sensor", "value": "binary sensor"},
+    {"name": "Button", "value": "button"},
+    {"name": "Switch", "value": "switch"},
+    {"name": "Cover", "value": "cover"}
+]
 
 COVER_STATES = {
     "opening": "OPEN",
@@ -84,9 +92,13 @@ class Terminal(Entity):
                 raise Exception(
                     f"Configuration error: Invalid regex: {self.config_command_regex}")
 
-            # Get max length, use float so "inf" works
-            self.config_length = float(
-                self.GetConfigurations()[CONFIG_KEY_LENGTH])
+            # Get max length:
+            if self.GetConfigurations()[CONFIG_KEY_LENGTH]:
+                self.config_length = int(
+                    self.GetConfigurations()[CONFIG_KEY_LENGTH])
+            else:
+                # Fall back to infinite:
+                self.config_length = float("inf")
 
             self.has_command = True
 
@@ -213,8 +225,8 @@ class Terminal(Entity):
         self.last_command = self.command
 
         # Run the command, collect output for update:
-        command = self.RunCommand(self.command)
-        self.last_output = command["message"]
+        command = self.RunCommand(self.command, shell=True)
+        self.last_output = f"Error: {command.stderr}" if command.stderr else command.stdout
 
     def Update(self):
 
@@ -222,23 +234,24 @@ class Terminal(Entity):
 
             # Run the command, do not log error on binary sensor:
             command = self.RunCommand(self.config_command_state,
-                                      log_errors=not self.has_binary_state)
+                                      log_errors=not self.has_binary_state,
+                                      shell=True)
 
             if self.has_binary_state:
-                self.state = STATE_ON if command["returncode"] == 0 else STATE_OFF
+                self.state = STATE_ON if command.returncode == 0 else STATE_OFF
 
             elif self.has_state:
 
                 if self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
-                    cmdout = command["stdout"].lower()
+                    cmdout = command.stdout.lower()
                     if cmdout in COVER_STATES.keys():
                         self.state = COVER_STATES[cmdout]
                     else:
                         self.Log(self.LOG_ERROR,
-                                 f"Invalid state: {command['stdout']}")
+                                 f"Invalid state: {cmdout}")
 
                 else:
-                    self.state = command["stdout"]
+                    self.state = command.stdout
 
                     # Parse state
                     try:
@@ -249,8 +262,10 @@ class Terminal(Entity):
                                      f"Invalid state: {self.state}")
 
             self.SetEntitySensorValue(KEY_STATE, self.state)
+
             self.SetEntitySensorExtraAttribute(
-                KEY_STATE, "Last state command output", command["message"])
+                KEY_STATE, "Last state command output",
+                f"Error: {command.stderr}" if command.stderr else command.stdout)
 
         if self.has_command:
             # Set extra attributes:
@@ -259,87 +274,68 @@ class Terminal(Entity):
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE, "Last output", self.last_output)
 
-    def RunCommand(self, command, log_errors=True):
-        """Run a command, log, collect output"""
-
-        # Run the command:
-        p = subprocess.run(command, capture_output=True,
-                           shell=True, universal_newlines=True)
-
-        output = {
-            "returncode": p.returncode,
-            "stdout": p.stdout,
-            "message": ""
-        }
-
-        # Log output and error:
-        if p.stderr:
-            output["message"] = "Error: " + p.stderr
-            loglevel = self.LOG_ERROR if log_errors else self.LOG_DEBUG
-            self.Log(loglevel,
-                     f"Error running command '{command}': {p.stderr}")
-        else:
-            output["message"] = p.stdout
-            self.Log(self.LOG_DEBUG,
-                     f"Command '{command}' run, stdout: {p.stdout}")
-        return output
-
     @classmethod
     def ConfigurationPreset(cls):
         preset = MenuPreset()
-        preset.AddEntry("Entity type (payload command, sensor, binary sensor, button, switch or cover)",
-                        CONFIG_KEY_ENTITY_TYPE, mandatory=True, modify_value_callback=MenuPreset.Callback_LowerAndStripString)
+        preset.AddEntry(name="Select entity type",
+                        key=CONFIG_KEY_ENTITY_TYPE, mandatory=True,
+                        question_type="select", choices=ENTITY_TYPE_CHOICES)
 
         # payload command
-        preset.AddEntry("Regex for filter the incoming payload: Use ^ as the first and $ as the last character",
-                        CONFIG_KEY_COMMAND_REGEX, mandatory=True,
+        preset.AddEntry(name="Regex for filter the incoming payload:",
+                        key=CONFIG_KEY_COMMAND_REGEX, mandatory=True,
+                        instruction="Use ^ as the first and $ as the last character",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
-        preset.AddEntry("Maximum command length", CONFIG_KEY_LENGTH, mandatory=False, default="inf",
+        preset.AddEntry(name="Maximum command length",
+                        key=CONFIG_KEY_LENGTH, mandatory=False, question_type="integer",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
 
         # button
-        preset.AddEntry("Terminal command to run",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+        preset.AddEntry(name="Terminal command to run",
+                        key=CONFIG_KEY_COMMAND_ON, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "button"})
 
         # switch
-        preset.AddEntry("Terminal command to switch ON",
-                        CONFIG_KEY_COMMAND_ON, mandatory=True,
+        preset.AddEntry(name="Terminal command to switch ON",
+                        key=CONFIG_KEY_COMMAND_ON, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
-        preset.AddEntry("Terminal command to switch OFF",
-                        CONFIG_KEY_COMMAND_OFF, mandatory=True,
+        preset.AddEntry(name="Terminal command to switch OFF",
+                        key=CONFIG_KEY_COMMAND_OFF, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
-        preset.AddEntry("Terminal command for STATE of the switch, leave empty for an optimistic switch. The command must return 0 for ON state",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=False,
+        preset.AddEntry(name="Terminal command for STATE of the switch, leave empty for an optimistic switch.",
+                        instruction="The command must return 0 for ON state.",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "switch"})
 
         # sensor
-        preset.AddEntry("Terminal command to get the sensor value",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+        preset.AddEntry(name="Terminal command to get the sensor value",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
-        preset.AddEntry("Unit of measurement",
-                        CONFIG_KEY_UNIT, mandatory=False,
+        preset.AddEntry(name="Unit of measurement",
+                        key=CONFIG_KEY_UNIT, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
-        preset.AddEntry("Number of decimals",
-                        CONFIG_KEY_DECIMALS, mandatory=False,
+        preset.AddEntry(name="Number of decimals",
+                        key=CONFIG_KEY_DECIMALS, mandatory=False,
+                        question_type="integer",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
 
         # binary sensor
-        preset.AddEntry("Terminal command, exit code must be 0 for ON state",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=True,
+        preset.AddEntry(name="Terminal command, exit code must be 0 for ON state",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "binary sensor"})
 
         # cover
-        preset.AddEntry("Terminal command to OPEN",
-                        CONFIG_KEY_COMMAND_OPEN, mandatory=True,
+        preset.AddEntry(name="Terminal command to OPEN",
+                        key=CONFIG_KEY_COMMAND_OPEN, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command to CLOSE",
-                        CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
+        preset.AddEntry(name="Terminal command to CLOSE",
+                        key=CONFIG_KEY_COMMAND_CLOSE, mandatory=True,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command to STOP",
-                        CONFIG_KEY_COMMAND_STOP, mandatory=False,
+        preset.AddEntry(name="Terminal command to STOP",
+                        key=CONFIG_KEY_COMMAND_STOP, mandatory=False,
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
-        preset.AddEntry("Terminal command for STATE, leave empty for optimistic. Command must return 'opening', 'closing' or 'stopped'",
-                        CONFIG_KEY_COMMAND_STATE, mandatory=False,
+        preset.AddEntry(name="Terminal command for STATE, leave empty for optimistic.",
+                        key=CONFIG_KEY_COMMAND_STATE, mandatory=False,
+                        instruction="Command must return 'opening', 'closing' or 'stopped'",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "cover"})
         return preset
