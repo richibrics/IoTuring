@@ -15,7 +15,7 @@ class Disk(Entity):
     ALLOW_MULTI_INSTANCE = True
     CONFIG_QUESTION = "which Drive shall be checked"
     DEFAULT_PATH_UNIX = "/"
-    DEFAULT_PATH_WINDOWS = "C://"
+    DEFAULT_PATH_WINDOWS = "C:\\"
 
     def Initialize(self) -> None:
         """Initialise the DiskUsage Entity and Register it
