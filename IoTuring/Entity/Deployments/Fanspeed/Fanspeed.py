@@ -9,7 +9,7 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 
 supports_win_fanspeed = False
 supports_linux_fanspeed = True
-supports_macos_fanspeed = False
+supports_macos_fanspeed = True
 
 KEY_FANSPEED = "fanspeed"
 KEY_FANLABEL = "fanlabel"
@@ -120,7 +120,12 @@ class Fanspeed(Entity):
         return len(above_threshold_fans)
 
     @staticmethod
-    def prettyprint_controllers(controllers: dict) -> str:
+    def parseControllernameFromInput(userInput) -> str:        
+        return list(psutil.sensors_fans().keys())[int(userInput)]
+
+
+    @staticmethod
+    def prettyprint_controllers(controllers) -> str:
         """print available controllers
 
         :param controllers: psutil.sensors_fans()
@@ -129,19 +134,20 @@ class Fanspeed(Entity):
         :rtype: str
         """
         output = "\n"
-        indent = "\t"
 
-        for controller in controllers.items():
-            output += controller[0] + "\n"
+        for i, controller in enumerate(controllers.items()):
+            output += f"{i}: " + controller[0] + "\n"                          #controller \n
+            output += "\t"                                                  #   fan @ x rpm, 
             for fan in controller[1]:
-                output += indent + fan[0] + " @ " + str(fan[1]) + "rpm\n"
+                output += fan.label + " @ " + str(fan.current) + "rpm, "    #   fan @ x rpm, fan @ x rpm, fan @ x rpm, 
+            output += "\n"                                                  #\n 
         return output
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         """generate the preset for human input, prints the names of available fancontrollers in the terminal
 
-        :return: preset
+        :return: preset 
         :rtype: MenuPreset
         """
         preset = MenuPreset()
@@ -154,6 +160,7 @@ class Fanspeed(Entity):
             + Fanspeed.prettyprint_controllers(controllers),
             CONFIG_KEY_CONTROLLER,
             mandatory=True,
+            modify_value_callback=Fanspeed.parseControllernameFromInput
         )
         preset.AddEntry(
             "At what threshold does a fan count as spinning",
