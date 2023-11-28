@@ -75,6 +75,7 @@ class Configurator(LogObject):
             manageEntitiesChoices.sort(key=lambda d: d['name'])
 
         manageEntitiesChoices = [
+            CHOICE_GO_BACK,
             {"name": "+ Add a new entity", "value": "AddNewEntity"},
             Separator()
         ] + manageEntitiesChoices
@@ -82,7 +83,7 @@ class Configurator(LogObject):
         choice = self.DisplayMenu(
             choices=manageEntitiesChoices,
             message="Manage entities",
-            add_back_choice=True)
+            add_back_choice=False)
 
         if choice == "AddNewEntity":
             self.SelectNewEntity(ecm)
@@ -204,7 +205,7 @@ class Configurator(LogObject):
         for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
             entityClass = ecm.GetClassFromName(
                 activeEntity[KEY_ENTITY_TYPE])
-            
+
             # Malformed entities, from different versions in config, just skip:
             if entityClass is None:
                 continue
@@ -378,17 +379,16 @@ class Configurator(LogObject):
         Args:
             choices (list): list of strings, dicts, see InquirerPy documentation
             message (str, optional): Title of the prompt. Defaults to "".
-            add_back_choice (bool, optional): Add a go back option at the end. Defaults to True.
+            add_back_choice (bool, optional): Add a go back option at the top. Defaults to True.
 
         Returns:
             The result of the prompt
         """
 
         if add_back_choice:
-            choices.extend([
-                Separator(),
-                CHOICE_GO_BACK
-            ])
+            choices = [CHOICE_GO_BACK,
+                       Separator()
+                       ] + choices
 
         if "max_height" not in kwargs:
             kwargs["max_height"] = "100%"
