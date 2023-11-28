@@ -202,11 +202,15 @@ class Configurator(LogObject):
         entityList = ecm.ListAvailableClassesNames()
         # Now I remove the entities that are active and that do not allow multi instances
         for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
-            # Malformed entities, from different versions in config, just skip
             entityClass = ecm.GetClassFromName(
                 activeEntity[KEY_ENTITY_TYPE])
-
+            
+            # Malformed entities, from different versions in config, just skip:
             if entityClass is None:
+                continue
+
+            # If the Allow Multi Instance option was changed:
+            if activeEntity[KEY_ENTITY_TYPE] in entityList:
                 continue
 
             # not multi, remove:

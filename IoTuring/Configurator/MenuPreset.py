@@ -31,15 +31,6 @@ class QuestionPreset():
         if mandatory:
             self.question += " {!}"
 
-        if default is not None:
-            if self.question_type == "yesno":
-                self.default = bool(
-                    default.lower() in BooleanAnswers.TRUE_ANSWERS)
-            else:
-                self.default = str(default)
-        else:
-            self.default = default
-
     def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
         """Check if this question should be displayed"""
 
@@ -108,11 +99,11 @@ class MenuPreset():
           * In case this won't be displayed, a default value will be used if provided; otherwise won't set this key in the dict)
         ! Caution: if the entry is not displayed, the mandatory property will be ignored !
         - instruction: more text to show
-        - question_type: text, secret, select or yesno
+        - question_type: text, secret, integer, select or yesno
         - choices: only for select question type
         """
 
-        if question_type not in ["text", "secret", "select", "yesno"]:
+        if question_type not in ["text", "secret", "select", "yesno", "integer"]:
             raise Exception(f"Unknown question type: {question_type}")
 
         if question_type == "select" and not choices:
@@ -153,13 +144,25 @@ class MenuPreset():
                             "invalid_message": "You must provide a value for this key"
                         })
 
-                    # text:
-                    prompt_function = inquirer.text
-
                     question_options["message"] = q_preset.question + ":"
 
                     if q_preset.default is not None:
-                        question_options["default"] = q_preset.default
+                        # yesno questions need boolean default:
+                        if q_preset.question_type == "yesno":
+                            question_options["default"] = \
+                                bool(str(q_preset.default).lower()
+                                     in BooleanAnswers.TRUE_ANSWERS)
+                        elif q_preset.question_type == "integer":
+                            question_options["default"] = int(q_preset.default)
+                        else:
+                            question_options["default"] = q_preset.default
+                    else:
+                        if q_preset.question_type == "integer":
+                            # The default default is 0, overwrite to None:
+                            question_options["default"] = None
+
+                    # text:
+                    prompt_function = inquirer.text
 
                     if q_preset.question_type == "secret":
                         prompt_function = inquirer.secret
@@ -176,11 +179,17 @@ class MenuPreset():
                             "choices": q_preset.choices
                         })
 
+                    elif q_preset.question_type == "integer":
+                        prompt_function = inquirer.number
+                        question_options["float_allowed"] = False
+
+                    # Create the prompt:
                     prompt = prompt_function(
                         instruction=q_preset.instruction,
                         **question_options
                     )
 
+                    # Handle escape keypress:
                     @prompt.register_kb("escape")
                     def _handle_esc(event):
                         prompt._mandatory = False

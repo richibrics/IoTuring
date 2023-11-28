@@ -81,7 +81,7 @@ class MQTTWarehouse(Warehouse):
     def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
         preset.AddEntry("Address", CONFIG_KEY_ADDRESS, mandatory=True)
-        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883)
+        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883, question_type="integer")
         preset.AddEntry("Client name", CONFIG_KEY_NAME, default=App.getName())
         preset.AddEntry("Username", CONFIG_KEY_USERNAME)
         preset.AddEntry("Password", CONFIG_KEY_PASSWORD, question_type="secret")

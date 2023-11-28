@@ -442,7 +442,7 @@ class HomeAssistantWarehouse(Warehouse):
         preset = MenuPreset()
         preset.AddEntry("Home assistant MQTT broker address",
                         CONFIG_KEY_ADDRESS, mandatory=True)
-        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883)
+        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883, question_type="integer")
         preset.AddEntry("Client name", CONFIG_KEY_NAME, mandatory=True)
         preset.AddEntry("Username", CONFIG_KEY_USERNAME)
         preset.AddEntry("Password", CONFIG_KEY_PASSWORD, question_type="secret")

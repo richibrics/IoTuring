@@ -21,14 +21,11 @@ class ConfiguratorObject:
 
     def GetTrueOrFalseFromConfigurations(self, key) -> bool:
         """ Get boolean value from confiugurations with key (if not present raise Exception) """
-        value = self.GetFromConfigurations(key)
-        # Default values, generated from MenuPresets are stored as boolean:
-        if isinstance(value, bool):
-            return value
-        # In configuration file it's stored as string:
+        value = self.GetFromConfigurations(key).lower()
+        if value in BooleanAnswers.TRUE_ANSWERS:
+            return True
         else:
-            return bool(value.lower() in BooleanAnswers.TRUE_ANSWERS)
-            
+            return False
 
     def AddMissingDefaultConfigs(self) -> None:
         """ If some default values are missing add them to the running configuration"""

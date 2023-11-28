@@ -39,6 +39,15 @@ ENTITY_TYPE_KEYS = {
     "COVER": "cover"
 }
 
+ENTITY_TYPE_CHOICES = [
+    {"name": "Payload command", "value": "payload command"},
+    {"name": "Sensor", "value": "sensor"},
+    {"name": "Binary sensor", "value": "binary sensor"},
+    {"name": "Button", "value": "button"},
+    {"name": "Switch", "value": "switch"},
+    {"name": "Cover", "value": "cover"}
+]
+
 COVER_STATES = {
     "opening": "OPEN",
     "closing": "CLOSE",
@@ -83,9 +92,13 @@ class Terminal(Entity):
                 raise Exception(
                     f"Configuration error: Invalid regex: {self.config_command_regex}")
 
-            # Get max length, use float so "inf" works
-            self.config_length = float(
-                self.GetConfigurations()[CONFIG_KEY_LENGTH])
+            # Get max length:
+            if self.GetConfigurations()[CONFIG_KEY_LENGTH]:
+                self.config_length = int(
+                    self.GetConfigurations()[CONFIG_KEY_LENGTH])
+            else:
+                # Fall back to infinite:
+                self.config_length = float("inf")
 
             self.has_command = True
 
@@ -266,7 +279,7 @@ class Terminal(Entity):
         preset = MenuPreset()
         preset.AddEntry(name="Select entity type",
                         key=CONFIG_KEY_ENTITY_TYPE, mandatory=True,
-                        question_type="select", choices=["Payload command", "Sensor", "Binary sensor", "Button", "Switch", "Cover"])
+                        question_type="select", choices=ENTITY_TYPE_CHOICES)
 
         # payload command
         preset.AddEntry(name="Regex for filter the incoming payload:",
@@ -274,7 +287,7 @@ class Terminal(Entity):
                         instruction="Use ^ as the first and $ as the last character",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
         preset.AddEntry(name="Maximum command length",
-                        key=CONFIG_KEY_LENGTH, mandatory=False, default="inf",
+                        key=CONFIG_KEY_LENGTH, mandatory=False, question_type="integer",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "payload command"})
 
         # button
@@ -303,6 +316,7 @@ class Terminal(Entity):
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
         preset.AddEntry(name="Number of decimals",
                         key=CONFIG_KEY_DECIMALS, mandatory=False,
+                        question_type="integer",
                         display_if_key_value={CONFIG_KEY_ENTITY_TYPE: "sensor"})
 
         # binary sensor
