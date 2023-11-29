@@ -46,5 +46,5 @@ class FileSwitch(Entity):
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         preset = MenuPreset()
-        preset.AddEntry("Path to file?", CONFIG_KEY_PATH, mandatory=True)
+        preset.AddEntry("Path to file", CONFIG_KEY_PATH, mandatory=True, question_type="filepath")
         return preset

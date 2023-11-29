@@ -442,12 +442,12 @@ class HomeAssistantWarehouse(Warehouse):
         preset = MenuPreset()
         preset.AddEntry("Home assistant MQTT broker address",
                         CONFIG_KEY_ADDRESS, mandatory=True)
-        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883)
+        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883, question_type="integer")
         preset.AddEntry("Client name", CONFIG_KEY_NAME, mandatory=True)
-        preset.AddEntry("Username", CONFIG_KEY_USERNAME, default="")
-        preset.AddEntry("Password", CONFIG_KEY_PASSWORD, default="")
-        preset.AddEntry("Add computer name to entity name ? Y/N",
-                        CONFIG_KEY_ADD_NAME_TO_ENTITY, default="Y")
-        preset.AddEntry("Use tag as entity name for multi instance entities? Y/N",
-                        CONFIG_KEY_USE_TAG_AS_ENTITY_NAME, default="N")
+        preset.AddEntry("Username", CONFIG_KEY_USERNAME)
+        preset.AddEntry("Password", CONFIG_KEY_PASSWORD, question_type="secret")
+        preset.AddEntry("Add computer name to entity name",
+                        CONFIG_KEY_ADD_NAME_TO_ENTITY, default="Y", question_type="yesno")
+        preset.AddEntry("Use tag as entity name for multi instance entities",
+                        CONFIG_KEY_USE_TAG_AS_ENTITY_NAME, default="N", question_type="yesno")
         return preset

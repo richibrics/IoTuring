@@ -1,20 +1,18 @@
-import subprocess
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
-# don't name Os as could be a problem with old configurations that used the Os entity:
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_LOCK = 'lock'
 
 commands = {
-    'Windows': {
+    OsD.WINDOWS: {
         'base': 'rundll32.exe user32.dll,LockWorkStation'
     },
-    'macOS': {
+    OsD.MACOS: {
         'base': 'pmset displaysleepnow'
     },
-    'Linux': {
+    OsD.LINUX: {
         'gnome': 'gnome-screensaver-command -l',
         'cinnamon': 'cinnamon-screensaver-command -a',
         'i3': 'i3lock',
@@ -55,13 +53,4 @@ class Lock(Entity):
             self, KEY_LOCK, self.Callback_Lock))
 
     def Callback_Lock(self, message):
-        try:
-            p = subprocess.run(self.command.split(), capture_output=True)
-            self.Log(self.LOG_DEBUG, f"Called lock command: {p}")
-
-            if p.stderr:
-                self.Log(self.LOG_ERROR,
-                         f"Error during system lock: {p.stderr.decode()}")
-
-        except Exception as e:
-            raise Exception('Error during system lock: ' + str(e))
+        self.RunCommand(command=self.command)

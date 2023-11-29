@@ -2,42 +2,45 @@ import platform
 import os
 import psutil
 import shutil
-from IoTuring.MyApp.SystemConsts import consts
 
 class OperatingSystemDetection():
     OS_NAME = platform.system()
     
-    from .consts import OS_FIXED_VALUE_LINUX, OS_FIXED_VALUE_MACOS, OS_FIXED_VALUE_WINDOWS
+    # Fixed list:
+    MACOS = "macOS"
+    WINDOWS = "Windows"
+    LINUX = "Linux"
 
-    @staticmethod
-    def GetOs() -> str:
-        if OperatingSystemDetection.IsMacos():  
-            return OperatingSystemDetection.OS_FIXED_VALUE_MACOS
-        elif OperatingSystemDetection.IsLinux():
-            return OperatingSystemDetection.OS_FIXED_VALUE_LINUX
-        elif OperatingSystemDetection.IsWindows():
-            return OperatingSystemDetection.OS_FIXED_VALUE_WINDOWS
+
+    @classmethod
+    def GetOs(cls) -> str:
+        if cls.IsMacos():  
+            return cls.MACOS
+        elif cls.IsLinux():
+            return cls.LINUX
+        elif cls.IsWindows():
+            return cls.WINDOWS
         else:
             raise Exception(
-                f"Operating system not in the fixed list. Please open a Git issue and warn about this: OS = {OperatingSystemDetection.OS_NAME}")
+                f"Operating system not in the fixed list. Please open a Git issue and warn about this: OS = {cls.OS_NAME}")
 
-    @staticmethod
-    def IsLinux() -> bool:
-        return bool(OperatingSystemDetection.OS_NAME == 'Linux')
+    @classmethod
+    def IsLinux(cls) -> bool:
+        return bool(cls.OS_NAME == cls.LINUX)
     
-    @staticmethod
-    def IsWindows() -> bool:
-        return bool(OperatingSystemDetection.OS_NAME == 'Windows')
+    @classmethod
+    def IsWindows(cls) -> bool:
+        return bool(cls.OS_NAME == cls.WINDOWS)
 
-    @staticmethod
-    def IsMacos() -> bool:
-        return bool(OperatingSystemDetection.OS_NAME == 'Darwin') # It's macOS
+    @classmethod
+    def IsMacos(cls) -> bool:
+        return bool(cls.OS_NAME == cls.MACOS)
 
-    @staticmethod
-    def GetEnv(envvar) -> str:
+    @classmethod
+    def GetEnv(cls, envvar) -> str:
         """Get envvar, also from different tty on linux"""
         env_value = ""
-        if OperatingSystemDetection.IsLinux():
+        if cls.IsLinux():
             e = os.environ.get(envvar)
             if not e:
                 try:

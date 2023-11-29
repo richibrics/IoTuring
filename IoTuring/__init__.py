@@ -16,7 +16,6 @@ entities = []
 
 
 def loop():
-    signal.signal(signal.SIGINT, Exit_SIGINT_handler)
     
     # Start logger:
     logger = Logger()
@@ -27,7 +26,14 @@ def loop():
         if not configurator.configuratorIO.checkConfigurationFileExists(): 
             # If the file doesn't exist, check if it's in the old location
             configurator.configuratorIO.checkConfigurationFileInOldLocation()
-        configurator.Menu()
+        try:
+            configurator.Menu()
+        except KeyboardInterrupt:
+            logger.Log(Logger.LOG_WARNING, "Configurator", "Configuration NOT saved")
+            Exit_SIGINT_handler()
+
+    # This have to start after configurator.Menu(), otherwise won't work starting from the menu
+    signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",
@@ -60,7 +66,7 @@ def loop():
     while(True):
         time.sleep(1)
 
-def Exit_SIGINT_handler(sig, frame):
+def Exit_SIGINT_handler(sig=None, frame=None):
     logger = Logger()
     logger.Log(Logger.LOG_INFO, "Main", "Application closed by SigInt", printToConsole=False) # to file
     

@@ -1,21 +1,17 @@
+import os
+
 from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Exceptions.Exceptions import UserCancelledException
+
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator import ConfiguratorIO
+from IoTuring.Configurator import messages
 
-# TODO Find new location for this message
-HELP_MESSAGE = f"""
-You can find the configuration file in the following path: 
-\tmacOS\t\t~/Library/Application Support/IoTuring/configurations.json 
-\tLinux\t\t~/.config/IoTuring/configurations.json 
-\tWindows\t\t%APPDATA%/IoTuring/configurations.json
-\tFallback\t[ioturing_install_path]/Configurator/configurations.json
-
-You can also set your preferred directory by setting the environment variable {ConfiguratorIO.CONFIG_PATH_ENV_VAR} 
-Configuration will be stored there in the file configurations.json.
-"""
+from InquirerPy import inquirer
+from InquirerPy.separator import Separator
 
 
 BLANK_CONFIGURATION = {'active_entities': [
@@ -29,11 +25,16 @@ KEY_WAREHOUSE_TYPE = "type"
 KEY_ENTITY_TYPE = "type"
 KEY_ENTITY_TAG = "tag"
 
-SEPARATOR_CHAR_NUMBER = 120
+CHOICE_GO_BACK = "< Go back"
+
 
 class Configurator(LogObject):
 
     def __init__(self) -> None:
+        # Clean the screen before first logs:
+        self.pinned_message = False
+        self.ClearScreen(pin_next_message=True)
+
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.config = self.LoadConfigurations()
 
@@ -43,124 +44,94 @@ class Configurator(LogObject):
 
     def Menu(self) -> None:
         """ UI for Entities and Warehouses settings """
-        run_app = False
-        while(not run_app):
-            self.PrintSeparator()
-            print("1 - Manage entities")
-            print("2 - Manage warehouses")
-            print("C - Start IoTuring")
-            print("H - Help")
-            print("Q - Quit\n")
 
-            choice = False
-            while not choice:
-                choice = input("Select your choice: ")
-                if choice == "1":
-                    choice = True  # Valid choice
-                    self.ManageEntities()
-                elif choice == "2":
-                    choice = True  # Valid choice
-                    self.ManageWarehouses()
-                elif choice == "c" or choice == "C":
-                    choice = True   # Valid choice
-                    run_app = True  # Will start the program exiting from here
-                    print("")  #  Blank line
-                    self.WriteConfigurations()
-                elif choice == "q" or choice == "Q":
-                    self.WriteConfigurations()
-                    exit(0)
-                elif choice == "h" or choice == "H":
-                    print(HELP_MESSAGE)
-                    choice = False
-                else:
-                    print("Invalid choice")
-                    choice = False
+        mainMenuChoices = [
+            {"name": "Manage entities", "value": self.ManageEntities},
+            {"name": "Manage warehouses", "value": self.ManageWarehouses},
+            {"name": "Start IoTuring", "value": self.WriteConfigurations},
+            {"name": "Help", "value": self.DisplayHelp},
+            {"name": "Quit", "value": self.Quit},
+        ]
+
+        choice = self.DisplayMenu(
+            choices=mainMenuChoices,
+            message="IoTuring configurator",
+            add_back_choice=False
+        )
+        choice()
 
     def ManageEntities(self) -> None:
         """ UI for Entities settings """
         ecm = EntityClassManager()
-        while(True):
-            choice = False
-            while not choice:
-                self.PrintSeparator()
-                print(
-                    "Active entities: (enter the entity number to edit its configuration or to disable it)")
-                i = 0
-                for entity in self.config[KEY_ACTIVE_ENTITIES]:
-                    if not KEY_ENTITY_TAG in entity:
-                        print(i+1, "-", entity[KEY_ENTITY_TYPE])
-                    else:
-                        print(i+1, "-", entity[KEY_ENTITY_TYPE],
-                              "with tag", entity[KEY_ENTITY_TAG])
-                    i += 1
-                print("\nA - Add a new entity")
-                print("Q - Come back")
-                choice = input("\nSelect your choice: ")
-                try:
-                    if choice == 'a' or choice == 'A':
-                        choice = True
-                        self.SelectNewEntity(ecm)
-                    elif choice == "q" or choice == "Q":
-                        return
-                    else:
-                        # If not valid I have a ValueError
-                        choice = int(choice)
-                        choice = choice - 1  # So now chosen entity = active entity in configurations
-                        if choice >= 0 and choice < len(self.config[KEY_ACTIVE_ENTITIES]):
-                            self.ManageSingleEntity(
-                                self.config[KEY_ACTIVE_ENTITIES][choice], ecm)
-                            choice = True
-                        else:
-                            raise ValueError()
-                except ValueError:
-                    choice = False
-                    print("Please insert a valid choice")
-                except Exception as e:
-                    choice = False
-                    self.Log(self.LOG_ERROR,
-                             "Error in Entity select menu: " + str(e))
+
+        manageEntitiesChoices = []
+
+        for entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
+            manageEntitiesChoices.append(
+                {"name": self.GetEntityLabel(entityConfig),
+                 "value": entityConfig}
+            )
+
+            manageEntitiesChoices.sort(key=lambda d: d['name'])
+
+        manageEntitiesChoices = [
+            CHOICE_GO_BACK,
+            {"name": "+ Add a new entity", "value": "AddNewEntity"},
+            Separator()
+        ] + manageEntitiesChoices
+
+        choice = self.DisplayMenu(
+            choices=manageEntitiesChoices,
+            message="Manage entities",
+            add_back_choice=False)
+
+        if choice == "AddNewEntity":
+            self.SelectNewEntity(ecm)
+        elif choice == CHOICE_GO_BACK:
+            self.Menu()
+        else:
+            self.ManageSingleEntity(choice, ecm)
 
     def ManageWarehouses(self) -> None:
         """ UI for Warehouses settings """
         wcm = WarehouseClassManager()
 
-        while(True):
-            self.PrintSeparator()
-            print("Select the warehouse you want to manage (X for enabled):")
-            availableWarehouses = wcm.ListAvailableClassesNames()
-            for index, whName in enumerate(availableWarehouses):
-                if not self.IsWarehouseActive(whName.replace("Warehouse", "")):
-                    print("[ ] " + str(index+1) + " - " +
-                          whName.replace("Warehouse", ""))
-                else:
-                    print("[X] " + str(index+1) + " - " +
-                          whName.replace("Warehouse", ""))
-            print("    Q - Come back\n")
-            choice = False
-            while not choice:
-                choice = input("Which one do you want to manage ? ")
-                if choice == "q" or choice == "Q":
-                    return
-                else:
-                    try:
-                        choice = int(choice) - 1
-                        if choice >= 0 and choice < len(availableWarehouses):
-                            self.ManageSingleWarehouse(
-                                availableWarehouses[choice].replace("Warehouse", ""), wcm)
-                            choice = True
-                        else:
-                            raise IndexError("Choice out of warehouses range")
-                    except IndexError:
-                        choice = False
-                        print("Please insert a valid Warehouse index")
-                    except Exception as e:
-                        choice = False
-                        self.Log(self.LOG_ERROR,
-                                 "Error in Warehouse select menu: " + str(e))
+        manageWhChoices = []
+
+        availableWarehouses = wcm.ListAvailableClassesNames()
+        for whName in availableWarehouses:
+            short_wh_name = whName.replace("Warehouse", "")
+
+            enabled_sign = " "
+            if self.IsWarehouseActive(short_wh_name):
+                enabled_sign = "X"
+
+            manageWhChoices.append(
+                {"name": f"[{enabled_sign}] - {short_wh_name}",
+                 "value": short_wh_name})
+
+        choice = self.DisplayMenu(
+            choices=manageWhChoices,
+            message="Select warehouse to manage (X for enabled)",
+        )
+
+        if choice == CHOICE_GO_BACK:
+            self.Menu()
+        else:
+            self.ManageSingleWarehouse(choice, wcm)
+
+    def DisplayHelp(self) -> None:
+        self.DisplayMessage(messages.HELP_MESSAGE)
+        self.Menu()
+
+    def Quit(self) -> None:
+        """ Save configurations and quit """
+        self.WriteConfigurations()
+        exit(0)
 
     def LoadConfigurations(self) -> dict:
         """ Reads the configuration file and returns configuration dictionary.
-            If not available, returns the blank configuration  """
+            If not available, returns the blank configuration """
         read_config = self.configuratorIO.readConfigurations()
         if read_config is None:
             read_config = BLANK_CONFIGURATION
@@ -171,108 +142,121 @@ class Configurator(LogObject):
         self.configuratorIO.writeConfigurations(self.config)
 
     def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
-        """ UI for single Warehouse settings """
-        print("\nWhat do you want to do with " + warehouseName + "?")
-        if self.IsWarehouseActive(warehouseName):
-            print("E - Edit the warehouse settings")
-            print("R - Remove the warehouse")
-        else:
-            print("A - Add the warehouse")
-        print("Q - Come back")
-
-        choice = input("Select an operation: ")
+        """UI for single Warehouse settings"""
 
         if self.IsWarehouseActive(warehouseName):
-            if choice == "r" or choice == "R":
-                if(Configurator.ConfirmQuestion()):
-                    self.RemoveActiveWarehouse(warehouseName)
-            elif choice == "e" or choice == "E":
-                self.EditActiveWarehouse(warehouseName, wcm)
+            manageWhChoices = [
+                {"name": "Edit the warehouse settings", "value": "Edit"},
+                {"name": "Remove the warehouse", "value": "Remove"}
+            ]
         else:
-            if choice == "a" or choice == "A":
-                self.AddActiveWarehouse(warehouseName, wcm)
+            manageWhChoices = [
+                {"name": "Add the warehouse", "value": "Add"}]
+
+        choice = self.DisplayMenu(
+            choices=manageWhChoices,
+            message=f"Manage warehouse {warehouseName}"
+        )
+
+        if choice == CHOICE_GO_BACK:
+            self.ManageWarehouses()
+        elif choice == "Edit":
+            self.EditActiveWarehouse(warehouseName, wcm)
+        elif choice == "Add":
+            self.AddActiveWarehouse(warehouseName, wcm)
+        elif choice == "Remove":
+            confirm = inquirer.confirm(message="Are you sure?").execute()
+
+            if confirm:
+                self.RemoveActiveWarehouse(warehouseName)
+            else:
+                self.ManageWarehouses()
 
     def ManageSingleEntity(self, entityConfig, ecm: EntityClassManager):
         """ UI to manage an active warehouse (edit config/remove) """
-        choice = False
-        while(not choice):
-            self.PrintSeparator()
-            print("What do you want to do with " +
-                  entityConfig[KEY_ENTITY_TYPE] + "?")
-            print("\nE - Edit the entity settings")
-            print("R - Remove the entity")
-            print("Q - Come back")
 
-            choice = input("Select an operation: ")
+        manageEntityChoices = [
+            {"name": "Edit the entity settings", "value": "Edit"},
+            {"name": "Remove the entity", "value": "Remove"}
+        ]
 
-            if choice == "r" or choice == "R":
-                if(Configurator.ConfirmQuestion()):
-                    self.RemoveActiveEntity(entityConfig, ecm)
-            elif choice == "e" or choice == "E":
-                self.EditActiveEntity(entityConfig, ecm)
+        choice = self.DisplayMenu(
+            choices=manageEntityChoices,
+            message=f"Manage entity {self.GetEntityLabel(entityConfig)}"
+        )
+
+        if choice == CHOICE_GO_BACK:
+            self.ManageEntities()
+        elif choice == "Edit":
+            self.EditActiveEntity(entityConfig, ecm)  # type: ignore
+        elif choice == "Remove":
+            confirm = inquirer.confirm(message="Are you sure?").execute()
+
+            if confirm:
+                self.RemoveActiveEntity(entityConfig)
+            else:
+                self.ManageEntities()
 
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
-        choice = False
-        while not choice:
-            entityList = ecm.ListAvailableClassesNames()
-            # Now I remove the entities that are active and that do not allow multi instances
-            for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
-                if not ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE]).AllowMultiInstance():
-                    entityList.remove(activeEntity[KEY_ENTITY_TYPE])
 
-            # Print entities with their index in order to choose them
-            self.PrintSeparator()
-            print("Available entities: ")
-            print("PS: if you don't see the entity you want, it may be already active and may not accept another version of itself)\n")
-            i = 0
-            for entity in entityList:
-                print(i+1, "-", entity)
-                i += 1
+        entityList = ecm.ListAvailableClassesNames()
+        # Now I remove the entities that are active and that do not allow multi instances
+        for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
+            entityClass = ecm.GetClassFromName(
+                activeEntity[KEY_ENTITY_TYPE])
 
-            print("\nQ - Come back")
+            # Malformed entities, from different versions in config, just skip:
+            if entityClass is None:
+                continue
 
-            choice = input("\nSelect your choice: ")
-            try:
-                if choice == "q" or choice == "Q":
-                    return
-                else:
-                    choice = int(choice)  # If not valid I have a ValueError
-                    choice = choice - 1  # So now chosen entity = active entity in configurations
-                    if choice >= 0 and choice < len(entityList):
-                        # WIll also open the configuration menu
-                        self.AddActiveEntity(entityList[choice], ecm)
-                        choice = True
-                    else:
-                        raise ValueError()
-            except ValueError:
-                choice = False
-                print("Please insert a valid choice")
-            except Exception as e:
-                choice = False
-                self.Log(self.LOG_ERROR,
-                         "Error in Entity select menu: " + str(e))
+            # If the Allow Multi Instance option was changed:
+            if activeEntity[KEY_ENTITY_TYPE] not in entityList:
+                continue
+
+            # not multi, remove:
+            if not entityClass.AllowMultiInstance():  # type: ignore
+                entityList.remove(activeEntity[KEY_ENTITY_TYPE])
+
+        choice = self.DisplayMenu(
+            choices=sorted(entityList),
+            message="Available entities:",
+            instruction="if you don't see the entity you want, it may be already active and may not accept another version of itself"
+
+        )
+
+        if choice == CHOICE_GO_BACK:
+            self.ManageEntities()
+        else:
+            self.AddActiveEntity(choice, ecm)
 
     def AddActiveEntity(self, entityName, ecm: EntityClassManager):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
         entityClass = ecm.GetClassFromName(entityName)
         try:
-            preset = entityClass.ConfigurationPreset()
+            preset = entityClass.ConfigurationPreset()  # type: ignore
 
             if preset.HasQuestions():
                 # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
-                if entityClass.AllowMultiInstance():
+                if entityClass.AllowMultiInstance():  # type: ignore
                     preset.AddTagQuestion()
 
-                preset.PrintRules()
+                self.DisplayMessage(messages.PRESET_RULES)
+                self.DisplayMessage(f"Configure {entityName} Entity")
                 preset.AskQuestions()
 
             else:
-                print("No configuration needed for this Entity :)")
+                self.DisplayMessage(
+                    "No configuration needed for this Entity :)")
 
             self.EntityMenuPresetToConfiguration(entityName, preset)
+        except UserCancelledException:
+            self.DisplayMessage("Configuration cancelled", force_clear=True)
+
         except Exception as e:
             print("Error during entity preset loading: " + str(e))
+
+        self.ManageEntities()
 
     def IsEntityActive(self, entityName) -> bool:
         """ Return True if an Entity is active """
@@ -281,10 +265,21 @@ class Configurator(LogObject):
                 return True
         return False
 
-    def RemoveActiveEntity(self, entityConfig, ecm: EntityClassManager) -> None:
+    def GetEntityLabel(self, entityConfig) -> str:
+        """ Get the type name of entity, add tag if multi"""
+        entityLabel = entityConfig[KEY_ENTITY_TYPE]
+        if KEY_ENTITY_TAG in entityConfig:
+            entityLabel += f" with tag {entityConfig[KEY_ENTITY_TAG]}"
+        return entityLabel
+
+    def RemoveActiveEntity(self, entityConfig) -> None:
         """ Remove entity name from the list of active entities if present """
         if entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
             self.config[KEY_ACTIVE_ENTITIES].remove(entityConfig)
+
+        self.DisplayMessage(
+            f"Entity removed: {self.GetEntityLabel(entityConfig)}")
+        self.ManageEntities()
 
     def IsWarehouseActive(self, warehouseName) -> bool:
         """ Return True if a warehouse is active """
@@ -298,31 +293,46 @@ class Configurator(LogObject):
 
         whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
-            preset = whClass.ConfigurationPreset()
+            preset = whClass.ConfigurationPreset()  # type: ignore
 
             if preset.HasQuestions():
-                preset.PrintRules()
+                self.DisplayMessage(messages.PRESET_RULES)
                 preset.AskQuestions()
 
             else:
-                print("No configuration needed for this Warehouse :)")
+                self.DisplayMessage(
+                    "No configuration needed for this Warehouse :)")
 
             # Save added settings
             self.WarehouseMenuPresetToConfiguration(warehouseName, preset)
+
+        except UserCancelledException:
+            self.DisplayMessage("Configuration cancelled", force_clear=True)
+
         except Exception as e:
             print("Error during warehouse preset loading: " + str(e))
 
+        self.ManageWarehouses()
+
     def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
         """ UI for single Warehouse settings edit """
-        print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
+        self.DisplayMessage(
+            "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
+
+        self.ManageWarehouses()
+
+        # TODO Implement
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
-        pass  # TODO Implement
 
     def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
         """ UI for single Entity settings edit """
-        print("You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
-        pass  # TODO Implement
+        self.DisplayMessage(
+            "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
+
+        self.ManageEntities()
+
+        # TODO Implement
 
     def RemoveActiveWarehouse(self, warehouseName) -> None:
         """ Remove warehouse name from the list of active warehouses if present """
@@ -330,7 +340,9 @@ class Configurator(LogObject):
             if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
                 # I remove this wh from the list
                 self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
-                return
+
+        self.DisplayMessage(f"Warehouse removed: {warehouseName}")
+        self.ManageWarehouses()
 
     def WarehouseMenuPresetToConfiguration(self, whName, preset) -> None:
         """ Get a MenuPreset with responses and add the entries to the configurations dict in warehouse part """
@@ -346,13 +358,63 @@ class Configurator(LogObject):
         self.config[KEY_ACTIVE_ENTITIES].append(_dict)
         print("Configuration added for \""+entityName+"\" :)")
 
-    def PrintSeparator(self):
-        print("\n"+SEPARATOR_CHAR_NUMBER*'#')
+    def ClearScreen(self, pin_next_message=False):
+        """ Clear the screen on any platform. If self.pinned_message is True, it won't be cleared.
 
-    @staticmethod
-    def ConfirmQuestion():
-        value = input("You sure ? [y/n] ")
-        if value == "y" or value == "Y":
-            return True
+        Args:
+            pin_next_message (bool, optional): Set self.pinned_message after clear. Defaults to False.
+        """
+
+        if not self.pinned_message:
+            os.system("cls" if os.name == "nt" else "clear")
+
+        if pin_next_message:
+            self.pinned_message = True
         else:
-            return False
+            self.pinned_message = False
+
+    def DisplayMenu(self, choices: list, message: str = "", add_back_choice=True, **kwargs):
+        """ Wrapper for inquirer.select
+
+        Args:
+            choices (list): list of strings, dicts, see InquirerPy documentation
+            message (str, optional): Title of the prompt. Defaults to "".
+            add_back_choice (bool, optional): Add a go back option at the top. Defaults to True.
+
+        Returns:
+            The result of the prompt
+        """
+
+        if add_back_choice:
+            choices = [CHOICE_GO_BACK,
+                       Separator()
+                       ] + choices
+
+        if "max_height" not in kwargs:
+            kwargs["max_height"] = "100%"
+
+        self.ClearScreen()
+        prompt = inquirer.select(
+            message=message, choices=choices, **kwargs)
+
+        if CHOICE_GO_BACK in choices:
+            @prompt.register_kb("escape")
+            def _handle_esc(event):
+                prompt.content_control.selection["value"] = CHOICE_GO_BACK
+                prompt._handle_enter(event)
+
+        choice = prompt.execute()
+        return choice
+
+    def DisplayMessage(self, message: str, force_clear=False):
+        """Display a message on the top of the screen, above menus
+
+        Args:
+            message (str): The message to display
+            force_clear (bool): clear screen regardless previous
+        """
+        if force_clear:
+            self.pinned_message = False
+        self.ClearScreen(pin_next_message=True)
+        print(message)
+        print()

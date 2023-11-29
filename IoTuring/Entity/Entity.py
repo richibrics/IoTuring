@@ -1,9 +1,11 @@
 from __future__ import annotations
+import time
+import subprocess
+
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
-import time
 
 KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
 
@@ -167,6 +169,62 @@ class Entity(LogObject, ConfiguratorObject):
             self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
         else:
             self.tag = ""
+
+    def RunCommand(self,
+                   command: str | list,
+                   command_name: str = "",
+                   log_errors: bool = True,
+                   shell: bool = False,
+                   **kwargs) -> subprocess.CompletedProcess:
+        """Safely call a subprocess. Kwargs are other Subprocess options
+
+        Args:
+            command (str | list): The command to call
+            command_name (str, optional): For logging, if empty entity name will be used.
+            log_errors (bool, optional): Log stderr of command. Use False when failure is expected. Defaults to True.
+            shell (bool, optional): Run in shell. Defaults to False.
+            **kwargs: subprocess args
+
+        Returns:
+            subprocess.CompletedProcess: See subprocess docs
+        """
+
+        # different defaults than in subprocess:
+        defaults = {
+            "capture_output": True,
+            "text": True
+        }
+
+        for param, value in defaults.items():
+            if param not in kwargs:
+                kwargs[param] = value
+
+        try:
+            if shell == False and isinstance(command, str):
+                runcommand = command.split()
+            else:
+                runcommand = command
+
+            if command_name:
+                command_name = self.NAME + "-" + command_name
+            else:
+                command_name = self.NAME
+
+            p = subprocess.run(
+                runcommand, shell=shell, **kwargs)
+
+            self.Log(self.LOG_DEBUG, f"Called {command_name} command: {p}")
+
+            # Do not log errors:
+            error_loglevel = self.LOG_ERROR if log_errors else self.LOG_DEBUG
+            if p.stderr:
+                self.Log(error_loglevel,
+                         f"Error during {command_name} command: {p.stderr}")
+
+        except Exception as e:
+            raise Exception(f"Error during {command_name} command: {str(e)}")
+
+        return p
 
     @classmethod
     def AllowMultiInstance(cls):
