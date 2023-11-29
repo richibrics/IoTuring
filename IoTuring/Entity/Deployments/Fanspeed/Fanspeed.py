@@ -22,11 +22,14 @@ CONFIG_KEY_THRESHOLD = "threshold"
 
 FANSPEED_DECIMALS = 0
 
+FANSPEED_CHOICE_STRING = "{}:\n with fans: {}"
+
 
 class Fanspeed(Entity):
     """Entity to read fanspeed"""
 
     NAME = "Fanspeed"
+    ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self) -> None:
         """Initialize the Class, setup Formatter, determin specificInitialize and specificUpdate depending on OS"""
@@ -89,19 +92,16 @@ class Fanspeed(Entity):
         """Updatemethod for Linux"""
         for package in self.registeredPackages:
             readout = psutil.sensors_fans()
-            # Set main value = current fans above the configured threshold
-            fanspeeds = []
-            controller = package.packageName
-            for i, fans in enumerate(package.attributes):
-                fanspeeds.append(readout[controller][i].current)
-            fans_above_threshold = self.above_threshold(fanspeeds, self.configuredThreshold)
-            self.SetEntitySensorValue(package.packageName, fans_above_threshold)
+            # Set main value = gitcurrent fans above the configured threshold
+            fanspeeds = [fan.current for fan in readout[package.packageName]]
+            # find fans above threshold and assign the entity state
+            self.SetEntitySensorValue(package.packageName, self.above_threshold(fanspeeds, self.configuredThreshold))
             # Set extra attributes {fan name : fanspeed in rpm}
-            for i, fan in enumerate(package.attributes):
+            for label, current in package.attributes.items():
                 self.SetEntitySensorExtraAttribute(
                     package.packageName,
-                    fan,
-                    readout[package.packageName][i].current,
+                    label,
+                    current,
                     valueFormatterOptions=self.fanspeedFormatOptions,
                 )
 
@@ -119,29 +119,6 @@ class Fanspeed(Entity):
         above_threshold_fans = [num for num in fanspeeds if num > threshold]
         return len(above_threshold_fans)
 
-    @staticmethod
-    def parseControllernameFromInput(userInput) -> str:        
-        return list(psutil.sensors_fans().keys())[int(userInput)]
-
-
-    @staticmethod
-    def prettyprint_controllers(controllers) -> str:
-        """print available controllers
-
-        :param controllers: psutil.sensors_fans()
-        :type controllers: dict
-        :return: formated output as a string
-        :rtype: str
-        """
-        output = "\n"
-
-        for i, controller in enumerate(controllers.items()):
-            output += f"{i}: " + controller[0] + "\n"                          #controller \n
-            output += "\t"                                                  #   fan @ x rpm, 
-            for fan in controller[1]:
-                output += fan.label + " @ " + str(fan.current) + "rpm, "    #   fan @ x rpm, fan @ x rpm, fan @ x rpm, 
-            output += "\n"                                                  #\n 
-        return output
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -150,22 +127,31 @@ class Fanspeed(Entity):
         :return: preset 
         :rtype: MenuPreset
         """
+
+        FAN_CHOICES = []
+        
+        for controller, fans in psutil.sensors_fans().items():
+            fanList = []
+            for fan in fans:
+                fanList.append(f"{fan.label}@{fan.current}rpm")
+            FAN_CHOICES.append({
+                "name": FANSPEED_CHOICE_STRING.format(controller, ", ".join(fanList)),
+                "value": controller
+                }                
+            )
+
         preset = MenuPreset()
-        controllers = psutil.sensors_fans()
-        controllerNames = []
-        for name in controllers:
-            controllerNames.append(name)
         preset.AddEntry(
-            f"which controller to watch\ncontrollers: {controllerNames}"
-            + Fanspeed.prettyprint_controllers(controllers),
-            CONFIG_KEY_CONTROLLER,
+            name="controllers to check",
+            key=CONFIG_KEY_CONTROLLER,
             mandatory=True,
-            modify_value_callback=Fanspeed.parseControllernameFromInput
+            question_type="select",
+            choices=FAN_CHOICES
         )
         preset.AddEntry(
-            "At what threshold does a fan count as spinning",
-            CONFIG_KEY_THRESHOLD,
-            default=200,
+            name="At what threshold does a fan count as spinning",
+            key=CONFIG_KEY_THRESHOLD,
+            default="200",
             mandatory=False
         )
         return preset
