@@ -39,22 +39,17 @@ class OperatingSystemDetection():
     @classmethod
     def GetEnv(cls, envvar) -> str:
         """Get envvar, also from different tty on linux"""
-        env_value = ""
-        if cls.IsLinux():
-            e = os.environ.get(envvar)
-            if not e:
-                try:
-                    # Try if there is another tty with gui:
-                    session_pid = next((u.pid for u in psutil.users() if u.host and "tty" in u.host), None) 
-                    if session_pid:
-                        p = psutil.Process(int(session_pid))
-                        with p.oneshot():
-                            env_value = p.environ()[envvar]
-                except KeyError:
-                    env_value = ""
-            else:
-                env_value = e
-
+        env_value = os.environ.get(envvar) or ""
+        if cls.IsLinux() and not env_value:
+            try:
+                # Try if there is another tty with gui:
+                session_pid = next((u.pid for u in psutil.users() if u.host and "tty" in u.host), None) 
+                if session_pid:
+                    p = psutil.Process(int(session_pid))
+                    with p.oneshot():
+                        env_value = p.environ()[envvar]
+            except KeyError:
+                env_value = ""
         return env_value
             
     @staticmethod
