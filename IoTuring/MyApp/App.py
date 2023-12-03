@@ -1,4 +1,4 @@
-from importlib_metadata import metadata
+from importlib.metadata import metadata
 
 class App():
     METADATA = metadata('IoTuring')
@@ -12,8 +12,9 @@ class App():
     # "Project-URL": "documentation, https://github.com/richibrics/IoTuring",
     # "Project-URL": "repository, https://github.com/richibrics/IoTuring",
     # "Project-URL": "changelog, https://github.com/richibrics/IoTuring/releases",
-    URL_HOMEPAGE = METADATA.get_all("Project-URL")[0].split(', ')[1].strip()
-    URL_RELEASES = METADATA.get_all("Project-URL")[-1].split(', ')[1].strip()
+    URLS = METADATA.get_all("Project-URL") or ""
+    URL_HOMEPAGE = URLS[0].split(', ')[1].strip()
+    URL_RELEASES = URLS[-1].split(', ')[1].strip()
 
     @staticmethod
     def getName() -> str:
