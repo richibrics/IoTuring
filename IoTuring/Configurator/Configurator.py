@@ -33,14 +33,9 @@ CHOICE_GO_BACK = "< Go back"
 
 class Configurator(LogObject):
 
-    def __init__(self, clear_screen: bool = True) -> None:
+    def __init__(self) -> None:
 
-        if clear_screen:
-            # Clean the screen before first logs:
-            self.pinned_message = False
-            self.ClearScreen(pin_next_message=True)
-        else:
-            self.pinned_message = True
+        self.pinned_message = False
 
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.config = self.LoadConfigurations()
@@ -66,7 +61,7 @@ class Configurator(LogObject):
 
                 # Reload config if it was moved:
                 if moveFile:
-                    self.__init__(clear_screen=False)
+                    self.__init__()
 
     def OpenConfigInEditor(self):
         """ Open configuration file in an editor """
@@ -78,7 +73,7 @@ class Configurator(LogObject):
             self.Log(self.LOG_INFO, f"Opening file: \"{config_path}\"")
 
             if OsD.IsWindows():
-                os.startfile(config_path)
+                os.startfile(config_path)  # type: ignore
                 return
             else:
                 editors = [
@@ -95,8 +90,11 @@ class Configurator(LogObject):
 
             self.Log(self.LOG_WARNING, "No editor found")
 
-    def Menu(self) -> None:
+    def Menu(self, clear_screen: bool = True) -> None:
         """ UI for Entities and Warehouses settings """
+
+        if not clear_screen:
+            self.pinned_message = True
 
         mainMenuChoices = [
             {"name": "Manage entities", "value": self.ManageEntities},
@@ -419,7 +417,7 @@ class Configurator(LogObject):
         """
 
         if not self.pinned_message:
-            os.system("cls" if os.name == "nt" else "clear")
+            self.ClearTerminal()
 
         if pin_next_message:
             self.pinned_message = True
@@ -471,3 +469,8 @@ class Configurator(LogObject):
         self.ClearScreen(pin_next_message=True)
         print(message)
         print()
+
+    @staticmethod
+    def ClearTerminal():
+        """Clear the terminal screen on any platform"""
+        os.system("cls" if os.name == "nt" else "clear")

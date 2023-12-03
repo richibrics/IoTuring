@@ -44,6 +44,9 @@ def loop():
         parser.print_help()
         os._exit(0)
 
+    # Clear the terminal
+    Configurator.ClearTerminal()
+
     # Start logger:
     logger = Logger()
     configurator = Configurator()
@@ -55,7 +58,7 @@ def loop():
             # Check old location:
             configurator.CheckFile()
 
-            configurator.Menu()
+            configurator.Menu(clear_screen=False)
         except KeyboardInterrupt:
             logger.Log(Logger.LOG_WARNING, "Configurator",
                        "Configuration NOT saved")
