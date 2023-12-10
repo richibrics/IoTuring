@@ -67,7 +67,7 @@ class Fanspeed(Entity):
         )  
         self.Log(self.LOG_DEBUG, f"registered controllers from config:{self.registeredPackages}")
         self.Log(self.LOG_DEBUG, f"got threshold as {self.configuredThreshold}rpm")
-        for controllerName,data, in sensors.items():  # read the controllernames and fanspeeds
+        for controllerName, data, in sensors.items():  # read the controllernames and fanspeeds
             # build packages from controllernames if they are in the config
             if controllerName in self.configuredPackages:
                 package = psutilFanspeedPackage(controllerName, data)
@@ -97,6 +97,7 @@ class Fanspeed(Entity):
             # find fans above threshold and assign the entity state
             self.SetEntitySensorValue(package.packageName, self.above_threshold(fanspeeds, self.configuredThreshold))
             # Set extra attributes {fan name : fanspeed in rpm}
+            self.Log(self.LOG_DEBUG, f"updating controller:{package.packageName} with {package.attributes}")
             for label, current in package.attributes.items():
                 self.SetEntitySensorExtraAttribute(
                     package.packageName,
@@ -132,8 +133,13 @@ class Fanspeed(Entity):
         
         for controller, fans in psutil.sensors_fans().items():
             fanList = []
-            for fan in fans:
-                fanList.append(f"{fan.label}@{fan.current}rpm")
+            if not controller:
+                raise NotImplementedError("blank controllernames are not supported")
+            for i_fans, fan in enumerate(fans):
+                if not fan.label:
+                    fanList.append(f"{FALLBACK_SENSOR_LABEL+str(i_fans)}@{fan.current}rpm")
+                else:
+                    fanList.append(f"{fan.label}@{fan.current}rpm")
             FAN_CHOICES.append({
                 "name": FANSPEED_CHOICE_STRING.format(controller, ", ".join(fanList)),
                 "value": controller
@@ -171,8 +177,8 @@ class psutilFanspeedPackage():
         self._packageName = packageName
         self._sensors: list[psutilFanspeedSensor] = []
         self._attributes = {}
-        for sensor in packageData:
-            self._sensors.append(psutilFanspeedSensor(sensor))
+        for i, sensor in enumerate(packageData):
+            self._sensors.append(psutilFanspeedSensor(sensor, index=i))
 
     @property
     def packageName(self) -> str:
@@ -231,20 +237,19 @@ class psutilFanspeedPackage():
 class psutilFanspeedSensor():
     """Sensor to pack fans of fancontrollers"""
 
-    def __init__(self, sensorData: psutil._common.sfan) -> None:
+    def __init__(self, sensorData: psutil._common.sfan, index=0) -> None:
         """sensorData is an element from the list which is the value of the the dict returned by psutil.sensors_fans()
 
         :param sensorData: list of sensorData[label, current]
         :type sensorData: list
         """
-        if sensorData.label == '':
-            self._label = FALLBACK_SENSOR_LABEL
-        else: 
-            self._label = sensorData.label
-        if sensorData.current == '':
-            raise Exception("fanspeed is not reported")
+        #check sensorlabel, if empty assign FALLBACK
+        if not sensorData.label:
+            self._label = FALLBACK_SENSOR_LABEL + str(index)
         else:
-            self._current = sensorData.current
+            self._label = sensorData.label
+
+        self._current = sensorData.current
 
     @property
     def current(self) -> int:
