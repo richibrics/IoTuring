@@ -42,6 +42,8 @@ class Fanspeed(Entity):
 
         if OsD.IsLinux() or OsD.IsMacos():
             if not hasattr(psutil, "sensors_fans"):
+                raise Exception("System not supported by psutil")
+            if not bool(psutil.sensors_fans()):
                 raise Exception("No fan found in system")
             self.specificInitialize = self.InitUnix
             self.specificUpdate = self.UpdateLinux
