@@ -4,25 +4,16 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
-from IoTuring.Configurator.MenuPreset import MenuPreset
 
 
-supports_win_fanspeed = False
-supports_linux_fanspeed = True
-supports_macos_fanspeed = True
+VALUEFORMATTEROPTIONS_FANSPEED_RPM = ValueFormatterOptions(
+            value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=0)
 
 KEY_FANSPEED = "fanspeed"
 KEY_FANLABEL = "fanlabel"
 
-FALLBACK_PACKAGE_LABEL = "controller"
-FALLBACK_SENSOR_LABEL = "fan"
-
-CONFIG_KEY_CONTROLLER = "controller"
-CONFIG_KEY_THRESHOLD = "threshold"
-
-FANSPEED_DECIMALS = 0
-
-FANSPEED_CHOICE_STRING = "{}:\n with fans: {}"
+FALLBACK_CONTROLLER_LABEL = "controller"
+FALLBACK_FAN_LABEL = "fan"
 
 
 class Fanspeed(Entity):
@@ -33,58 +24,46 @@ class Fanspeed(Entity):
 
     def Initialize(self) -> None:
         """Initialize the Class, setup Formatter, determin specificInitialize and specificUpdate depending on OS"""
-        self.fanspeedFormatOptions = ValueFormatterOptions(
-            value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=FANSPEED_DECIMALS
-        )
 
         self.specificInitialize = None
         self.specificUpdate = None
 
-        if OsD.IsLinux() or OsD.IsMacos():
-            if not hasattr(psutil, "sensors_fans"):
+        if OsD.IsLinux():
+            if not hasattr(psutil, "sensors_fans"): # psutil docs: no attribute -> system not supported
                 raise Exception("System not supported by psutil")
-            if not bool(psutil.sensors_fans()):
+            if not bool(psutil.sensors_fans()): # psutil docs: empty dict -> no fancontrollers reporting
                 raise Exception("No fan found in system")
-            self.specificInitialize = self.InitUnix
+            self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
+        
+        elif OsD.IsMacos():
+            raise NotImplementedError
+
         elif OsD.IsWindows():
             raise NotImplementedError
             
         self.specificInitialize()
 
-    def InitUnix(self) -> None:
-        """OS dependant Init for Unix systems"""
-        self.configuredPackages: list[str] = []
-        self.registeredPackages: list[psutilFanspeedPackage] = []
+    def InitLinux(self) -> None:
+        """OS dependant Init for Linux"""
         self.configuredThreshold: int 
         sensors = psutil.sensors_fans()
         self.Log(self.LOG_DEBUG, f"fancontrollers found:{sensors}")
         # load all controllers from config
         self.config = self.GetConfigurations()
-        self.configuredThreshold = self.config[CONFIG_KEY_THRESHOLD]
-        if isinstance(self.configuredThreshold, str): # convert to int from configuration string
-            self.configuredThreshold = int(self.configuredThreshold)
-        self.configuredPackages.append(
-            self.config[CONFIG_KEY_CONTROLLER]
-        )  
-        self.Log(self.LOG_DEBUG, f"registered controllers from config:{self.registeredPackages}")
-        self.Log(self.LOG_DEBUG, f"got threshold as {self.configuredThreshold}rpm")
-        for controllerName, data, in sensors.items():  # read the controllernames and fanspeeds
-            # build packages from controllernames if they are in the config
-            if controllerName in self.configuredPackages:
-                package = psutilFanspeedPackage(controllerName, data)
-                # register the entity and give it an initial value
-                if package.hasCurrent():
-                    # build the list of FanspeedPackage objects and register them as Entitys
-                    self.registeredPackages.append(package)
-                    self.RegisterEntitySensor(
-                        EntitySensor(
-                            self,
-                            package.packageName,
-                            supportsExtraAttributes=True,
-                            valueFormatterOptions=None, # give the state no unit since it resembles num of fans spinning above threshold
-                        )
+        for i, controllerName in enumerate(sensors):
+            # use FALLBACK for blank controllernames
+            if controllerName == '':
+                controllerName = FALLBACK_CONTROLLER_LABEL + str(i)
+            # register an entity for each controller
+            self.RegisterEntitySensor(
+                    EntitySensor(
+                        self,
+                        controllerName,
+                        supportsExtraAttributes=True,
+                        valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM, 
                     )
+            )
 
     def Update(self) -> None:
         """placeholder for OS specificUpdate"""
@@ -92,181 +71,23 @@ class Fanspeed(Entity):
 
     def UpdateLinux(self) -> None:
         """Updatemethod for Linux"""
-        for package in self.registeredPackages:
-            readout = psutil.sensors_fans()
-            # Set main value = gitcurrent fans above the configured threshold
-            fanspeeds = [fan.current for fan in readout[package.packageName]]
-            # find fans above threshold and assign the entity state
-            self.SetEntitySensorValue(package.packageName, self.above_threshold(fanspeeds, self.configuredThreshold))
-            # Set extra attributes {fan name : fanspeed in rpm}
-            self.Log(self.LOG_DEBUG, f"updating controller:{package.packageName} with {package.attributes}")
-            for label, current in package.attributes.items():
-                self.SetEntitySensorExtraAttribute(
-                    package.packageName,
-                    label,
-                    current,
-                    valueFormatterOptions=self.fanspeedFormatOptions,
-                )
-
-    @staticmethod
-    def above_threshold(fanspeeds: list[int], threshold: int) -> int:
-        """filters a list of integers for values above a threshold returns amount of values above threshold
-
-        :param fanspeeds: list of fanspeeds
-        :type fans: list[int]
-        :param threshold: threshold to filter values below
-        :type threshold: int
-        :return: amount of fanspeeds above threshold
-        :rtype: int
-        """
-        above_threshold_fans = [num for num in fanspeeds if num > threshold]
-        return len(above_threshold_fans)
-
-
-    @classmethod
-    def ConfigurationPreset(cls) -> MenuPreset:
-        """generate the preset for human input, prints the names of available fancontrollers in the terminal
-
-        :return: preset 
-        :rtype: MenuPreset
-        """
-
-        FAN_CHOICES = []
-        
         for controller, fans in psutil.sensors_fans().items():
-            fanList = []
-            if not controller:
-                raise NotImplementedError("blank controllernames are not supported")
-            for i_fans, fan in enumerate(fans):
-                if not fan.label:
-                    fanList.append(f"{FALLBACK_SENSOR_LABEL+str(i_fans)}@{fan.current}rpm")
+            # get all fanspeed in a list and find max
+            highest_fan = max([fan.current for fan in fans])
+            # find higest fanspeed and assign the entity state
+            self.SetEntitySensorValue(controller, highest_fan)
+            # Set extra attributes {fan name : fanspeed in rpm}
+            self.Log(self.LOG_DEBUG, f"updating controller:{controller} with {fans}")
+            for fan in fans:
+                # appy FALLBACK if label is blank
+                if fan.label == '':
+                    fanlabel = FALLBACK_FAN_LABEL
                 else:
-                    fanList.append(f"{fan.label}@{fan.current}rpm")
-            FAN_CHOICES.append({
-                "name": FANSPEED_CHOICE_STRING.format(controller, ", ".join(fanList)),
-                "value": controller
-                }                
-            )
-
-        preset = MenuPreset()
-        preset.AddEntry(
-            name="controllers to check",
-            key=CONFIG_KEY_CONTROLLER,
-            mandatory=True,
-            question_type="select",
-            choices=FAN_CHOICES
-        )
-        preset.AddEntry(
-            name="At what threshold does a fan count as spinning",
-            key=CONFIG_KEY_THRESHOLD,
-            default="200",
-            mandatory=False
-        )
-        return preset
-
-
-class psutilFanspeedPackage():
-    """FanspeedPackage to pack all fans from a fancontroller"""
-
-    def __init__(self, packageName: str, packageData: int) -> None:
-        """packageData is the value of the the dict returned by psutil.sensors_fans()
-
-        :param packageName: name of the fanspeedController
-        :type packageName: str
-        :param packageData: fanspeed
-        :type packageData: int
-        """
-        self._packageName = packageName
-        self._sensors: list[psutilFanspeedSensor] = []
-        self._attributes = {}
-        for i, sensor in enumerate(packageData):
-            self._sensors.append(psutilFanspeedSensor(sensor, index=i))
-
-    @property
-    def packageName(self) -> str:
-        """packageName property
-
-        :return: packageName
-        :rtype: str
-        """
-        return self._packageName
-
-    @property
-    def sensors(self) -> list:
-        """sensors property
-
-        :return: list of fanspeedsensors from a fancontroller
-        :rtype: list
-        """
-        return (
-            self._sensors.copy()
-        )  # Safe return: nobody outside can change the value !
-
-    @property
-    def highest(self):
-        """highest property
-
-        :return: highest current fanspeed among this package sensors
-        :rtype: int
-        """
-        if self.hasCurrent():
-            speeds: int = self.attributes
-            return max(speeds)
-        return False
-
-    def hasCurrent(self):
-        """True if at least a sensor of the package has the current property
-
-        :return: if one sensor has a current speed
-        :rtype: bool
-        """
-        if any(self.attributes):
-            return True
-        return False
-
-    @property
-    def attributes(self):
-        """attributes of the package, contain fans and their speeds
-
-        :return: attributes
-        :rtype: dict
-        """
-        for sensor in self._sensors:
-            self._attributes[f"{sensor.label}"] = sensor.current
-        return self._attributes
-
-
-class psutilFanspeedSensor():
-    """Sensor to pack fans of fancontrollers"""
-
-    def __init__(self, sensorData: psutil._common.sfan, index=0) -> None:
-        """sensorData is an element from the list which is the value of the the dict returned by psutil.sensors_fans()
-
-        :param sensorData: list of sensorData[label, current]
-        :type sensorData: list
-        """
-        #check sensorlabel, if empty assign FALLBACK
-        if not sensorData.label:
-            self._label = FALLBACK_SENSOR_LABEL + str(index)
-        else:
-            self._label = sensorData.label
-
-        self._current = sensorData.current
-
-    @property
-    def current(self) -> int:
-        """current fanspeed
-
-        :return: current
-        :rtype: int
-        """
-        return self._current
-
-    @property
-    def label(self) -> str:
-        """sensor label
-
-        :return: packageName
-        :rtype: str
-        """
-        return self._label
+                    fanlabel = fan.label
+                # set extra attributes for each fan
+                self.SetEntitySensorExtraAttribute(
+                    controller,
+                    fanlabel,
+                    fan.current,
+                    valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
+                )
