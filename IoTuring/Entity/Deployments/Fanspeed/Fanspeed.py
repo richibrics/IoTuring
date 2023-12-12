@@ -6,7 +6,7 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 
 VALUEFORMATTEROPTIONS_FANSPEED_RPM = ValueFormatterOptions(
-            value_type=ValueFormatterOptions.TYPE_ROTATION)
+    value_type=ValueFormatterOptions.TYPE_ROTATION)
 
 
 FALLBACK_CONTROLLER_LABEL = "controller"
@@ -26,45 +26,48 @@ class Fanspeed(Entity):
         self.specificUpdate = None
 
         if OsD.IsLinux():
-            if not hasattr(psutil, "sensors_fans"): # psutil docs: no attribute -> system not supported
+            # psutil docs: no attribute -> system not supported
+            if not hasattr(psutil, "sensors_fans"):
                 raise Exception("System not supported by psutil")
-            if not bool(psutil.sensors_fans()): # psutil docs: empty dict -> no fancontrollers reporting
+            # psutil docs: empty dict -> no fancontrollers reporting
+            if not bool(psutil.sensors_fans()):
                 raise Exception("No fan found in system")
             self.specificInitialize = self.InitLinux
             self.specificUpdate = self.UpdateLinux
-        
-        elif OsD.IsMacos():
+
+        else:
             raise NotImplementedError
 
-        elif OsD.IsWindows():
-            raise NotImplementedError
-            
         self.specificInitialize()
 
     def InitLinux(self) -> None:
         """OS dependant Init for Linux"""
-        self.configuredThreshold: int 
         sensors = psutil.sensors_fans()
         self.Log(self.LOG_DEBUG, f"fancontrollers found:{sensors}")
-        # load all controllers from config
-        self.config = self.GetConfigurations()
-        for i, controllerName in enumerate(sensors):
+
+        for i, controller in enumerate(sensors):
             # use FALLBACK for blank controllernames
-            if controllerName == '':
-                controllerName = FALLBACK_CONTROLLER_LABEL + str(i)
+            controllerName = controller or FALLBACK_CONTROLLER_LABEL + str(i)
+
+            # Add extra attributes only if there are multiple fans:
+            multipleFans = bool(len(sensors[controller]) > 1)
+
             # register an entity for each controller
             self.RegisterEntitySensor(
-                    EntitySensor(
-                        self,
-                        controllerName,
-                        supportsExtraAttributes=True,
-                        valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM, 
-                    )
+                EntitySensor(
+                    self,
+                    controllerName,
+                    supportsExtraAttributes=multipleFans,
+                    valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
+                )
             )
 
     def Update(self) -> None:
         """placeholder for OS specificUpdate"""
-        self.specificUpdate()
+        if self.specificUpdate:
+            self.specificUpdate()
+        else:
+            raise NotImplementedError
 
     def UpdateLinux(self) -> None:
         """Updatemethod for Linux"""
@@ -72,21 +75,23 @@ class Fanspeed(Entity):
             # get all fanspeed in a list and find max
             highest_fan = max([fan.current for fan in fans])
             # find higest fanspeed and assign the entity state
-            self.SetEntitySensorValue( 
+            self.SetEntitySensorValue(
                 key=controller,
                 value=highest_fan)
             # Set extra attributes {fan name : fanspeed in rpm}
-            self.Log(self.LOG_DEBUG, f"updating controller:{controller} with {fans}")
-            for fan in fans:
-                # appy FALLBACK if label is blank
-                if fan.label == '':
-                    fanlabel = FALLBACK_FAN_LABEL
-                else:
-                    fanlabel = fan.label
-                # set extra attributes for each fan
-                self.SetEntitySensorExtraAttribute(
-                    controller,
-                    fanlabel,
-                    fan.current,
-                    valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
-                )
+            self.Log(self.LOG_DEBUG,
+                     f"updating controller:{controller} with {fans}")
+
+            # Add fans as extra attributes, if there are more than one:
+            if len(fans) > 1:
+                for i, fan in enumerate(fans):
+                    # appy FALLBACK if label is blank
+                    fanlabel = fan.label or FALLBACK_FAN_LABEL + str(i)
+
+                    # set extra attributes for each fan
+                    self.SetEntitySensorExtraAttribute(
+                        controller,
+                        fanlabel,
+                        fan.current,
+                        valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
+                    )
