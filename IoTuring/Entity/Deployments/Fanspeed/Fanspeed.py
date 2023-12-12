@@ -15,9 +15,7 @@ FALLBACK_FAN_LABEL = "fan"
 
 class Fanspeed(Entity):
     """Entity to read fanspeed"""
-
     NAME = "Fanspeed"
-    ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self) -> None:
         """Initialize the Class, setup Formatter, determin specificInitialize and specificUpdate depending on OS"""
@@ -50,14 +48,14 @@ class Fanspeed(Entity):
             controllerName = controller or FALLBACK_CONTROLLER_LABEL + str(i)
 
             # Add extra attributes only if there are multiple fans:
-            multipleFans = bool(len(sensors[controller]) > 1)
+            hasMultipleFans = bool(len(sensors[controller]) > 1)
 
             # register an entity for each controller
             self.RegisterEntitySensor(
                 EntitySensor(
                     self,
                     controllerName,
-                    supportsExtraAttributes=multipleFans,
+                    supportsExtraAttributes=hasMultipleFans,
                     valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
                 )
             )
