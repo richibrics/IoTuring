@@ -122,65 +122,63 @@ class Disk(Entity):
             attributeValue=usage.free,
             valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
         
-        if self.configuredIo:
-            # because of this reverse parsing to get the devicename from the partition name, all the following is only linux having the partition named nvme* or sd* 
+        if self.configuredIo and OsD.IsLinux():
+            # the following are supported on nearly every OS, Windows drivenames/devnames are complicated, so no Windows support
             
-            if OsD.IsLinux():
-                devname = self.disk_partition.device.split("/")[-1]
-                disk_io = psutil.disk_io_counters(perdisk=True)[devname]
+            devname = self.disk_partition.device.split("/")[-1]
+            disk_io = psutil.disk_io_counters(perdisk=True)[devname]
 
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_READ_COUNT,
-                    attributeValue=disk_io.read_count)
-                
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_WRITE_COUNT,
-                    attributeValue=disk_io.write_count)
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_COUNT,
+                attributeValue=disk_io.read_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_COUNT,
+                attributeValue=disk_io.write_count)
 
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_READ_BYTES,
-                    attributeValue=disk_io.read_bytes,
-                    valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
-                
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_WRITE_BYTES,
-                    attributeValue=disk_io.write_bytes,
-                    valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
-                
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_READ_TIME,
-                    attributeValue=disk_io.read_time,
-                    valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
-                
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey=KEY_USED_PERCENTAGE,
-                    attributeKey=EXTRA_KEY_DISK_WRTIE_TIME,
-                    attributeValue=disk_io.write_time,
-                    valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
-                
-                # the following are only supported in linux
-                if OsD.IsLinux():
-                    self.SetEntitySensorExtraAttribute(
-                        sensorDataKey=KEY_USED_PERCENTAGE,
-                        attributeKey=EXTRA_KEY_DISK_READ_MERGED_COUNT,
-                        attributeValue=disk_io.read_merged_count)
-                    
-                    self.SetEntitySensorExtraAttribute(
-                        sensorDataKey=KEY_USED_PERCENTAGE,
-                        attributeKey=EXTRA_KEY_DISK_WRITE_MERGED_COUNT,
-                        attributeValue=disk_io.write_merged_count)
-                    
-                    self.SetEntitySensorExtraAttribute(
-                        sensorDataKey=KEY_USED_PERCENTAGE,
-                        attributeKey=EXTRA_KEY_DISK_BUSY_TIME,
-                        attributeValue=disk_io.busy_time,
-                        valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
-                
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_BYTES,
+                attributeValue=disk_io.read_bytes,
+                valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_BYTES,
+                attributeValue=disk_io.write_bytes,
+                valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_TIME,
+                attributeValue=disk_io.read_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRTIE_TIME,
+                attributeValue=disk_io.write_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+            
+            # the following are only supported in linux
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_MERGED_COUNT,
+                attributeValue=disk_io.read_merged_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_MERGED_COUNT,
+                attributeValue=disk_io.write_merged_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_BUSY_TIME,
+                attributeValue=disk_io.busy_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+        
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -201,7 +199,8 @@ class Disk(Entity):
         preset.AddEntry(name="Drive to check",
                         key=CONFIG_KEY_DU_PATH, mandatory=False,
                         question_type="select", choices=DISK_CHOICES)
-        preset.AddEntry(name="Update DiskIO",
-                        key=CONFIG_KEY_DISKIO, mandatory=False,
-                        question_type="yesno")
+        if OsD.IsLinux():
+            preset.AddEntry(name="Update DiskIO",
+                            key=CONFIG_KEY_DISKIO, mandatory=False,
+                            question_type="yesno")
         return preset
