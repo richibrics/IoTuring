@@ -122,14 +122,12 @@ class Disk(Entity):
             attributeValue=usage.free,
             valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
         
-        if OsD.IsLinux():
+        if self.configuredIo:
             # because of this reverse parsing to get the devicename from the partition name, all the following is only linux having the partition named nvme* or sd* 
-            if self.configuredIo:
-                devname = self.disk_partition.device.split("/", 2)
-                if "nvme" in self.disk_partition.device:
-                    disk_io = psutil.disk_io_counters(perdisk=True)[devname[2][:-2]]
-                elif "sd" in self.disk_partition.device:
-                    disk_io = psutil.disk_io_counters(perdisk=True)[devname[2][:-1]]
+            
+            if OsD.IsLinux():
+                devname = self.disk_partition.device.split("/")[-1]
+                disk_io = psutil.disk_io_counters(perdisk=True)[devname]
 
                 self.SetEntitySensorExtraAttribute(
                     sensorDataKey=KEY_USED_PERCENTAGE,
