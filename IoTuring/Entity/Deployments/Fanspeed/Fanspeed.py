@@ -1,5 +1,4 @@
 import psutil
-
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
@@ -7,10 +6,8 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 
 VALUEFORMATTEROPTIONS_FANSPEED_RPM = ValueFormatterOptions(
-            value_type=ValueFormatterOptions.TYPE_ROTATION, decimals=0)
+            value_type=ValueFormatterOptions.TYPE_ROTATION)
 
-KEY_FANSPEED = "fanspeed"
-KEY_FANLABEL = "fanlabel"
 
 FALLBACK_CONTROLLER_LABEL = "controller"
 FALLBACK_FAN_LABEL = "fan"
@@ -75,7 +72,9 @@ class Fanspeed(Entity):
             # get all fanspeed in a list and find max
             highest_fan = max([fan.current for fan in fans])
             # find higest fanspeed and assign the entity state
-            self.SetEntitySensorValue(controller, highest_fan)
+            self.SetEntitySensorValue( 
+                key=controller,
+                value=highest_fan)
             # Set extra attributes {fan name : fanspeed in rpm}
             self.Log(self.LOG_DEBUG, f"updating controller:{controller} with {fans}")
             for fan in fans:
