@@ -66,9 +66,8 @@ class ConfiguratorIO(LogObject):
         try:
             # Use path from environment variable if present, otherwise os specific folders, otherwise use default path
             envvarPath = OsD.GetEnv(CONFIG_PATH_ENV_VAR)
-            if envvarPath:
+            if envvarPath and len(envvarPath) > 0:
                 folderPath = Path(envvarPath)
-
             else:
                 if OsD.IsMacos() and macos_support:
                     folderPath = self.macOSFolderPath().joinpath(self.directoryName)
