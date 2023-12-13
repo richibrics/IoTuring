@@ -102,3 +102,6 @@ class ClassManager(LogObject):
         for py in self.modulesFilename:
             res.append(path.basename(py).split(".py")[0])
         return res
+
+    def ListAvailableClasses(self) -> list:
+        return [self.GetClassFromName(n) for n in self.ListAvailableClassesNames()]

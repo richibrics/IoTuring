@@ -251,7 +251,10 @@ class Configurator(LogObject):
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
 
-        entityList = ecm.ListAvailableClassesNames()
+        # entity classnames without unsupported entities:
+        entityList = [
+            e.NAME for e in ecm.ListAvailableClasses() if e.SystemSupported()]
+
         # Now I remove the entities that are active and that do not allow multi instances
         for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
             entityClass = ecm.GetClassFromName(
@@ -272,8 +275,7 @@ class Configurator(LogObject):
         choice = self.DisplayMenu(
             choices=sorted(entityList),
             message="Available entities:",
-            instruction="if you don't see the entity you want, it may be already active and may not accept another version of itself"
-
+            instruction="if you don't see the entity, it may be already active and not accept another version, or not supported by your system"
         )
 
         if choice == CHOICE_GO_BACK:
@@ -285,11 +287,14 @@ class Configurator(LogObject):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
         entityClass = ecm.GetClassFromName(entityName)
         try:
-            preset = entityClass.ConfigurationPreset()  # type: ignore
+            if not entityClass:
+                raise Exception(f"Entityclass not found: {entityName}")
+
+            preset = entityClass.ConfigurationPreset()
 
             if preset.HasQuestions():
                 # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
-                if entityClass.AllowMultiInstance():  # type: ignore
+                if entityClass.AllowMultiInstance():
                     preset.AddTagQuestion()
 
                 self.DisplayMessage(messages.PRESET_RULES)
