@@ -6,10 +6,15 @@ import shutil
 class OperatingSystemDetection():
     OS_NAME = platform.system()
     
-    # Fixed list:
+    # Values to return as OS:
     MACOS = "macOS"
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+    # Values to use to detect the OS:
+    MACOS_DETECTION_NAMES = ["macOS", "Darwin"]
+    WINDOWS_DETECTION_NAMES = ["Windows"]
+    LINUX_DETECTION_NAMES = ["Linux"]
 
 
     @classmethod
@@ -26,15 +31,15 @@ class OperatingSystemDetection():
 
     @classmethod
     def IsLinux(cls) -> bool:
-        return bool(cls.OS_NAME == cls.LINUX)
+        return bool(cls.OS_NAME in cls.LINUX_DETECTION_NAMES)
     
     @classmethod
     def IsWindows(cls) -> bool:
-        return bool(cls.OS_NAME == cls.WINDOWS)
+        return bool(cls.OS_NAME in cls.WINDOWS_DETECTION_NAMES)
 
     @classmethod
     def IsMacos(cls) -> bool:
-        return bool(cls.OS_NAME == cls.MACOS)
+        return bool(cls.OS_NAME in cls.MACOS_DETECTION_NAMES)
 
     @classmethod
     def GetEnv(cls, envvar) -> str:
