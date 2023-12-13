@@ -1,5 +1,6 @@
 from IoTuring.Logger import consts
 from IoTuring.Logger.Colors import Colors
+from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
 
 
 class LogLevel:
@@ -10,7 +11,7 @@ class LogLevel:
             (l for l in consts.LOG_LEVELS if l["const"] == level_const), None)
 
         if not level_dict:
-            raise Exception(f"Unknown log level: {level_const}")
+            raise UnknownLoglevelException(level_const)
 
         self.const = level_const
         self.string = level_dict["string"]

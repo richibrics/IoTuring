@@ -24,7 +24,7 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 ### Who knows how it works
 
-Using pip (on Python >= 3.7) install the IoTuring package
+Using pip (on Python >= 3.8) install the IoTuring package
 
 ```shell
 pip install IoTuring
@@ -38,7 +38,7 @@ Configure with `IoTuring -c` or `python -m IoTuring -c`
 
 #### Requirements
 
-- [Python 3.7+](https://www.python.org/downloads/)
+- [Python 3.8+](https://www.python.org/downloads/)
 - [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
 
 Some platforms may need other software for some entities.
@@ -109,7 +109,7 @@ python -m IoTuring
 Run the configurator:
 
 ```shell
-docker run -it -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest IoTuring -c
+docker run -it -v ./.config/IoTuring/:/config richibrics/ioturing:latest IoTuring -c
 ```
 
 Enable the `Console Warehouse` to see logs!
@@ -117,7 +117,7 @@ Enable the `Console Warehouse` to see logs!
 Run detached after configuration:
 
 ```shell
-docker run -d -v ./.config/IoTuring/:/config ghcr.io/richibrics/ioturing:latest
+docker run -d -v ./.config/IoTuring/:/config richibrics/ioturing:latest
 ```
 
 For a docker compose example see [docker-compose.yaml](./docker-compose.yaml). Create configuration manually or with the command above!
@@ -163,7 +163,7 @@ All sensors and switches will be available to be added to your dashboard in your
 | Volume             | control audio volume                                                        | ![mac](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/mac.png) ![linux](https://raw.githubusercontent.com/richibrics/IoTuring/main/docs/images/linux.png)                                                             |
 
 
-\* To use the features from Power entity on Linux and macOS you need to give permissions to your user to shutdown and reboot without sudo password.
+\* To use the features from Power entity on macOS and on some Linux distros you need to give permissions to your user to shutdown and reboot without sudo password.
 You can easily do that by using the following terminal command:
 
 ```shell

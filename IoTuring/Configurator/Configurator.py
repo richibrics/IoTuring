@@ -1,14 +1,17 @@
 import os
+import subprocess
+
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
-
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 
 from IoTuring.Configurator import ConfiguratorIO
 from IoTuring.Configurator import messages
+
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
@@ -31,9 +34,8 @@ CHOICE_GO_BACK = "< Go back"
 class Configurator(LogObject):
 
     def __init__(self) -> None:
-        # Clean the screen before first logs:
+
         self.pinned_message = False
-        self.ClearScreen(pin_next_message=True)
 
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.config = self.LoadConfigurations()
@@ -42,8 +44,57 @@ class Configurator(LogObject):
         """ Return a copy of the configurations dict"""
         return self.config.copy()  # Safe return
 
-    def Menu(self) -> None:
+    def CheckFile(self) -> None:
+        """ Make sure config file exists or can be created """
+        if not self.configuratorIO.checkConfigurationFileExists():
+            if self.configuratorIO.shouldMoveOldConfig():
+
+                moveFile = inquirer.confirm(
+                    message=" ".join([
+                        "A configuration file was found in the old location.",
+                        "Do you want to move it to the new location?",
+                        "If not, a new blank configuration will be used."]),
+                    default=True
+                ).execute()
+
+                self.configuratorIO.manageOldConfig(moveFile)
+
+                # Reload config if it was moved:
+                if moveFile:
+                    self.__init__()
+
+    def OpenConfigInEditor(self):
+        """ Open configuration file in an editor """
+        if not self.configuratorIO.checkConfigurationFileExists():
+            self.Log(self.LOG_ERROR,
+                     "Configuration file not found, run with -c to create one!")
+        else:
+            config_path = str(self.configuratorIO.getFilePath())
+            self.Log(self.LOG_INFO, f"Opening file: \"{config_path}\"")
+
+            if OsD.IsWindows():
+                os.startfile(config_path)  # type: ignore
+                return
+            else:
+                editors = [
+                    OsD.GetEnv("EDITOR"),
+                    "nano",
+                    "vim"
+                ]
+                editor_command = next(
+                    (e for e in editors if OsD.CommandExists(e)), "")
+                if editor_command:
+                    subprocess.run(f'{editor_command} "{config_path}"',
+                                   shell=True, close_fds=True)
+                    return
+
+            self.Log(self.LOG_WARNING, "No editor found")
+
+    def Menu(self, clear_screen: bool = True) -> None:
         """ UI for Entities and Warehouses settings """
+
+        if not clear_screen:
+            self.pinned_message = True
 
         mainMenuChoices = [
             {"name": "Manage entities", "value": self.ManageEntities},
@@ -366,7 +417,7 @@ class Configurator(LogObject):
         """
 
         if not self.pinned_message:
-            os.system("cls" if os.name == "nt" else "clear")
+            self.ClearTerminal()
 
         if pin_next_message:
             self.pinned_message = True
@@ -418,3 +469,8 @@ class Configurator(LogObject):
         self.ClearScreen(pin_next_message=True)
         print(message)
         print()
+
+    @staticmethod
+    def ClearTerminal():
+        """Clear the terminal screen on any platform"""
+        os.system("cls" if os.name == "nt" else "clear")

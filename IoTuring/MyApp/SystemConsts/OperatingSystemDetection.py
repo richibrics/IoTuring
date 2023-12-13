@@ -6,10 +6,15 @@ import shutil
 class OperatingSystemDetection():
     OS_NAME = platform.system()
     
-    # Fixed list:
+    # Values to return as OS:
     MACOS = "macOS"
     WINDOWS = "Windows"
     LINUX = "Linux"
+
+    # Values to use to detect the OS:
+    MACOS_DETECTION_NAMES = ["macOS", "Darwin"]
+    WINDOWS_DETECTION_NAMES = ["Windows"]
+    LINUX_DETECTION_NAMES = ["Linux"]
 
 
     @classmethod
@@ -26,35 +31,30 @@ class OperatingSystemDetection():
 
     @classmethod
     def IsLinux(cls) -> bool:
-        return bool(cls.OS_NAME == cls.LINUX)
+        return bool(cls.OS_NAME in cls.LINUX_DETECTION_NAMES)
     
     @classmethod
     def IsWindows(cls) -> bool:
-        return bool(cls.OS_NAME == cls.WINDOWS)
+        return bool(cls.OS_NAME in cls.WINDOWS_DETECTION_NAMES)
 
     @classmethod
     def IsMacos(cls) -> bool:
-        return bool(cls.OS_NAME == cls.MACOS)
+        return bool(cls.OS_NAME in cls.MACOS_DETECTION_NAMES)
 
     @classmethod
     def GetEnv(cls, envvar) -> str:
         """Get envvar, also from different tty on linux"""
-        env_value = ""
-        if cls.IsLinux():
-            e = os.environ.get(envvar)
-            if not e:
-                try:
-                    # Try if there is another tty with gui:
-                    session_pid = next((u.pid for u in psutil.users() if u.host and "tty" in u.host), None) 
-                    if session_pid:
-                        p = psutil.Process(int(session_pid))
-                        with p.oneshot():
-                            env_value = p.environ()[envvar]
-                except KeyError:
-                    env_value = ""
-            else:
-                env_value = e
-
+        env_value = os.environ.get(envvar) or ""
+        if cls.IsLinux() and not env_value:
+            try:
+                # Try if there is another tty with gui:
+                session_pid = next((u.pid for u in psutil.users() if u.host and "tty" in u.host), None) 
+                if session_pid:
+                    p = psutil.Process(int(session_pid))
+                    with p.oneshot():
+                        env_value = p.environ()[envvar]
+            except KeyError:
+                env_value = ""
         return env_value
             
     @staticmethod
