@@ -17,6 +17,7 @@ TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 CELSIUS_UNIT = '°C'
+ROTATION = ['rpm']
 
 SPACE_BEFORE_UNIT = ' '
 
@@ -50,6 +51,8 @@ class ValueFormatter():
             return ValueFormatter.FrequencyFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_TEMPERATURE:
             return ValueFormatter.TemperatureCelsiusFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_ROTATION:
+            return ValueFormatter.RoundsPerMinuteFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if includeUnit:
                 return str(value) + SPACE_BEFORE_UNIT + '%'
@@ -150,6 +153,19 @@ class ValueFormatter():
         
         if includeUnit:
             result = result + SPACE_BEFORE_UNIT + CELSIUS_UNIT 
+        return result
+
+    @staticmethod
+    def RoundsPerMinuteFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # asked_size not implemented
+        
+        # decimals
+        value = ValueFormatter.roundValue(value, options)
+
+        result = str(value)
+        
+        if includeUnit:
+            result = result + SPACE_BEFORE_UNIT + ROTATION[0]
         return result
 
     @staticmethod
