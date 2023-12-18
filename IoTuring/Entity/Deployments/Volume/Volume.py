@@ -1,4 +1,3 @@
-import subprocess
 import re
 
 from IoTuring.Entity.Entity import Entity
@@ -17,8 +16,8 @@ VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0 = ValueFormatterOptions(
     value_type=ValueFormatterOptions.TYPE_PERCENTAGE, decimals=0)
 
 commands = {
-    OsD.OS_FIXED_VALUE_LINUX: 'pactl set-sink-volume @DEFAULT_SINK@ {}%',
-    OsD.OS_FIXED_VALUE_MACOS: 'osascript -e "set volume output volume {}"'
+    OsD.LINUX: 'pactl set-sink-volume @DEFAULT_SINK@ {}%',
+    OsD.MACOS: 'osascript -e "set volume output volume {}"'
 }
 
 
@@ -49,11 +48,10 @@ class Volume(Entity):
         if OsD.IsMacos():
             self.UpdateMac()
         elif OsD.IsLinux():
-            # Example: 'Volume: front-left: 39745 /  61% / -13,03 dB,   ... 
+            # Example: 'Volume: front-left: 39745 /  61% / -13,03 dB,   ...
             # Only care about the first percent.
-            p = subprocess.run("pactl get-sink-volume @DEFAULT_SINK@",
-                               capture_output=True, shell=True, text=True)
-            self.Log(self.LOG_DEBUG, f"pactl stdout: {p.stdout}")
+            p = self.RunCommand(command="pactl get-sink-volume @DEFAULT_SINK@",
+                                        shell=True)
             m = re.search(r"/ +(\d{1,3})% /", p.stdout)
             if m:
                 volume = m.group(1)
@@ -67,15 +65,13 @@ class Volume(Entity):
         if not 0 <= volume <= 100:
             raise Exception('Incorrect payload!')
         else:
-            subprocess.run(
-                commands[OsD.GetOs()].format(volume),
-                shell=True, check=True)
+            self.RunCommand(command=commands[OsD.GetOs()].format(volume),
+                            shell=True)
 
     def UpdateMac(self):
         # result like: output volume:44, input volume:89, alert volume:100, output muted:false
-        result = subprocess.run(
-            ['osascript', '-e', 'get volume settings'], capture_output=True, text=True)
-        result = result.stdout.strip().split(',')
+        command = self.RunCommand(command=['osascript', '-e', 'get volume settings'])
+        result = command.stdout.strip().split(',')
 
         output_volume = result[0].split(':')[1]
         input_volume = result[1].split(':')[1]

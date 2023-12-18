@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from os import path
@@ -33,7 +35,7 @@ class ClassManager(LogObject):
         # THIS MUST BE IMPLEMENTED IN SUBCLASSES, IS THE CLASS I WANT TO SEARCH !!!!
         self.baseClass = None
 
-    def GetClassFromName(self, wantedName):
+    def GetClassFromName(self, wantedName) -> type | None:
         # From name, load the correct module and extract the class
         for module in self.modulesFilename:  # Search the module file
             moduleName = self.ModuleNameFromPath(module)
@@ -50,21 +52,26 @@ class ClassManager(LogObject):
             loader = importlib.machinery.SourceFileLoader(
                 self.ModuleNameFromPath(path), path)
             spec = importlib.util.spec_from_loader(loader.name, loader)
+
+            if not spec:
+                raise Exception("Spec not found")
+
             module = importlib.util.module_from_spec(spec)
             loader.exec_module(module)
             moduleName = os.path.split(path)[1][:-3]
             sys.modules[moduleName] = module
+            return module
         except Exception as e:
             self.Log(self.LOG_ERROR, "Error while loading module " +
                      path + ": " + str(e))
-        return module
 
-    # From the module passed, I search for a Class that has classNmae=moduleName
+    # From the module passed, I search for a Class that has className=moduleName
     def GetClassFromModule(self, module):
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
                 if(name == module.__name__):
                     return obj
+        raise Exception(f"No class found: {module.__name__}")
 
     # List files in the _path directory and get only files in subfolders
     def GetModulesFilename(self, _path):
