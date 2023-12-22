@@ -14,8 +14,8 @@ except:
     supports_win = False
 
 commands = {
-    OsD.LINUX: 'notify-send "{}" "{}" --icon="ICON_PATH"',
-    OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+    OsD.LINUX: 'notify-send "{}" "{}" --icon="{}"',  # title, message, icon path
+    OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''  # message, title
 }
 
 
@@ -80,29 +80,6 @@ class Notify(Entity):
         self.NAME = self.NAME + \
             ("Payload" if self.data_mode == MODE_DATA_VIA_PAYLOAD else "")
 
-        # Prepare the notification system
-        if OsD.IsWindows():
-            if not supports_win:
-                raise Exception(
-                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
-
-        elif OsD.GetOs() in commands:
-            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):
-                raise Exception(
-                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
-                )
-
-            # Add icon to command:
-            if "ICON_PATH" in commands[OsD.GetOs()]:
-                self.command = commands[OsD.GetOs()].replace(
-                    "ICON_PATH", self.config_icon_path)
-            else:
-                self.command = commands[OsD.GetOs()]
-
-        else:
-            raise Exception(
-                'Notify not available for this platorm!')
-
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
     def Callback(self, message):
@@ -133,9 +110,13 @@ class Notify(Entity):
                 isMute=False).show()
 
         else:
+            if OsD.IsMacos():
+                command = commands[OsD.GetOs()].format(
+                    self.notification_message, self.notification_title)
 
-            command = self.command.format(
-                self.notification_title, self.notification_message)
+            else:  # Linux:
+                command = commands[OsD.GetOs()].format(
+                    self.notification_title, self.notification_message, self.config_icon_path)
 
             self.RunCommand(command=command, shell=True)
 
@@ -152,3 +133,19 @@ class Notify(Entity):
                         mandatory=False, default=DEFAULT_ICON_PATH,
                         question_type="filepath")
         return preset
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.IsWindows():
+            if not supports_win:
+                raise Exception(
+                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+
+        elif OsD.GetOs() in commands:
+            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):
+                raise Exception(
+                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
+                )
+
+        else:
+            raise cls.UnsupportedOsException()
