@@ -275,7 +275,7 @@ class Configurator(LogObject):
         choice = self.DisplayMenu(
             choices=sorted(entityList),
             message="Available entities:",
-            instruction="if you don't see the entity, it may be already active and not accept another version, or not supported by your system"
+            instruction="if you don't see the entity, it may be already active and not accept another activation, or not supported by your system"
         )
 
         if choice == CHOICE_GO_BACK:

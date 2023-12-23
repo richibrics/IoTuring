@@ -126,7 +126,7 @@ class Temperature(Entity):
 
     @classmethod
     def CheckSystemSupport(cls):
-        if not OsD.IsLinux() or not OsD.IsMacos():            
+        if not OsD.IsLinux() and not OsD.IsMacos():            
             raise cls.UnsupportedOsException()
 
 class psutilTemperaturePackage():
