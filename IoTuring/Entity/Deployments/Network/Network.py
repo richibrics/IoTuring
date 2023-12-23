@@ -1,34 +1,24 @@
-# Wireless strenght method taken from: https://github.com/s7jones/Wifi-Signal-Plotter/
+# Wireless strength method taken from: https://github.com/s7jones/Wifi-Signal-Plotter/
 
 import psutil
 import re
 import subprocess
 
 from IoTuring.Entity.Entity import Entity 
-from ValueFormatter import ValueFormatter
-
-supports_win_signal_strenght = True
-supports_linux_signal_strenght = True 
-supports_macos_signal_strenght = False # to avoid using those data in macOS
-
-try:
-    import winreg
-except:
-    supports_win_signal_strenght = False
-
-try:
-    import netifaces
-except:
-    supports_linux_signal_strenght = False
+from IoTuring.Entity.EntityData import EntitySensor
+from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 
 DOWNLOAD_TRAFFIC_TOPIC = 'network/traffic/bytes_recv'
 UPLOAD_TRAFFIC_TOPIC = 'network/traffic/bytes_sent'
 
 NIC_ADDRESS_TOPIC = 'network/interfaces/{}/private_address' # nic name in brackets
-NIC_SIGNAL_STRENGHT_TOPIC = 'network/interfaces/{}/signal_strenght' # nic name in brackets - 0 for non wireless nic
+NIC_SIGNAL_STRENGTH_TOPIC = 'network/interfaces/{}/signal_strength' # nic name in brackets - 0 for non wireless nic
 
 # Supports FORMATTED for traffic information
+
+VALUEFORMATTEROPTIONS = ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_BYTE)
 
 SIZE_OPTION_KEY = "size"
 EXCLUDE_INTERFACES_CONTENT_OPTION_KEY = "exclude_interfaces"
@@ -37,97 +27,131 @@ RENAME_INTERFACES_CONTENT_OPTION_KEY = "rename_interfaces"
 NIC_PRIVATE_ADDRESS_DISCOVERY_NAME_FORMAT = "{} private ip"
 NIC_PRIVATE_ADDRESS_DISCOVERY_ICON = "mdi:ip-network"
 
-NIC_SIGNAL_STRENGHT_DISCOVERY_NAME_FORMAT = "{} signal strenght"
-NIC_SIGNAL_STRENGHT_DISCOVERY_ICON = "mdi:network-strength-3"
+NIC_SIGNAL_STRENGTH_DISCOVERY_NAME_FORMAT = "{} signal strength"
+NIC_SIGNAL_STRENGTH_DISCOVERY_ICON = "mdi:network-strength-3"
 
-# Windows returns strenght in %, linux in dB
-NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT_LINUX = "dB"
-NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT_WINDOWS = "%"
+# Windows returns strength in %, linux in dB
+NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_LINUX = "dB"
+NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_WINDOWS = "%"
 
 class Network(Entity):
+    NAME = "Network"
     def Initialize(self):
         
-        self.supports_signal_strenght = True
+        self.initMethods: {
+            OsD.WINDOWS: self.InitWindows,
+            OsD.LINUX: self.InitLinux,
+            OsD.MACOS: self.InitMacos
+                           }
+        self.updateMethods: {
+            OsD.WINDOWS: self.UpateWindows,
+            OsD.LINUX: self.UpdateLinux,
+            OsD.MACOS: self.UpdateMacos
+        }
+        self.platform = OsD.GetEnv()
+        self.specificInitialize = self.initMethods[self.platform]
+        self.specificUpdate = self.updateMethods[self.platform]
 
-        # Get list of interfaces to ignore: if not specified: [], if set only a string: [string], if set a list: [item1,item2] -> I always have a list (else schema not validated)
-        self.excludeInterfaces=self.Configurator.ReturnAsList(self.GetOption([self.consts.CONTENTS_OPTION_KEY,EXCLUDE_INTERFACES_CONTENT_OPTION_KEY],[]))
+        # # Get list of interfaces to ignore: if not specified: [], if set only a string: [string], if set a list: [item1,item2] -> I always have a list (else schema not validated)
+        # self.excludeInterfaces=self.Configurator.ReturnAsList(self.GetOption([self.consts.CONTENTS_OPTION_KEY,EXCLUDE_INTERFACES_CONTENT_OPTION_KEY],[]))
+        # self.excludeInterfaces = self.GetFromConfigurations(key=EXCLUDE_INTERFACES_CONTENT_OPTION_KEY)
 
-
-        # Interfaces
-        self.nics = []
-        for nic in netifaces.interfaces():
-            # If I don't exclude it and if has a private address (AF_INET=2)
-            if '{' not in self.GetNicName(nic) and self.GetNicName(nic) not in self.excludeInterfaces and netifaces.AF_INET in netifaces.ifaddresses(nic):
-                self.AddTopic(self.InterfaceTopicFormat(NIC_ADDRESS_TOPIC,self.GetNicName(nic)))
-                self.AddTopic(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGHT_TOPIC,self.GetNicName(nic)))
-                self.nics.append(nic)
-                self.Log(self.Logger.LOG_DEBUG, "Added " + self.GetNicName(nic,getRenamed=False)+ " interface")
-                if self.GetNicName(nic) != self.GetNicName(nic, getRenamed= False):
-                    self.Log(self.Logger.LOG_DEBUG, "Renamed " + self.GetNicName(nic,getRenamed=False)+ " to " + self.GetNicName(nic))
+        # # Interfaces
+        # self.nicsToRegister = []
+        # for nic in netifaces.interfaces():
+        #     # If I don't exclude it and if has a private address (AF_INET=2)
+        #     if '{' not in self.GetNicName(nic) and self.GetNicName(nic) not in self.excludeInterfaces and netifaces.AF_INET in netifaces.ifaddresses(nic):
+        #         self.AddTopic(self.InterfaceTopicFormat(NIC_ADDRESS_TOPIC,self.GetNicName(nic)))
+        #         self.AddTopic(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGTH_TOPIC,self.GetNicName(nic)))
+        #         self.nics.append(nic)
+        #         self.Log(self.Logger.LOG_DEBUG, "Added " + self.GetNicName(nic,getRenamed=False)+ " interface")
+        #         if self.GetNicName(nic) != self.GetNicName(nic, getRenamed= False):
+        #             self.Log(self.Logger.LOG_DEBUG, "Renamed " + self.GetNicName(nic,getRenamed=False)+ " to " + self.GetNicName(nic))
+        #         self.RegisterEntitySensor()
 
         # Traffic data
-        self.AddTopic(DOWNLOAD_TRAFFIC_TOPIC)
-        self.AddTopic(UPLOAD_TRAFFIC_TOPIC)
+        # self.AddTopic(DOWNLOAD_TRAFFIC_TOPIC)
+        # self.AddTopic(UPLOAD_TRAFFIC_TOPIC)
+        self.specificInitialize()
 
+    def InitWindows(self):
+        import winreg
 
-    def PostInitialize(self):
-        global supports_linux_signal_strenght,supports_win_signal_strenght,supports_macos_signal_strenght
+    def InitLinux(self):
+        import netifaces
+        for nic in netifaces.interface():
+            self.GetFromConfigurations()
 
-        os = self.GetOS()
+    def InitMacos(self):
+        raise NotImplementedError
     
-        self.UpdateWirelessSignalStrenghtSpecificFunction = None   # Specific function for this os/de, set this here to avoid all if else except at each update
+    def UpdateWindows(self):
+        raise NotImplementedError
 
-        if(os == self.consts.FIXED_VALUE_OS_WINDOWS):    
-            self.NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT= NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT_WINDOWS
-            self.UpdateWirelessSignalStrenghtSpecificFunction = self.GetWirelessStrenght_Windows
+    def UpdateLinux(self):
         
-            if not supports_win_signal_strenght:
-                self.Log(self.Logger.LOG_ERROR,"Error with signal strenght sensor, have you installed all the dependencies ? (winreg, netifaces)")
-                # If not supported, I remove the signal strenght topic (also discovery won't include anymore this topic)
-                self.RemoveSignalStrenghtTopics()
-                self.supports_signal_strenght = False
-
-        elif(os ==  self.consts.FIXED_VALUE_OS_LINUX):
-            self.NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT= NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT_LINUX
-            self.UpdateWirelessSignalStrenghtSpecificFunction = self.GetWirelessStrenght_Linux
-
-            if not supports_linux_signal_strenght:
-                self.Log(self.Logger.LOG_ERROR,"Error with signal strenght sensor, have you installed all the dependencies ? (netifaces)")
-                # If not supported, I remove the signal strenght topic (also discovery won't include anymore this topic)
-                self.RemoveSignalStrenghtTopics()
-                self.supports_signal_strenght = False
-
-
-        # elif(Get_Operating_System() ==  self.consts.FIXED_VALUE_OS_MACOS):
-        #    self.UpdateSpecificFunction =  NOT SUPPORTED
         
-        else:
-            self.Log(self.Logger.LOG_ERROR, 'No wireless signal strenght sensor available for this operating system')
-            # If not supported, I remove the signal strenght topic (also discovery won't include anymore this topic)
-            self.RemoveSignalStrenghtTopics()
-            self.supports_signal_strenght = False
+    def UpdateMac(self):
+        raise NotImplementedError
+
+    # def PostInitialize(self):
+    #     global supports_linux_signal_strength,supports_win_signal_strength,supports_macos_signal_strength
+
+    #     os = self.GetOS()
+    
+    #     self.UpdateWirelessSignalStrenghtSpecificFunction = None   # Specific function for this os/de, set this here to avoid all if else except at each update
+
+    #     if(os == self.consts.FIXED_VALUE_OS_WINDOWS):    
+    #         self.NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT= NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_WINDOWS
+    #         self.UpdateWirelessSignalStrenghtSpecificFunction = self.GetWirelessStrenght_Windows
+        
+    #         if not supports_win_signal_strength:
+    #             self.Log(self.Logger.LOG_ERROR,"Error with signal strength sensor, have you installed all the dependencies ? (winreg, netifaces)")
+    #             # If not supported, I remove the signal strength topic (also discovery won't include anymore this topic)
+    #             self.RemoveSignalStrenghtTopics()
+    #             self.supports_signal_strength = False
+
+    #     elif(os ==  self.consts.FIXED_VALUE_OS_LINUX):
+    #         self.NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT= NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_LINUX
+    #         self.UpdateWirelessSignalStrenghtSpecificFunction = self.GetWirelessStrenght_Linux
+
+    #         if not supports_linux_signal_strength:
+    #             self.Log(self.Logger.LOG_ERROR,"Error with signal strength sensor, have you installed all the dependencies ? (netifaces)")
+    #             # If not supported, I remove the signal strength topic (also discovery won't include anymore this topic)
+    #             self.RemoveSignalStrenghtTopics()
+    #             self.supports_signal_strength = False
+
+
+    #     # elif(Get_Operating_System() ==  self.consts.FIXED_VALUE_OS_MACOS):
+    #     #    self.UpdateSpecificFunction =  NOT SUPPORTED
+        
+    #     else:
+    #         self.Log(self.Logger.LOG_ERROR, 'No wireless signal strength sensor available for this operating system')
+    #         # If not supported, I remove the signal strength topic (also discovery won't include anymore this topic)
+    #         self.RemoveSignalStrenghtTopics()
+    #         self.supports_signal_strength = False
 
         
 
 
     def Update(self):
         # Interfaces data
-        strenght_data = self.UpdateWirelessSignalStrenghtSpecificFunction()
-        strenght_set = False # If after the check in the strenght data values, if the nic hasn't a value, set 0
+        strength_data = self.UpdateWirelessSignalStrenghtSpecificFunction()
+        strength_set = False # If after the check in the strength data values, if the nic hasn't a value, set 0
         
         for nic in self.nics:
             # Private address
             self.SetTopicValue(self.InterfaceTopicFormat(NIC_ADDRESS_TOPIC,self.GetNicName(nic)), netifaces.ifaddresses(nic)[netifaces.AF_INET][0]['addr'])
             
-            # Wireless strenght 
-            if self.supports_signal_strenght:
-                strenght_set = False
-                for nic_strenght in strenght_data:
-                    if nic_strenght[0]==self.GetNicName(nic,getRenamed=False):
-                        strenght_set = True
-                        self.SetTopicValue(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGHT_TOPIC,self.GetNicName(nic)), nic_strenght[1])
-                if strenght_set==False:
-                    self.SetTopicValue(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGHT_TOPIC,self.GetNicName(nic)), 0)
+            # Wireless strength 
+            if self.supports_signal_strength:
+                strength_set = False
+                for nic_strength in strength_data:
+                    if nic_strength[0]==self.GetNicName(nic,getRenamed=False):
+                        strength_set = True
+                        self.SetTopicValue(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGTH_TOPIC,self.GetNicName(nic)), nic_strength[1])
+                if strength_set==False:
+                    self.SetTopicValue(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGTH_TOPIC,self.GetNicName(nic)), 0)
 
 
         # Traffic data
@@ -138,7 +162,7 @@ class Network(Entity):
 
 
 
-    # Signal strenght methods:
+    # Signal strength methods:
     def GetWirelessStrenght_Linux(self):
         p = subprocess.Popen("iwconfig", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out = p.stdout.read().decode()
@@ -154,9 +178,9 @@ class Network(Entity):
         elif "Signal" in out: # English support
             m = re.findall('Nome.*?:.*?([A-z0-9 ]*).*?Signal.*?:.*?([0-9]*)%', out, re.DOTALL)
         else:
-            self.Log(self.Logger.LOG_ERROR,"Can't get signal strenght data in your region. Please open a Git issue with and show the output of this command in the CMD: 'netsh wlan show interfaces' ")
-            self.supports_signal_strenght=False
-            # TODO Remove the signal strenght topic for all the inets here !
+            self.Log(self.Logger.LOG_ERROR,"Can't get signal strength data in your region. Please open a Git issue with and show the output of this command in the CMD: 'netsh wlan show interfaces' ")
+            self.supports_signal_strength=False
+            # TODO Remove the signal strength topic for all the inets here !
         p.communicate()
         return m
 
@@ -197,10 +221,10 @@ class Network(Entity):
                     if NIC_ADDRESS_TOPIC.split("/")[-1] in data['name']: # Check if it's the private address
                         data['payload']['name'] = data['payload']['name'].split("-")[0] + "- " + NIC_PRIVATE_ADDRESS_DISCOVERY_NAME_FORMAT.format(self.GetNicName(nic))
                         data['payload']['icon'] = NIC_PRIVATE_ADDRESS_DISCOVERY_ICON
-                    elif NIC_SIGNAL_STRENGHT_TOPIC.split("/")[-1] in data['name']: # Check if it's the signal strenght
-                        data['payload']['name'] = data['payload']['name'].split("-")[0] + "- " + NIC_SIGNAL_STRENGHT_DISCOVERY_NAME_FORMAT.format(self.GetNicName(nic))
-                        data['payload']['icon'] = NIC_SIGNAL_STRENGHT_DISCOVERY_ICON
-                        data['payload']['unit_of_measurement'] = self.NIC_SIGNAL_STRENGHT_DISCOVERY_UNIT_OF_MEASUREMENT
+                    elif NIC_SIGNAL_STRENGTH_TOPIC.split("/")[-1] in data['name']: # Check if it's the signal strength
+                        data['payload']['name'] = data['payload']['name'].split("-")[0] + "- " + NIC_SIGNAL_STRENGTH_DISCOVERY_NAME_FORMAT.format(self.GetNicName(nic))
+                        data['payload']['icon'] = NIC_SIGNAL_STRENGTH_DISCOVERY_ICON
+                        data['payload']['unit_of_measurement'] = self.NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT
 
         return discovery_data
 
@@ -226,9 +250,9 @@ class Network(Entity):
 
 
     def RemoveSignalStrenghtTopics(self):
-        # If not supported, I remove the signal strenght topic (also discovery won't include anymore this topic)
+        # If not supported, I remove the signal strength topic (also discovery won't include anymore this topic)
         for topic in self.outTopics:
-            if topic['topic'].split("/")[-1] == NIC_SIGNAL_STRENGHT_TOPIC.split("/")[-1]:
+            if topic['topic'].split("/")[-1] == NIC_SIGNAL_STRENGTH_TOPIC.split("/")[-1]:
                 self.RemoveOutboundTopic(topic)
 
 # Example in configuration:
