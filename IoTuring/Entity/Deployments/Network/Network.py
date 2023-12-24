@@ -89,7 +89,11 @@ class Network(Entity):
         raise NotImplementedError
 
     def UpdateLinux(self):
-        
+        p = subprocess.Popen("iwconfig", stdout=subprocess.PIPE, stderr=subprocess.PIPE) # credits to https://github.com/s7jones/Wifi-Signal-Plotter/
+        out = p.stdout.read().decode()
+        m = re.findall('(wl.*?) .*?Signal level=(-[0-9]+) dBm', out, re.DOTALL)
+        p.communicate()
+        return m
         
     def UpdateMac(self):
         raise NotImplementedError
