@@ -1,12 +1,14 @@
-from io import TextIOWrapper
-from IoTuring.Logger import consts
-from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 import sys
 import os
 import inspect
 from datetime import datetime
 import json
 import threading
+from io import TextIOWrapper
+
+from IoTuring.Logger import consts
+from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
+from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
 
 
 class Singleton(type):
@@ -29,6 +31,10 @@ class Logger(LogLevelObject, metaclass=Singleton):
     log_filename = ""
     log_file_descriptor = None
 
+    # Default log levels:
+    console_log_level = LogLevel(consts.CONSOLE_LOG_LEVEL)
+    file_log_level = LogLevel(consts.FILE_LOG_LEVEL)
+
     def __init__(self) -> None:
 
         self.terminalSupportsColors = Logger.checkTerminalSupportsColors()
@@ -37,6 +43,15 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.SetLogFilename()
         # Open the file descriptor
         self.GetLogFileDescriptor()
+
+        # Override log level from envvar:
+        try:
+            if os.getenv("IOTURING_LOG_LEVEL"):
+                level_override = LogLevel(str(os.getenv("IOTURING_LOG_LEVEL")))
+                self.console_log_level = level_override
+        except UnknownLoglevelException as e:
+            self.Log(self.LOG_ERROR, "Logger",
+                     f"Unknown Loglevel: {e.loglevel}")
 
     def SetLogFilename(self) -> str:
         """ Set filename with timestamp and also call setup folder """
@@ -121,18 +136,11 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
     # Both print and save to file
     def PrintAndSave(self, string, loglevel: LogLevel, printToConsole=True, writeToFile=True) -> None:
-        # Override log level from envvar:
-        console_level = consts.CONSOLE_LOG_LEVEL
-        if os.getenv("IOTURING_LOG_LEVEL"):
-            console_level = str(os.getenv("IOTURING_LOG_LEVEL"))
 
-        console_log_level = LogLevel(console_level)
-        file_log_level = LogLevel(consts.FILE_LOG_LEVEL)
-
-        if printToConsole and int(loglevel) <= int(console_log_level):
+        if printToConsole and int(loglevel) <= int(self.console_log_level):
             self.ColoredPrint(string, loglevel)
 
-        if writeToFile and int(loglevel) <= int(file_log_level):
+        if writeToFile and int(loglevel) <= int(self.file_log_level):
             # acquire the lock
             with self.lock:
                 self.GetLogFileDescriptor().write(string+' \n')
