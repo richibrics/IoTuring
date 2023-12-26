@@ -18,6 +18,7 @@ FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 CELSIUS_UNIT = '°C'
 ROTATION = ['rpm']
+RADIOPOWER =['dBm']
 
 SPACE_BEFORE_UNIT = ' '
 
@@ -53,6 +54,8 @@ class ValueFormatter():
             return ValueFormatter.TemperatureCelsiusFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_ROTATION:
             return ValueFormatter.RoundsPerMinuteFormatter(value, options, includeUnit)
+        elif valueType ==ValueFormatterOptions.TYPE_RADIOPOWER:
+            return ValueFormatter.RadioPowerFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if includeUnit:
                 return str(value) + SPACE_BEFORE_UNIT + '%'
@@ -169,7 +172,18 @@ class ValueFormatter():
         return result
 
     @staticmethod
+    def RadioPowerFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        
+        value = ValueFormatter.roundValue(value, options)
+        
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + 'dBm'
+        else:
+            return str(value)
+
+    @staticmethod
     def roundValue(value, options: ValueFormatterOptions):
         if options.get_decimals() != ValueFormatterOptions.DO_NOT_TOUCH_DECIMALS:
             return round(value, options.get_decimals())
         return value
+    
