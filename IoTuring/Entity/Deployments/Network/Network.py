@@ -23,7 +23,7 @@ NIC_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 KEY_SIGNAL_STRENGTH = "signal_strength"
 CONFIG_KEY_NIC = "nicname"
 CONFIG_KEY_WIRELESS = "wireless"
-
+NOT_WIRELESS_STRING = "no wireless extensions."
 
 # old stuff
 DOWNLOAD_TRAFFIC_TOPIC = "network/traffic/bytes_recv"
@@ -133,7 +133,7 @@ class Network(Entity):
             )
         else:
             self.SetEntitySensorValue(
-                
+
             )
 
     def UpdateMac(self):
@@ -180,11 +180,12 @@ class Network(Entity):
         
     # Signal strength methods:
     def GetWirelessStrength_Linux(self):
-        p = subprocess.Popen("iwconfig", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out = p.stdout.read().decode()
-        m = re.findall("(wl.*?) .*?Signal level=(-[0-9]+) dBm", out, re.DOTALL)
-        p.communicate()
-        return m[0][1]
+        p = self.RunCommand(["iwconfig", self.configuredNic])
+        if p.stderr:
+            raise Exception("error during iwconfig")
+        elif p.stdout:
+            signalStrength = re.findall(f"Signal level=(-[0-9]+) dBm", p.stdout)
+        return signalStrength[0]
 
     def GetWirelessStrength_Windows(self):
         p = subprocess.Popen(
@@ -248,6 +249,7 @@ class Network(Entity):
             nicip4 = ""
             nicip6 = ""
             nicmac = ""
+
             for family in nicinfo:
                 if family.family==AddressFamily.AF_INET:
                     nicip4 = family.address
@@ -283,6 +285,14 @@ class Network(Entity):
         )
         return preset
 
+
+    @classmethod
+    def CheckSystemSupport(cls): # TODO extend checks
+        if OsD.IsLinux():
+            if not OsD.CommandExists("iwconfig"):
+                raise Exception("iwconfig not found")
+        else:
+            raise cls.UnsupportedOsException()
 
 # Example in configuration:
 #
