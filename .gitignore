@@ -1,6 +1,5 @@
 __pycache__
 IoTuring/Logger/Logs
-**/*.code-workspace
 nogit.*
 commands_topic.txt
 .vscode
