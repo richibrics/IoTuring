@@ -8,6 +8,7 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
+from datetime import datetime, timedelta
 import psutil
 from socket import AddressFamily
 
@@ -21,31 +22,13 @@ VALUEFORMATTEROPTIONS_RADIOPOWER = ValueFormatterOptions(
 NIC_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
 KEY_SIGNAL_STRENGTH = "signal_strength"
+KEY_DOWN_SPEED = "down_speed"
+KEY_UP_SPEED = "up_speed"
+EXTRA_KEY_DOWN_SPEED = "down_speed"
+
 CONFIG_KEY_NIC = "nicname"
 CONFIG_KEY_WIRELESS = "wireless"
 NOT_WIRELESS_STRING = "no wireless extensions."
-
-# old stuff
-DOWNLOAD_TRAFFIC_TOPIC = "network/traffic/bytes_recv"
-UPLOAD_TRAFFIC_TOPIC = "network/traffic/bytes_sent"
-
-NIC_ADDRESS_TOPIC = "network/interfaces/{}/private_address"  # nic name in brackets
-NIC_SIGNAL_STRENGTH_TOPIC = "network/interfaces/{}/signal_strength"  # nic name in brackets - 0 for non wireless nic
-
-
-SIZE_OPTION_KEY = "size"
-EXCLUDE_INTERFACES_CONTENT_OPTION_KEY = "exclude_interfaces"
-RENAME_INTERFACES_CONTENT_OPTION_KEY = "rename_interfaces"
-
-NIC_PRIVATE_ADDRESS_DISCOVERY_NAME_FORMAT = "{} private ip"
-NIC_PRIVATE_ADDRESS_DISCOVERY_ICON = "mdi:ip-network"
-
-NIC_SIGNAL_STRENGTH_DISCOVERY_NAME_FORMAT = "{} signal strength"
-NIC_SIGNAL_STRENGTH_DISCOVERY_ICON = "mdi:network-strength-3"
-
-# Windows returns strength in %, linux in dB
-NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_LINUX = "dB"
-NIC_SIGNAL_STRENGTH_DISCOVERY_UNIT_OF_MEASUREMENT_WINDOWS = "%"
 
 
 class Network(Entity):
@@ -62,54 +45,42 @@ class Network(Entity):
             OsD.LINUX: self.UpdateLinux,
             OsD.MACOS: self.UpdateMac,
         }
+        self.getWirelessMethods = {
+            OsD.WINDOWS: self.GetWirelessStrength_Windows,
+            OsD.LINUX: self.GetWirelessStrength_Linux,
+            OsD.MACOS: "self.GetWirelessStrength_Mac" # TODO
+        }
         self.platform = OsD.GetOs()
         self.specificInitialize = self.initMethods[self.platform]
         self.specificUpdate = self.updateMethods[self.platform]
+        self.specificGetWirelessStrength = self.getWirelessMethods[self.platform]
+
+        self.lastTimeUpdated = datetime.now() - timedelta(seconds=1) # crude, i need a better way to init the time so it is not 0 at init
 
         self.configuredNic = self.GetFromConfigurations(CONFIG_KEY_NIC)
 
-        if self.GetFromConfigurations(CONFIG_KEY_WIRELESS) == 'Y':
-            self.isWireless = True
+        self.io = psutil.net_io_counters()
+
+        self.isWireless = bool(self.specificGetWirelessStrength)
+
+        if self.isWireless:
             self.RegisterEntitySensor(
                 EntitySensor(
                     self,
-                    KEY_SIGNAL_STRENGTH,
+                    key=KEY_SIGNAL_STRENGTH,
                     supportsExtraAttributes=True,
                     valueFormatterOptions=VALUEFORMATTEROPTIONS_RADIOPOWER,
                 )
             )
         else:
-            self.isWireless = False # There has to be a smoother way, works though
             self. RegisterEntitySensor(
                 EntitySensor(
                     self,
-                    
+                    key=KEY_DOWN_SPEED,
+                    supportsExtraAttributes=True,
+                    valueFormatterOptions=VALUEFORMATTEROPTIONS_BYTE,
                 )
             )
-
-        
-      
-
-        # # Get list of interfaces to ignore: if not specified: [], if set only a string: [string], if set a list: [item1,item2] -> I always have a list (else schema not validated)
-        # self.excludeInterfaces=self.Configurator.ReturnAsList(self.GetOption([self.consts.CONTENTS_OPTION_KEY,EXCLUDE_INTERFACES_CONTENT_OPTION_KEY],[]))
-        # self.excludeInterfaces = self.GetFromConfigurations(key=EXCLUDE_INTERFACES_CONTENT_OPTION_KEY)
-
-        # # Interfaces
-        # self.nicsToRegister = []
-        # for nic in netifaces.interfaces():
-        #     # If I don't exclude it and if has a private address (AF_INET=2)
-        #     if '{' not in self.GetNicName(nic) and self.GetNicName(nic) not in self.excludeInterfaces and netifaces.AF_INET in netifaces.ifaddresses(nic):
-        #         self.AddTopic(self.InterfaceTopicFormat(NIC_ADDRESS_TOPIC,self.GetNicName(nic)))
-        #         self.AddTopic(self.InterfaceTopicFormat(NIC_SIGNAL_STRENGTH_TOPIC,self.GetNicName(nic)))
-        #         self.nics.append(nic)
-        #         self.Log(self.Logger.LOG_DEBUG, "Added " + self.GetNicName(nic,getRenamed=False)+ " interface")
-        #         if self.GetNicName(nic) != self.GetNicName(nic, getRenamed= False):
-        #             self.Log(self.Logger.LOG_DEBUG, "Renamed " + self.GetNicName(nic,getRenamed=False)+ " to " + self.GetNicName(nic))
-        #         self.RegisterEntitySensor()
-
-        # Traffic data
-        # self.AddTopic(DOWNLOAD_TRAFFIC_TOPIC)
-        # self.AddTopic(UPLOAD_TRAFFIC_TOPIC)
         self.specificInitialize()
 
     def InitWindows(self):
@@ -125,20 +96,37 @@ class Network(Entity):
         self.GetEntitySensorValue(self.GetWirelessStrength_Windows())
 
     def UpdateLinux(self):
-
         if self.isWireless:
+            #self.SetEntitySensorValue(
+            #    key=KEY_SIGNAL_STRENGTH, 
+            #    value=self.GetWirelessStrength_Linux()
+            #)
             self.SetEntitySensorValue(
-                key=KEY_SIGNAL_STRENGTH, 
-                value=self.GetWirelessStrength_Linux()
+                #KEY_SIGNAL_STRENGTH,
+                EXTRA_KEY_DOWN_SPEED,
+                self.GetDownSpeed(),
             )
         else:
             self.SetEntitySensorValue(
-
+                key=KEY_DOWN_SPEED,
+                value=self.GetDownSpeed()
             )
+
+        
 
     def UpdateMac(self):
         raise NotImplementedError
 
+
+    def GetDownSpeed(self):
+        io_2 = psutil.net_io_counters()
+        bytesDown = (io_2.bytes_sent - self.io.bytes_sent)
+        timedelta = datetime.now() - self.lastTimeUpdated
+        return bytesDown / timedelta.seconds
+
+        
+    
+    
     # def PostInitialize(self):
     #     global supports_linux_signal_strength,supports_win_signal_strength,supports_macos_signal_strength
 
@@ -177,7 +165,8 @@ class Network(Entity):
 
     def Update(self):
         self.specificUpdate()
-        
+        self.lastTimeUpdated = datetime.now()
+
     # Signal strength methods:
     def GetWirelessStrength_Linux(self):
         p = self.RunCommand(["iwconfig", self.configuredNic])
