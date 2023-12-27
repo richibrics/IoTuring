@@ -37,6 +37,18 @@ class Wifi(Entity):
             OsD.MACOS: "self.GetWirelessStrength_Mac" # TODO
         }
 
+        self.patterns = {
+            'ESSID': r'ESSID:"(.*?)"',
+            'Mode': r'Mode:(.*?)\s+Frequency',
+            'Frequency': r'Frequency:(.*?)\s+Access Point',
+            'Access Point': r'Access Point:(.*?)\s+Bit Rate',
+            'Bit Rate': r'Bit Rate=(.*?)\s+Tx-Power',
+            'Tx-Power': r'Tx-Power=(.*?)\s+Retry',
+            'Link Quality': r'Link Quality=(.*?)\s+Signal level',
+            'Signal level': r'Signal level=(.*?)\s+Rx invalid nwid',
+            # Add more patterns as needed
+        }
+
         self.platform = OsD.GetOs()
         self.specificInitialize = self.initMethods[self.platform] 
         self.specificUpdate = self.updateMethods[self.platform]
@@ -45,16 +57,34 @@ class Wifi(Entity):
         self.configuredNic = self.GetFromConfigurations(CONFIG_KEY_WIFI)
 
     def InitWindows(self):
+        print("InitWindows")
 
     def InitLinux(self):
-        print("init")
+        
+
+
     def InitMac(self):
+        print("InitMac")
 
     def UpdateWindows(self):
+        print("UpdateWindows")
 
     def UpdateLinux(self):
+        p = self.RunCommand(["iwconfig", self.configuredNic])
+        wifi_info = {}
+        
+        for key, pattern in self.patterns.items():
+            match = re.search(pattern, p.stdout)
+            if match:
+                wifi_info[key] = match.group(1) # storing in the dict maybe redundant, but better readable
+                
+        self.SetEntitySensorValue(
+            key=KEY_SIGNAL_STRENGTH,
+            value=wifi_info[wifi_info[]]
+        )
 
     def UpdateMac(self):
+        print("UpdateMac")
 
     def GetWirelessStrength_Linux(self):
         p = self.RunCommand(["iwconfig", self.configuredNic])
