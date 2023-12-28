@@ -18,7 +18,5 @@ HELP_MESSAGE = f"""
 \tUse ctrl+C to exit without saving
 """
 
-PRESET_RULES = """
-Options with this sign are compulsory: {!}
-Use Escape to cancel
-"""
+PRESET_RULES = """Options with this sign are compulsory: {!}
+Use Escape to cancel"""
