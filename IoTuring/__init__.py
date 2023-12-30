@@ -71,6 +71,9 @@ def loop():
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
+    # Load AppSettings:
+    ConfiguratorLoader(configurator).LoadAppSettings()
+
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",
                "Run the script with -c to enter configuration mode")

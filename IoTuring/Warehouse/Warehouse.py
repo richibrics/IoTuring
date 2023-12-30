@@ -3,18 +3,17 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
+from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 
 from threading import Thread
 import time
-
-DEFAULT_LOOP_TIMEOUT = 10
 
 
 class Warehouse(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
 
     def __init__(self, configurations) -> None:
-        self.loopTimeout = DEFAULT_LOOP_TIMEOUT
+        self.loopTimeout = float(AppSettings.Settings[CONFIG_KEY_UPDATE_INTERVAL])
         self.configurations = configurations
 
     def Start(self) -> None:

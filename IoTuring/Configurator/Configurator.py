@@ -2,6 +2,8 @@ import os
 import subprocess
 import shutil
 
+from IoTuring.Configurator.MenuPreset import QuestionPreset
+
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
 
@@ -12,16 +14,21 @@ from IoTuring.Configurator import ConfiguratorIO
 from IoTuring.Configurator import messages
 
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.AppSettings import AppSettings
 
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
 
 
-BLANK_CONFIGURATION = {'active_entities': [
-    {"type": "AppInfo"}], 'active_warehouses': []}
+BLANK_CONFIGURATION = {
+    'active_entities': [{"type": "AppInfo"}],
+    'active_warehouses': [],
+    'app_settings': {}
+}
 
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
+KEY_APP_SETTINGS = "app_settings"
 
 KEY_WAREHOUSE_TYPE = "type"
 
@@ -96,6 +103,7 @@ class Configurator(LogObject):
         mainMenuChoices = [
             {"name": "Manage entities", "value": self.ManageEntities},
             {"name": "Manage warehouses", "value": self.ManageWarehouses},
+            {"name": "App Settings", "value": self.ManageSettings},
             {"name": "Start IoTuring", "value": self.WriteConfigurations},
             {"name": "Help", "value": self.DisplayHelp},
             {"name": "Quit", "value": self.Quit},
@@ -171,6 +179,55 @@ class Configurator(LogObject):
         else:
             self.ManageSingleWarehouse(choice, wcm)
 
+    def ManageSettings(self):
+        preset = AppSettings.ConfigurationPreset()
+
+        settingsChoices = []
+
+        for entry in preset.presets:
+            # Load config instead of default:
+            if entry.key in self.config[KEY_APP_SETTINGS]:
+                value = self.config[KEY_APP_SETTINGS][entry.key]
+            else:
+                value = entry.default
+
+            settingsChoices.append({
+                "name": f"{entry.name}: {value}",
+                "value": entry.key
+            })
+
+        choice = self.DisplayMenu(
+            choices=settingsChoices,
+            message="Select setting to edit",
+            add_back_choice=True)
+
+        if choice == CHOICE_GO_BACK:
+            self.Menu()
+        else:
+            q_preset = preset.GetPresetByKey(choice)
+            if q_preset:
+                self.ManageSingleSetting(q_preset)
+            else:
+                self.DisplayMessage(f"Question preset not found: {choice}")
+                self.ManageSettings()
+
+
+    def ManageSingleSetting(self, q_preset:QuestionPreset):
+
+        # Load config as default:
+        if q_preset.key in self.config[KEY_APP_SETTINGS]:
+            q_preset.default = self.config[KEY_APP_SETTINGS][q_preset.key]
+
+        value = q_preset.Ask()
+
+            
+        if value:
+            # Add to config:
+            self.config[KEY_APP_SETTINGS][q_preset.key] = value
+
+        self.ManageSettings()
+            
+
     def DisplayHelp(self) -> None:
         self.DisplayMessage(messages.HELP_MESSAGE)
         # Help message is too long:
@@ -188,6 +245,10 @@ class Configurator(LogObject):
         read_config = self.configuratorIO.readConfigurations()
         if read_config is None:
             read_config = BLANK_CONFIGURATION
+
+        # Add AppSettings to old configurations:
+        if not KEY_APP_SETTINGS in read_config:
+            read_config[KEY_APP_SETTINGS] = {}
         return read_config
 
     def WriteConfigurations(self) -> None:

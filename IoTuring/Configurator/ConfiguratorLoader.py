@@ -1,10 +1,11 @@
 from __future__ import annotations
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE
+from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE, KEY_APP_SETTINGS
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.Warehouse.Warehouse import Warehouse
+from IoTuring.MyApp.AppSettings import AppSettings
 
 
 class ConfiguratorLoader(LogObject):
@@ -62,3 +63,16 @@ class ConfiguratorLoader(LogObject):
     # - for each one:
     #   - pass the configuration to the warehouse function that uses the configuration to init the Warehouse
     #   - append the Warehouse to the list
+
+
+    def LoadAppSettings(self) -> None:
+        """ Load app settings from config and defafults to AppSettings.Settings class attribute """
+        if not KEY_APP_SETTINGS in self.configurations:
+            self.configurations[KEY_APP_SETTINGS] = {}
+            
+        appSettings = AppSettings(self.configurations[KEY_APP_SETTINGS])
+        appSettings.AddMissingDefaultConfigs()
+
+        # Add configs to class:
+        AppSettings.Settings = appSettings.GetConfigurations()
+            
