@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from IoTuring.MyApp.App import App
+from IoTuring.MyApp.AppSettings import AppSettings
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
@@ -51,6 +52,10 @@ def loop():
     logger = Logger()
     configurator = Configurator()
 
+    # Load AppSettings:
+    AppSettings().LoadConfiguration(configurator)
+    
+
     logger.Log(Logger.LOG_DEBUG, "App", f"Selected options: {vars(args)}")
 
     if args.configurator:
@@ -71,8 +76,7 @@ def loop():
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
-    # Load AppSettings:
-    ConfiguratorLoader(configurator).LoadAppSettings()
+    
 
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",

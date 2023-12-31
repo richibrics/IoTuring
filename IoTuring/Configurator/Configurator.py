@@ -228,6 +228,8 @@ class Configurator(LogObject):
     def WriteConfigurations(self) -> None:
         """ Save to configurations file """
         self.configuratorIO.writeConfigurations(self.config.ToDict())
+        # Reload AppSettings
+        AppSettings().LoadConfiguration(self)
 
     def ManageSingleWarehouse(self, whClass):
         """UI for single Warehouse settings"""

@@ -31,7 +31,7 @@ class Entity(LogObject, ConfiguratorObject):
 
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
-        self.updateTimeout = float(AppSettings.Settings[CONFIG_KEY_UPDATE_INTERVAL])
+        self.updateTimeout = float(AppSettings().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
         
 
     def Initialize(self):

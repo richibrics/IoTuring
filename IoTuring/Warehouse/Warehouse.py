@@ -15,7 +15,7 @@ class Warehouse(LogObject, ConfiguratorObject):
     CATEGORY_NAME = CONFIG_CATEGORY_NAME[KEY_ACTIVE_WAREHOUSES]
 
     def __init__(self, single_configuration: SingleConfiguration) -> None:
-        self.loopTimeout = float(AppSettings.Settings[CONFIG_KEY_UPDATE_INTERVAL])
+        self.loopTimeout = float(AppSettings().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
         self.configurations = single_configuration
 
 
