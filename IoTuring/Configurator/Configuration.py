@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # config categories:
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
