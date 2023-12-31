@@ -6,6 +6,7 @@ from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
 
@@ -24,7 +25,6 @@ class Entity(LogObject, ConfiguratorObject):
         self.configurations = configurations
         self.SetTagFromConfiguration()
 
-        self.initializeState = False
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
         self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
@@ -36,8 +36,8 @@ class Entity(LogObject, ConfiguratorObject):
     def CallInitialize(self) -> bool:
         """ Safe method to run the Initialize function. Returns True if no error occcured. """
         try:
+            self.CheckSystemSupport()
             self.Initialize()
-            self.initializeState = True
             self.Log(self.LOG_INFO, "Initialization successfully completed")
         except Exception as e:
             self.Log(self.LOG_ERROR,
@@ -231,3 +231,25 @@ class Entity(LogObject, ConfiguratorObject):
         """ Return True if this Entity can have multiple instances, useful for customizable entities 
             These entities are the ones that must have a tag to be recognized """
         return cls.ALLOW_MULTI_INSTANCE
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        """Must be implemented in subclasses. Raise an exception if system not supported."""
+        return
+
+    @classmethod
+    def SystemSupported(cls) -> bool:
+        """Check if the sysytem supported by this entity.
+
+        Returns:
+            bool: True if supported
+        """
+        try:
+            cls.CheckSystemSupport()
+            return True
+        except:
+            return False
+
+    class UnsupportedOsException(Exception):
+        def __init__(self) -> None:
+            super().__init__(f"Unsupported operating system: {OsD.GetOs()}")

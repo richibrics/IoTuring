@@ -8,23 +8,25 @@ KEY_SHUTDOWN = 'shutdown'
 KEY_REBOOT = 'reboot'
 KEY_SLEEP = 'sleep'
 
-commands_shutdown = {
-    OsD.WINDOWS: 'shutdown /s /t 0',
-    OsD.MACOS: 'sudo shutdown -h now',
-    OsD.LINUX: 'poweroff'
+commands = {
+    OsD.WINDOWS: {
+        KEY_SHUTDOWN: 'shutdown /s /t 0',
+        KEY_REBOOT: 'shutdown /r',
+        KEY_SLEEP: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0'
+    },
+    OsD.MACOS: {
+        KEY_SHUTDOWN: 'sudo shutdown -h now',
+        KEY_REBOOT: 'sudo reboot'
+    },
+    OsD.LINUX: {
+        KEY_SHUTDOWN: 'poweroff',
+        KEY_REBOOT: 'reboot',
+        KEY_SLEEP: 'systemctl suspend'
+    }
 }
 
-
-commands_reboot = {
-    OsD.WINDOWS: 'shutdown /r',
-    OsD.MACOS: 'sudo reboot',
-    OsD.LINUX: 'reboot'
-}
-
-commands_sleep = {
-    OsD.WINDOWS: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
-    OsD.LINUX: 'systemctl suspend',
-    'Linux_X11': 'xset dpms force standby',
+linux_optional_sleep_commands = {
+    'X11': 'xset dpms force standby'
 }
 
 
@@ -34,43 +36,11 @@ class Power(Entity):
     def Initialize(self):
         self.commands = {}
 
-        self.os = OsD.GetOs()
-        # Check if commands are available for this OS/DE combo, then register them
-
-        # Shutdown
-        if self.os in commands_shutdown:
-            self.commands[KEY_SHUTDOWN] = commands_shutdown[self.os]
-            self.RegisterEntityCommand(EntityCommand(
-                self, KEY_SHUTDOWN, self.Callback))
-
-        # Reboot
-        if self.os in commands_reboot:
-            self.commands[KEY_REBOOT] = commands_reboot[self.os]
-            self.RegisterEntityCommand(EntityCommand(
-                self, KEY_REBOOT, self.Callback))
-
-        # Try if command works without sudo, add if it's not working:
-        if OsD.IsLinux():
-            for commandtype in self.commands:
-                testcommand = self.commands[commandtype] + " --wtmp-only"
-                if not self.RunCommand(testcommand).returncode == 0:
-                    self.commands[commandtype] = "sudo " + \
-                        self.commands[commandtype]
-
-        # Sleep
-        if self.os in commands_sleep:
-            self.commands[KEY_SLEEP] = commands_sleep[self.os]
-
-            # Fallback to xset, if supported:
-            if OsD.IsLinux() and not De.IsWayland():
-                try:
-                    De.CheckXsetSupport()
-                    self.commands[KEY_SLEEP] = commands_sleep["Linux_X11"]
-                except Exception as e:
-                    self.Log(self.LOG_DEBUG, f'Xset not supported: {str(e)}')
-
-            self.RegisterEntityCommand(EntityCommand(
-                self, KEY_SLEEP, self.Callback))
+        for command_key in [KEY_SHUTDOWN, KEY_REBOOT, KEY_SLEEP]:
+            if command_key in commands[OsD.GetOs()]:
+                self.commands[command_key] = self.GetCommand(command_key)
+                self.RegisterEntityCommand(EntityCommand(
+                    self, command_key, self.Callback))
 
     def Callback(self, message):
         # From the topic we can find the command:
@@ -79,3 +49,44 @@ class Power(Entity):
             command=self.commands[key],
             command_name=key
         )
+
+    def GetCommand(self, command_key: str) -> str:
+        """Get the command for this command_key
+
+        Args:
+            command_key (str): KEY_SHUTDOWN, KEY_REBOOT or KEY_SLEEP
+
+        Returns:
+            str: The command string
+        """
+
+        command = commands[OsD.GetOs()][command_key]
+
+        if OsD.IsLinux():
+
+            if command_key == KEY_SLEEP:
+                # Fallback to xset, if supported:
+                if not De.IsWayland():
+                    try:
+                        De.CheckXsetSupport()
+                        command = linux_optional_sleep_commands['X11']
+                    except Exception as e:
+                        self.Log(self.LOG_DEBUG,
+                                 f'Xset not supported: {str(e)}')
+
+            else:
+                # Try if command works without sudo, add if it's not working:
+                testcommand = command + " --wtmp-only"
+
+                if not self.RunCommand(testcommand).returncode == 0:
+                    command = "sudo " + command
+
+        self.Log(self.LOG_DEBUG,
+                 f'Found {command_key} command: {command}')
+
+        return command
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.GetOs() not in commands:
+            raise cls.UnsupportedOsException()
