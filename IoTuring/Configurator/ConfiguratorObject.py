@@ -1,24 +1,24 @@
-from IoTuring.Configurator.MenuPreset import BooleanAnswers
-from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Configurator.MenuPreset import BooleanAnswers, MenuPreset
+from IoTuring.Configurator.Configuration import SingleConfiguration
 
 
 class ConfiguratorObject:
     """ Base class for configurable classes """
 
-    def __init__(self, configurations) -> None:
-        self.configurations = configurations
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        self.configurations = single_configuration
 
     def GetConfigurations(self) -> dict:
-        """ Safe return configurations dict """
-        return self.configurations.copy()
+        """ return configuration as dict """
+        return self.configurations.ToDict()
 
     def GetFromConfigurations(self, key):
-        """ Get value from confiugurations with key (if not present raise Exception) """
-        if key in self.GetConfigurations():
-            return self.GetConfigurations()[key]
+        """ Get value from confiugurations with key (if not present raise Exception)."""
+        if self.configurations.HasConfigKey(key):
+            return self.configurations.GetConfigValue(key)
         else:
             raise Exception("Can't find key " + key + " in configurations")
-
+        
     def GetTrueOrFalseFromConfigurations(self, key) -> bool:
         """ Get boolean value from confiugurations with key (if not present raise Exception) """
         value = self.GetFromConfigurations(key).lower()
@@ -33,9 +33,10 @@ class ConfiguratorObject:
         defaults = preset.GetDefaults()
 
         if defaults:
-            for default_key in defaults:
-                if default_key not in self.GetConfigurations():
-                    self.configurations[default_key] = defaults[default_key]
+            for default_key, default_value in defaults.items():
+                if not self.configurations.HasConfigKey(default_key):
+                    self.configurations.UpdateConfigValue(default_key, default_value)
+
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:

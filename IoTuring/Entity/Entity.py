@@ -3,31 +3,36 @@ import time
 import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
+from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CATEGORY_NAME, KEY_ACTIVE_ENTITIES
+from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
-KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
 
-DEFAULT_UPDATE_TIMEOUT = 10
 
 
 class Entity(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
     ALLOW_MULTI_INSTANCE = False
+    CATEGORY_NAME = CONFIG_CATEGORY_NAME[KEY_ACTIVE_ENTITIES]
 
-    def __init__(self, configurations) -> None:
+
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        
         # Prepare the entity
         self.entitySensors = []
         self.entityCommands = []
 
-        self.configurations = configurations
-        self.SetTagFromConfiguration()
+        self.configurations = single_configuration
+        self.tag = self.configurations.GetTag()
+        
 
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
-        self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
+        self.updateTimeout = float(AppSettings.Settings[CONFIG_KEY_UPDATE_INTERVAL])
+        
 
     def Initialize(self):
         """ Must be implemented in sub-classes, may be useful here to use the configuration """
@@ -145,7 +150,7 @@ class Entity(LogObject, ConfiguratorObject):
 
     def GetEntityTag(self) -> str:
         """ Return entity identifier tag """
-        return self.tag  # Set from SetTagFromConfiguration on entity init
+        return self.tag
 
     def GetEntityNameWithTag(self) -> str:
         """ Return entity name and tag combined (or name alone if no tag is present) """
@@ -163,12 +168,6 @@ class Entity(LogObject, ConfiguratorObject):
     def LogSource(self):
         return self.GetEntityId()
 
-    def SetTagFromConfiguration(self):
-        """ Set tag from configuration or set it blank if not present there """
-        if self.GetConfigurations() is not None and KEY_ENTITY_TAG in self.GetConfigurations():
-            self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
-        else:
-            self.tag = ""
 
     def RunCommand(self,
                    command: str | list,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE, KEY_APP_SETTINGS
+from IoTuring.Configurator.Configurator import Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.Warehouse.Warehouse import Warehouse
@@ -12,28 +12,27 @@ class ConfiguratorLoader(LogObject):
     configurator = None
 
     def __init__(self, configurator: Configurator) -> None:
-        self.configurations = configurator.GetConfigurations()
+        self.configurations = configurator.config
 
     # Return list of instances initialized using their configurations
     def LoadWarehouses(self) -> list[Warehouse]:
         warehouses = []
         wcm = WarehouseClassManager()
-        if not KEY_ACTIVE_WAREHOUSES in self.configurations:
+        if not self.configurations.GetConfigsInCategory(KEY_ACTIVE_WAREHOUSES):
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one warehouse: configure it using -c argument")
             exit(1)
-        for activeWarehouse in self.configurations[KEY_ACTIVE_WAREHOUSES]:
+        for whConfig in self.configurations.GetConfigsInCategory(KEY_ACTIVE_WAREHOUSES):
             # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
-            whClass = wcm.GetClassFromName(
-                activeWarehouse[KEY_WAREHOUSE_TYPE]+"Warehouse")
+            whClass = wcm.GetClassFromName(whConfig.GetLongName())
 
             if whClass is None:
-                self.Log(self.LOG_ERROR, "Can't find " +
-                         activeWarehouse[KEY_WAREHOUSE_TYPE] + " warehouse, check your configurations.")
+                self.Log(self.LOG_ERROR, f"Can't find {whConfig.GetType()} warehouse, check your configurations.")
             else:
-                whClass(activeWarehouse).AddMissingDefaultConfigs()
-                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {whClass(activeWarehouse).configurations}")
-                warehouses.append(whClass(activeWarehouse))
+                wh = whClass(whConfig)
+                wh.AddMissingDefaultConfigs()
+                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {wh.configurations}")
+                warehouses.append(wh)
         return warehouses
 
     # warehouses[0].AddEntity(eM.NewEntity(eM.EntityNameToClass("Username")).getInstance()): may be useful
@@ -41,19 +40,19 @@ class ConfiguratorLoader(LogObject):
     def LoadEntities(self) -> list[Entity]:
         entities = []
         ecm = EntityClassManager()
-        if not KEY_ACTIVE_ENTITIES in self.configurations:
+        if not self.configurations.GetConfigsInCategory(KEY_ACTIVE_ENTITIES):
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one entity: configure it using -c argument")
             exit(1)
-        for activeEntity in self.configurations[KEY_ACTIVE_ENTITIES]:
-            entityClass = ecm.GetClassFromName(activeEntity[KEY_ENTITY_TYPE])
+        for entityConfig in self.configurations.GetConfigsInCategory(KEY_ACTIVE_ENTITIES):
+            entityClass = ecm.GetClassFromName(entityConfig.GetType())
             if entityClass is None:
-                self.Log(self.LOG_ERROR, "Can't find " +
-                         activeEntity[KEY_ENTITY_TYPE] + " entity, check your configurations.")
+                self.Log(self.LOG_ERROR, f"Can't find {entityConfig.GetType()} entity, check your configurations.")
             else:
-                entityClass(activeEntity).AddMissingDefaultConfigs()
-                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {entityClass(activeEntity).configurations}")
-                entities.append(entityClass(activeEntity))  # Entity instance
+                ec = entityClass(entityConfig)
+                ec.AddMissingDefaultConfigs()
+                self.Log(self.LOG_DEBUG, f"Full configuration with defaults: {ec.configurations}")
+                entities.append(ec)  # Entity instance
         return entities
 
     # How Warehouse configurations works:
@@ -67,10 +66,9 @@ class ConfiguratorLoader(LogObject):
 
     def LoadAppSettings(self) -> None:
         """ Load app settings from config and defafults to AppSettings.Settings class attribute """
-        if not KEY_APP_SETTINGS in self.configurations:
-            self.configurations[KEY_APP_SETTINGS] = {}
+        
             
-        appSettings = AppSettings(self.configurations[KEY_APP_SETTINGS])
+        appSettings = AppSettings(self.configurations.GetAppSettings())
         appSettings.AddMissingDefaultConfigs()
 
         # Add configs to class:

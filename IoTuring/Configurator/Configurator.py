@@ -3,6 +3,7 @@ import subprocess
 import shutil
 
 from IoTuring.Configurator.MenuPreset import QuestionPreset
+from IoTuring.Configurator.Configuration import FullConfiguration, SingleConfiguration, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
@@ -20,21 +21,6 @@ from InquirerPy import inquirer
 from InquirerPy.separator import Separator
 
 
-BLANK_CONFIGURATION = {
-    'active_entities': [{"type": "AppInfo"}],
-    'active_warehouses': [],
-    'app_settings': {}
-}
-
-KEY_ACTIVE_ENTITIES = "active_entities"
-KEY_ACTIVE_WAREHOUSES = "active_warehouses"
-KEY_APP_SETTINGS = "app_settings"
-
-KEY_WAREHOUSE_TYPE = "type"
-
-KEY_ENTITY_TYPE = "type"
-KEY_ENTITY_TAG = "tag"
-
 CHOICE_GO_BACK = "< Go back"
 
 
@@ -45,11 +31,14 @@ class Configurator(LogObject):
         self.pinned_lines = 1
 
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
-        self.config = self.LoadConfigurations()
 
-    def GetConfigurations(self) -> dict:
-        """ Return a copy of the configurations dict"""
-        return self.config.copy()  # Safe return
+        # Load configuration from file, create Configuration object:
+        config_dict_from_file = self.configuratorIO.readConfigurations()
+        if config_dict_from_file:
+            self.config = FullConfiguration(config_dict_from_file)
+        else:
+            # Create blank config:
+            self.config = FullConfiguration()
 
     def CheckFile(self) -> None:
         """ Make sure config file exists or can be created """
@@ -122,13 +111,13 @@ class Configurator(LogObject):
 
         manageEntitiesChoices = []
 
-        for entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
+        for entityConfig in self.config.GetConfigsInCategory(KEY_ACTIVE_ENTITIES):
             manageEntitiesChoices.append(
-                {"name": self.GetEntityLabel(entityConfig),
+                {"name": entityConfig.GetLabel(),
                  "value": entityConfig}
             )
 
-            manageEntitiesChoices.sort(key=lambda d: d['name'])
+        manageEntitiesChoices.sort(key=lambda d: d['name'])
 
         manageEntitiesChoices = [
             CHOICE_GO_BACK,
@@ -149,7 +138,7 @@ class Configurator(LogObject):
         elif choice == CHOICE_GO_BACK:
             self.Menu()
         else:
-            self.ManageSingleEntity(choice, ecm)
+            self.ManageSingleEntity(choice)
 
     def ManageWarehouses(self) -> None:
         """ UI for Warehouses settings """
@@ -157,17 +146,16 @@ class Configurator(LogObject):
 
         manageWhChoices = []
 
-        availableWarehouses = wcm.ListAvailableClassesNames()
-        for whName in availableWarehouses:
-            short_wh_name = whName.replace("Warehouse", "")
+        availableWarehouses = wcm.ListAvailableClasses()
+        for whClass in availableWarehouses:
 
             enabled_sign = " "
-            if self.IsWarehouseActive(short_wh_name):
+            if self.IsWarehouseActive(whClass):
                 enabled_sign = "X"
 
             manageWhChoices.append(
-                {"name": f"[{enabled_sign}] - {short_wh_name}",
-                 "value": short_wh_name})
+                {"name": f"[{enabled_sign}] - {whClass.NAME}",
+                 "value": whClass})
 
         choice = self.DisplayMenu(
             choices=manageWhChoices,
@@ -177,7 +165,7 @@ class Configurator(LogObject):
         if choice == CHOICE_GO_BACK:
             self.Menu()
         else:
-            self.ManageSingleWarehouse(choice, wcm)
+            self.ManageSingleWarehouse(choice)
 
     def ManageSettings(self):
         preset = AppSettings.ConfigurationPreset()
@@ -186,8 +174,8 @@ class Configurator(LogObject):
 
         for entry in preset.presets:
             # Load config instead of default:
-            if entry.key in self.config[KEY_APP_SETTINGS]:
-                value = self.config[KEY_APP_SETTINGS][entry.key]
+            if self.config.GetAppSettings().HasConfigKey(entry.key):
+                value = self.config.GetAppSettings().GetConfigValue(entry.key)
             else:
                 value = entry.default
 
@@ -198,8 +186,7 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=settingsChoices,
-            message="Select setting to edit",
-            add_back_choice=True)
+            message="Select setting to edit")
 
         if choice == CHOICE_GO_BACK:
             self.Menu()
@@ -211,22 +198,21 @@ class Configurator(LogObject):
                 self.DisplayMessage(f"Question preset not found: {choice}")
                 self.ManageSettings()
 
+    def ManageSingleSetting(self, q_preset: QuestionPreset):
 
-    def ManageSingleSetting(self, q_preset:QuestionPreset):
+        appSettingsConfig = self.config.GetAppSettings()
 
         # Load config as default:
-        if q_preset.key in self.config[KEY_APP_SETTINGS]:
-            q_preset.default = self.config[KEY_APP_SETTINGS][q_preset.key]
+        if appSettingsConfig.HasConfigKey(q_preset.key):
+            q_preset.default = appSettingsConfig.GetConfigValue(q_preset.key)
 
         value = q_preset.Ask()
 
-            
         if value:
             # Add to config:
-            self.config[KEY_APP_SETTINGS][q_preset.key] = value
+            appSettingsConfig.UpdateConfigValue(q_preset.key, value)
 
         self.ManageSettings()
-            
 
     def DisplayHelp(self) -> None:
         self.DisplayMessage(messages.HELP_MESSAGE)
@@ -239,26 +225,14 @@ class Configurator(LogObject):
         self.WriteConfigurations()
         exit(0)
 
-    def LoadConfigurations(self) -> dict:
-        """ Reads the configuration file and returns configuration dictionary.
-            If not available, returns the blank configuration """
-        read_config = self.configuratorIO.readConfigurations()
-        if read_config is None:
-            read_config = BLANK_CONFIGURATION
-
-        # Add AppSettings to old configurations:
-        if not KEY_APP_SETTINGS in read_config:
-            read_config[KEY_APP_SETTINGS] = {}
-        return read_config
-
     def WriteConfigurations(self) -> None:
         """ Save to configurations file """
-        self.configuratorIO.writeConfigurations(self.config)
+        self.configuratorIO.writeConfigurations(self.config.ToDict())
 
-    def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
+    def ManageSingleWarehouse(self, whClass):
         """UI for single Warehouse settings"""
 
-        if self.IsWarehouseActive(warehouseName):
+        if self.IsWarehouseActive(whClass):
             manageWhChoices = [
                 {"name": "Edit the warehouse settings", "value": "Edit"},
                 {"name": "Remove the warehouse", "value": "Remove"}
@@ -269,25 +243,28 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=manageWhChoices,
-            message=f"Manage warehouse {warehouseName}"
+            message=f"Manage warehouse {whClass.NAME}"
         )
 
         if choice == CHOICE_GO_BACK:
             self.ManageWarehouses()
-        elif choice == "Edit":
-            self.EditActiveWarehouse(warehouseName, wcm)
         elif choice == "Add":
-            self.AddActiveWarehouse(warehouseName, wcm)
-        elif choice == "Remove":
-            confirm = inquirer.confirm(message="Are you sure?").execute()
+            self.AddActiveClass(whClass, KEY_ACTIVE_WAREHOUSES)
+            self.ManageWarehouses()
+        else:
+            whConfig = self.config.GetConfigsOfType(whClass.NAME)[0]
+            if choice == "Edit":
+                self.EditActiveWarehouse(whConfig)
+            elif choice == "Remove":
+                confirm = inquirer.confirm(message="Are you sure?").execute()
 
-            if confirm:
-                self.RemoveActiveWarehouse(warehouseName)
-            else:
+                if confirm:
+                    self.RemoveActiveConfiguration(whConfig)
+
                 self.ManageWarehouses()
 
-    def ManageSingleEntity(self, entityConfig, ecm: EntityClassManager):
-        """ UI to manage an active warehouse (edit config/remove) """
+    def ManageSingleEntity(self, entityConfig: SingleConfiguration):
+        """ UI to manage an active entity (edit config/remove) """
 
         manageEntityChoices = [
             {"name": "Edit the entity settings", "value": "Edit"},
@@ -296,47 +273,42 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=manageEntityChoices,
-            message=f"Manage entity {self.GetEntityLabel(entityConfig)}"
+            message=f"Manage entity {entityConfig.GetLabel()}"
         )
 
         if choice == CHOICE_GO_BACK:
             self.ManageEntities()
         elif choice == "Edit":
-            self.EditActiveEntity(entityConfig, ecm)  # type: ignore
+            self.EditActiveEntity(entityConfig)  # type: ignore
         elif choice == "Remove":
             confirm = inquirer.confirm(message="Are you sure?").execute()
 
             if confirm:
-                self.RemoveActiveEntity(entityConfig)
-            else:
-                self.ManageEntities()
+                self.RemoveActiveConfiguration(entityConfig)
+
+            self.ManageEntities()
 
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
 
-        # entity classnames without unsupported entities:
-        entityList = [
-            e.NAME for e in ecm.ListAvailableClasses() if e.SystemSupported()]
+        # entity classes without unsupported entities:
+        entityClasses = [
+            e for e in ecm.ListAvailableClasses() if e.SystemSupported()]
 
-        # Now I remove the entities that are active and that do not allow multi instances
-        for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
-            entityClass = ecm.GetClassFromName(
-                activeEntity[KEY_ENTITY_TYPE])
+        entityChoices = []
 
-            # Malformed entities, from different versions in config, just skip:
-            if entityClass is None:
-                continue
+        for entityClass in entityClasses:
+            if self.config.GetConfigsOfType(entityClass.NAME):
+                if not entityClass.AllowMultiInstance():
+                    continue
+            entityChoices.append(
+                {"name": entityClass.NAME, "value": entityClass}
+            )
 
-            # If the Allow Multi Instance option was changed:
-            if activeEntity[KEY_ENTITY_TYPE] not in entityList:
-                continue
-
-            # not multi, remove:
-            if not entityClass.AllowMultiInstance():  # type: ignore
-                entityList.remove(activeEntity[KEY_ENTITY_TYPE])
+        entityChoices.sort(key=lambda d: d['name'])
 
         choice = self.DisplayMenu(
-            choices=sorted(entityList),
+            choices=entityChoices,
             message="Available entities:",
             instruction="if you don't see the entity, it may be already active and not accept another activation, or not supported by your system"
         )
@@ -344,7 +316,8 @@ class Configurator(LogObject):
         if choice == CHOICE_GO_BACK:
             self.ManageEntities()
         else:
-            self.AddActiveEntity(choice, ecm)
+            self.AddActiveClass(choice, KEY_ACTIVE_ENTITIES)
+            self.ManageEntities()
 
     def ShowUnsupportedEntities(self, ecm: EntityClassManager):
         """ UI to show unsupported entities """
@@ -366,96 +339,48 @@ class Configurator(LogObject):
 
         self.ManageEntities()
 
-    def AddActiveEntity(self, entityName, ecm: EntityClassManager):
-        """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
-        entityClass = ecm.GetClassFromName(entityName)
-        try:
-            if not entityClass:
-                raise Exception(f"Entityclass not found: {entityName}")
-
-            preset = entityClass.ConfigurationPreset()
-
-            if preset.HasQuestions():
-                # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
-                if entityClass.AllowMultiInstance():
-                    preset.AddTagQuestion()
-
-                self.DisplayMessage(messages.PRESET_RULES)
-                self.DisplayMessage(f"Configure {entityName} Entity")
-                preset.AskQuestions()
-                self.ClearScreen(force_clear=True)
-
-            else:
-                self.DisplayMessage(
-                    "No configuration needed for this Entity :)")
-
-            self.EntityMenuPresetToConfiguration(entityName, preset)
-        except UserCancelledException:
-            self.DisplayMessage("Configuration cancelled", force_clear=True)
-
-        except Exception as e:
-            print("Error during entity preset loading: " + str(e))
-
-        self.ManageEntities()
-
-    def IsEntityActive(self, entityName) -> bool:
-        """ Return True if an Entity is active """
-        for entity in self.config[KEY_ACTIVE_ENTITIES]:
-            if entityName == entity[KEY_ENTITY_TYPE]:
-                return True
-        return False
-
-    def GetEntityLabel(self, entityConfig) -> str:
-        """ Get the type name of entity, add tag if multi"""
-        entityLabel = entityConfig[KEY_ENTITY_TYPE]
-        if KEY_ENTITY_TAG in entityConfig:
-            entityLabel += f" with tag {entityConfig[KEY_ENTITY_TAG]}"
-        return entityLabel
-
-    def RemoveActiveEntity(self, entityConfig) -> None:
-        """ Remove entity name from the list of active entities if present """
-        if entityConfig in self.config[KEY_ACTIVE_ENTITIES]:
-            self.config[KEY_ACTIVE_ENTITIES].remove(entityConfig)
-
+    def RemoveActiveConfiguration(self, singleConfig: SingleConfiguration) -> None:
+        """ Remove configuration (wh or entity) """
+        self.config.RemoveActiveConfiguration(singleConfig)
         self.DisplayMessage(
-            f"Entity removed: {self.GetEntityLabel(entityConfig)}")
-        self.ManageEntities()
+            f"{singleConfig.GetCategoryName()} removed: {singleConfig.GetLabel()}")
 
-    def IsWarehouseActive(self, warehouseName) -> bool:
+    def IsWarehouseActive(self, whClass) -> bool:
         """ Return True if a warehouse is active """
-        for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
-            if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
-                return True
-        return False
+        return bool(self.config.GetConfigsOfType(whClass.NAME))
 
-    def AddActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
-        """ Add warehouse to the preferences using a menu with the warehouse preset if available """
-
-        whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
+    def AddActiveClass(self, ioClass, config_category: str) -> None:
         try:
-            preset = whClass.ConfigurationPreset()  # type: ignore
+            preset = ioClass.ConfigurationPreset()
 
             if preset.HasQuestions():
+
+                if config_category == KEY_ACTIVE_ENTITIES:
+                    # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
+                    if ioClass.AllowMultiInstance():
+                        preset.AddTagQuestion()
+
                 self.DisplayMessage(messages.PRESET_RULES)
+                self.DisplayMessage(
+                    f"Configure {ioClass.NAME} {ioClass.CATEGORY_NAME}")
                 preset.AskQuestions()
                 self.ClearScreen(force_clear=True)
 
             else:
                 self.DisplayMessage(
-                    "No configuration needed for this Warehouse :)")
+                    f"No configuration needed for this {ioClass.CATEGORY_NAME} :)")
 
-            # Save added settings
-            self.WarehouseMenuPresetToConfiguration(warehouseName, preset)
+            self.config.AddConfiguration(
+                config_category, preset.GetDict(), ioClass.NAME)
 
         except UserCancelledException:
             self.DisplayMessage("Configuration cancelled", force_clear=True)
 
         except Exception as e:
-            print("Error during warehouse preset loading: " + str(e))
+            print(
+                f"Error during {ioClass.CATEGORY_NAME} preset loading: {str(e)}")
 
-        self.ManageWarehouses()
-
-    def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+    def EditActiveWarehouse(self, whConfig: SingleConfiguration) -> None:
         """ UI for single Warehouse settings edit """
         self.DisplayMessage(
             "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
@@ -466,7 +391,7 @@ class Configurator(LogObject):
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
 
-    def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
+    def EditActiveEntity(self, entityConfig: SingleConfiguration) -> None:
         """ UI for single Entity settings edit """
         self.DisplayMessage(
             "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
@@ -474,30 +399,6 @@ class Configurator(LogObject):
         self.ManageEntities()
 
         # TODO Implement
-
-    def RemoveActiveWarehouse(self, warehouseName) -> None:
-        """ Remove warehouse name from the list of active warehouses if present """
-        for wh in self.config[KEY_ACTIVE_WAREHOUSES]:
-            if warehouseName == wh[KEY_WAREHOUSE_TYPE]:
-                # I remove this wh from the list
-                self.config[KEY_ACTIVE_WAREHOUSES].remove(wh)
-
-        self.DisplayMessage(f"Warehouse removed: {warehouseName}")
-        self.ManageWarehouses()
-
-    def WarehouseMenuPresetToConfiguration(self, whName, preset) -> None:
-        """ Get a MenuPreset with responses and add the entries to the configurations dict in warehouse part """
-        _dict = preset.GetDict()
-        _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse", "")
-        self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
-        self.DisplayMessage("Configuration added for \""+whName+"\" :)")
-
-    def EntityMenuPresetToConfiguration(self, entityName, preset) -> None:
-        """ Get a MenuPreset with responses and add the entries to the configurations dict in entity part """
-        _dict = preset.GetDict()
-        _dict[KEY_ENTITY_TYPE] = entityName
-        self.config[KEY_ACTIVE_ENTITIES].append(_dict)
-        self.DisplayMessage("Configuration added for \""+entityName+"\" :)")
 
     def ClearScreen(self, force_clear=False):
         """ Clear the screen on any platform. If self.pinned_lines greater than zero, it won't be cleared.

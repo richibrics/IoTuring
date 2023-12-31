@@ -63,7 +63,7 @@ class QuestionPreset():
 
         return should_display
 
-    def Ask(self, menupreset: "MenuPreset | None" = None):
+    def Ask(self):
         """Ask a single question preset"""
 
         question_options = {}
@@ -122,18 +122,18 @@ class QuestionPreset():
             **question_options
         )
 
-        cancelled = False
+        self.cancelled = False
 
         @prompt.register_kb("escape")
         def _handle_esc(event):
             prompt._mandatory = False
             prompt._handle_skip(event)
             # exception raised here catched by inquirer.
-            cancelled = True
+            self.cancelled = True
 
         value = prompt.execute()
 
-        if cancelled:
+        if self.cancelled:
             raise UserCancelledException
 
         return value
@@ -207,7 +207,7 @@ class MenuPreset():
                 # It should be displayed, ask question:
                 if q_preset.ShouldDisplay(self):
 
-                    value = q_preset.Ask(self)
+                    value = q_preset.Ask()
 
                     if value:
                         q_preset.value = value

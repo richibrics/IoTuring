@@ -61,8 +61,8 @@ class Terminal(Entity):
 
     def Initialize(self):
 
-        self.config_entity_type = self.GetConfigurations()[
-            CONFIG_KEY_ENTITY_TYPE]
+        self.config_entity_type = self.GetFromConfigurations(
+            CONFIG_KEY_ENTITY_TYPE)
 
         # sanitize entity type:
         self.entity_type = str(
@@ -86,16 +86,16 @@ class Terminal(Entity):
         # payload_command
         if self.entity_type == ENTITY_TYPE_KEYS["PAYLOAD_COMMAND"]:
             self.config_command_regex = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_REGEX]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_REGEX)
             # Check if it's a correct regex:
             if not re.search(r"^\^.*\$$", self.config_command_regex):
                 raise Exception(
                     f"Configuration error: Invalid regex: {self.config_command_regex}")
 
             # Get max length:
-            if self.GetConfigurations()[CONFIG_KEY_LENGTH]:
+            if self.GetFromConfigurations(CONFIG_KEY_LENGTH):
                 self.config_length = int(
-                    self.GetConfigurations()[CONFIG_KEY_LENGTH])
+                    self.GetFromConfigurations(CONFIG_KEY_LENGTH))
             else:
                 # Fall back to infinite:
                 self.config_length = float("inf")
@@ -104,52 +104,52 @@ class Terminal(Entity):
 
         # button
         elif self.entity_type == ENTITY_TYPE_KEYS["BUTTON"]:
-            self.config_command = self.GetConfigurations()[
-                CONFIG_KEY_COMMAND_ON]
+            self.config_command = self.GetFromConfigurations(
+                CONFIG_KEY_COMMAND_ON)
             self.has_command = True
 
         # switch
         elif self.entity_type == ENTITY_TYPE_KEYS["SWITCH"]:
             self.config_command_on = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_ON]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_ON)
             self.config_command_off = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_OFF]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_OFF)
             self.has_command = True
 
-            if self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]:
+            if self.GetFromConfigurations(CONFIG_KEY_COMMAND_STATE):
                 self.config_command_state = \
-                    self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+                    self.GetFromConfigurations(CONFIG_KEY_COMMAND_STATE)
                 self.has_binary_state = True
 
         # sensor
         elif self.entity_type == ENTITY_TYPE_KEYS["SENSOR"]:
             self.config_command_state = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_STATE)
             self.has_state = True
 
-            self.config_unit = self.GetConfigurations()[CONFIG_KEY_UNIT]
+            self.config_unit = self.GetFromConfigurations(CONFIG_KEY_UNIT)
             if self.config_unit:
                 self.custom_payload["unit_of_measurement"] = self.config_unit
 
-            if self.GetConfigurations()[CONFIG_KEY_DECIMALS]:
+            if self.GetFromConfigurations(CONFIG_KEY_DECIMALS):
                 self.value_formatter_options = \
                     ValueFormatterOptions(value_type=ValueFormatterOptions.TYPE_NONE,
-                                          decimals=int(self.GetConfigurations()[CONFIG_KEY_DECIMALS]))
+                                          decimals=int(self.GetFromConfigurations(CONFIG_KEY_DECIMALS)))
 
         # binary sensor
         elif self.entity_type == ENTITY_TYPE_KEYS["BINARY_SENSOR"]:
             self.config_command_state = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_STATE)
             self.has_binary_state = True
 
         # cover
         elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
             self.config_cover_commands = {
-                "OPEN": self.GetConfigurations()[CONFIG_KEY_COMMAND_OPEN],
-                "CLOSE": self.GetConfigurations()[CONFIG_KEY_COMMAND_CLOSE]
+                "OPEN": self.GetFromConfigurations(CONFIG_KEY_COMMAND_OPEN),
+                "CLOSE": self.GetFromConfigurations(CONFIG_KEY_COMMAND_CLOSE)
             }
 
-            stop_command = self.GetConfigurations()[CONFIG_KEY_COMMAND_STOP]
+            stop_command = self.GetFromConfigurations(CONFIG_KEY_COMMAND_STOP)
 
             if stop_command:
                 self.config_cover_commands["STOP"] = stop_command
@@ -159,7 +159,7 @@ class Terminal(Entity):
             self.has_command = True
 
             self.config_command_state = \
-                self.GetConfigurations()[CONFIG_KEY_COMMAND_STATE]
+                self.GetFromConfigurations(CONFIG_KEY_COMMAND_STATE)
 
             if self.config_command_state:
                 self.has_state = True
