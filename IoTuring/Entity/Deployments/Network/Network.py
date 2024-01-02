@@ -265,13 +265,6 @@ class Network(Entity):
             question_type="select",
             choices=NIC_CHOICES,
         )
-        preset.AddEntry(
-            name="Is it a wireless interface?",
-            key=CONFIG_KEY_WIRELESS,
-            mandatory=False,
-            question_type="yesno",
-            default='N'
-        )
         return preset
 
 
@@ -282,15 +275,3 @@ class Network(Entity):
                 raise Exception("iwconfig not found")
         else:
             raise cls.UnsupportedOsException()
-
-# Example in configuration:
-#
-#      - Network:
-#          value_format: # for traffic information
-#            size: MB // SIZE_....BYTE constant
-#          content:
-#             exclude_interfaces:
-#               - lo
-#               - VirtualBox Host-Only Network
-#             rename_interfaces:
-#               wlp0s20f3: Wi-Fi
