@@ -13,6 +13,8 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 
 # Lists of measure units
 BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+BYTE_PER_SECOND_SIZES = ['Bps' ,'KBps', 'MBps', 'GBps', 'TBps', 'PBps']
+BIT_PER_SECOND_SIZES = ['bps' ,'Kbps', 'Mbps', 'Gbps', 'Tbps', 'Pbps']
 TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
@@ -61,6 +63,10 @@ class ValueFormatter():
                 return str(value) + SPACE_BEFORE_UNIT + '%'
             else:
                 return str(value)
+        elif valueType == ValueFormatterOptions.TYPE_BIT_PER_SECOND:
+            return ValueFormatter.BitPerSecondFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_BYTE_PER_SECOND:
+            return ValueFormatter.BytePerSecondFormatter(value, options, includeUnit)
         else:
             return str(value)
 
@@ -178,6 +184,41 @@ class ValueFormatter():
         
         if includeUnit:
             return str(value) + SPACE_BEFORE_UNIT + 'dBm'
+        else:
+            return str(value)
+        
+    @staticmethod
+    def BytePerSecondFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # Get value in hertz, and adjustable
+        asked_size = options.get_adjust_size()
+
+        if asked_size and asked_size in BYTE_PER_SECOND_SIZES:
+            index = BYTE_PER_SECOND_SIZES.index(asked_size)
+            value = value/pow(1000,index)
+        else:
+            index = 0
+
+        value = ValueFormatter.roundValue(value, options)
+
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + BYTE_PER_SECOND_SIZES[index]
+        else:
+            return str(value)
+
+    def BitPerSecondFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # Get value in hertz, and adjustable
+        asked_size = options.get_adjust_size()
+
+        if asked_size and asked_size in BYTE_PER_SECOND_SIZES:
+            index = BIT_PER_SECOND_SIZES.index(asked_size)
+            value = value/pow(1000,index)
+        else:
+            index = 0
+
+        value = ValueFormatter.roundValue(value, options)
+
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + BIT_PER_SECOND_SIZES[index]
         else:
             return str(value)
 
