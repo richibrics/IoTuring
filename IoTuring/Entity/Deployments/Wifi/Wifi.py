@@ -4,6 +4,7 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.Configurator.MenuPreset import MenuPreset
 
+from typing import List
 import subprocess
 import psutil
 import re
@@ -42,6 +43,9 @@ EXTRA_KEY_HT = "ht"
 EXTRA_KEY_SECURITY = "security"
 EXTRA_KEY_LINK_AUTH = "link_auth"
 EXTRA_KEY_LINK_ENC = "link_enc"
+
+wifiInterfaces: List[str]
+
 
 class Wifi(Entity):
     NAME = "Wifi"
@@ -244,8 +248,19 @@ class Wifi(Entity):
 
     @classmethod
     def CheckSystemSupport(cls):  # TODO extend checks
+        
         if OsD.IsLinux():
             if not OsD.CommandExists("iwconfig"):
                 raise Exception("iwconfig not found")
+            import glob
+            import os
+            interfaces = glob.glob('/sys/class/net/*')
+            global wifiInterfaces
+
+            for interface in interfaces:
+                if os.path.exists(os.path.join(interface, 'wireless')):
+                    wifiInterfaces.append(interface[0].split('/')[-1]) # to go from '/sys/class/net/interfacename' to 'interfacename'
+            if not any(wifiInterfaces):
+                raise Exception("no wifi interface found")
         else:
-            raise cls.UnsupportedOsException()
+            raise Exception("OS detection failed")
