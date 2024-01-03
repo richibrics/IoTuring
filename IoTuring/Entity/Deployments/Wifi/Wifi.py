@@ -248,19 +248,39 @@ class Wifi(Entity):
 
     @classmethod
     def CheckSystemSupport(cls):  # TODO extend checks
-        
+        global wifiInterfaces
+        import psutil
+
         if OsD.IsLinux():
             if not OsD.CommandExists("iwconfig"):
                 raise Exception("iwconfig not found")
-            import glob
+            
+            sysClassNet = "/sys/class/net/{}/wireless"
+            interfaces = psutil.net_if_addrs()
+
             import os
-            interfaces = glob.glob('/sys/class/net/*')
-            global wifiInterfaces
+            for interface in interfaces:
+                if os.path.exists(sysClassNet.format(interface)):
+                    wifiInterfaces.append(interface)
+        elif OsD.IsWindows():
+            interfaces = psutil.net_if_addrs()
 
             for interface in interfaces:
-                if os.path.exists(os.path.join(interface, 'wireless')):
-                    wifiInterfaces.append(interface[0].split('/')[-1]) # to go from '/sys/class/net/interfacename' to 'interfacename'
-            if not any(wifiInterfaces):
+                if interface == 'WiFi':
+                    wifiInterfaces.append(interface)
+        if not any(wifiInterfaces):
                 raise Exception("no wifi interface found")
+        
+        elif OsD.IsMacos():
+            # preferences_file = '/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist' maybe there is something here
+            # but without cli tools maybe hard to find
+            #
+            # 
+            if not OsD.CommandExists("airport"):
+                raise Exception("airport not found")
+            raise Exception("Macos not supported")
+            
+            
+            
         else:
             raise Exception("OS detection failed")
