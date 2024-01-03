@@ -195,7 +195,7 @@ class Wifi(Entity):
 
     @classmethod
     def CheckSystemSupport(cls):
-        wifiInterface = "" 
+        wifiInterface = "" # TODO add this interface to config to get it during init
 
         if OsD.IsLinux():
             if not OsD.CommandExists("iwconfig"):
