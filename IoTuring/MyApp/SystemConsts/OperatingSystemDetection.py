@@ -2,6 +2,7 @@ import platform
 import os
 import psutil
 import shutil
+import subprocess
 
 class OperatingSystemDetection():
     OS_NAME = platform.system()
@@ -57,6 +58,42 @@ class OperatingSystemDetection():
                 env_value = ""
         return env_value
             
+    @staticmethod
+    def RunCommand(command: str | list,
+                   shell: bool = False,
+                   **kwargs) -> subprocess.CompletedProcess:
+        """Safely call a subprocess. Kwargs are other Subprocess options
+
+        Args:
+            command (str | list): The command to call
+            shell (bool, optional): Run in shell. Defaults to False.
+            **kwargs: subprocess args
+
+        Returns:
+            subprocess.CompletedProcess: See subprocess docs
+        """
+
+        # different defaults than in subprocess:
+        defaults = {
+            "capture_output": True,
+            "text": True
+        }
+
+        for param, value in defaults.items():
+            if param not in kwargs:
+                kwargs[param] = value
+
+        if shell == False and isinstance(command, str):
+            runcommand = command.split()
+        else:
+            runcommand = command
+
+        p = subprocess.run(
+            runcommand, shell=shell, **kwargs)
+
+        return p
+
+
     @staticmethod
     def CommandExists(command) -> bool:
         """Check if a command exists"""

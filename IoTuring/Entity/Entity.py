@@ -6,6 +6,7 @@ from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
 
@@ -189,29 +190,14 @@ class Entity(LogObject, ConfiguratorObject):
             subprocess.CompletedProcess: See subprocess docs
         """
 
-        # different defaults than in subprocess:
-        defaults = {
-            "capture_output": True,
-            "text": True
-        }
-
-        for param, value in defaults.items():
-            if param not in kwargs:
-                kwargs[param] = value
-
         try:
-            if shell == False and isinstance(command, str):
-                runcommand = command.split()
-            else:
-                runcommand = command
 
             if command_name:
                 command_name = self.NAME + "-" + command_name
             else:
                 command_name = self.NAME
 
-            p = subprocess.run(
-                runcommand, shell=shell, **kwargs)
+            p = OsD.RunCommand(command, shell=shell, **kwargs)
 
             self.Log(self.LOG_DEBUG, f"Called {command_name} command: {p}")
 
@@ -220,11 +206,12 @@ class Entity(LogObject, ConfiguratorObject):
             if p.stderr:
                 self.Log(error_loglevel,
                          f"Error during {command_name} command: {p.stderr}")
+            
+            return p
 
         except Exception as e:
             raise Exception(f"Error during {command_name} command: {str(e)}")
 
-        return p
 
     @classmethod
     def AllowMultiInstance(cls):
