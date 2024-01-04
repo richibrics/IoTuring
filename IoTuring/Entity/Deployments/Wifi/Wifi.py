@@ -74,6 +74,7 @@ EXTRA_KEY_MCS = "MCS"
 
 class Wifi(Entity):
     NAME = "Wifi"
+    ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self):
         self.wifiInterface = self.GetFromConfigurations(CONFIG_KEY_WIFI)
@@ -168,9 +169,9 @@ class Wifi(Entity):
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["Signal"]
             )
-        elif "Signal Level" in wifiInfo:  # Linux
+        elif "Signal_Level" in wifiInfo:  # Linux
             self.SetEntitySensorValue(
-                key=self.keySignalStrength, value=wifiInfo["Signal Level"]
+                key=self.keySignalStrength, value=wifiInfo["Signal_Level"]
             )
         elif "agrCtlRSSI" in wifiInfo:
             self.SetEntitySensorValue(
