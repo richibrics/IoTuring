@@ -23,6 +23,7 @@ KEY_ENTITY_TYPE = "type"
 
 
 class FullConfiguration:
+    """Full configuration of all classes"""
 
     def __init__(self, config_dict: dict = BLANK_CONFIGURATION) -> None:
 
@@ -90,6 +91,11 @@ class FullConfiguration:
             config_category, single_config_dict))
 
     def GetAppSettings(self) -> "SingleConfiguration":
+        """Find the AppSettings single configuration
+
+        Returns:
+            SingleConfiguration: The AppSettings as a SingleConfiguration
+        """
         if self.GetConfigsInCategory(KEY_APP_SETTINGS):
             return self.GetConfigsInCategory(KEY_APP_SETTINGS)[0]
         else:
@@ -98,6 +104,7 @@ class FullConfiguration:
             return appconfig
 
     def ToDict(self) -> dict:
+        """Full configuration as a dict, for saving to file """
         config_dict = {}
         for config_category in BLANK_CONFIGURATION:
             config_dict[config_category] = []
@@ -108,6 +115,7 @@ class FullConfiguration:
 
 
 class SingleConfiguration:
+    """Single configuraiton of an entity or warehouse or AppSettings"""
 
     config_category: str
     type: str
@@ -115,6 +123,12 @@ class SingleConfiguration:
     configurations: dict
 
     def __init__(self, config_category: str, config_dict: dict) -> None:
+        """Create a new SingleConfiguration
+
+        Args:
+            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_APP_SETTINGS
+            config_dict (dict): All options as in config file
+        """
         self.config_category = config_category
 
         if KEY_ENTITY_TYPE in config_dict:
@@ -156,24 +170,56 @@ class SingleConfiguration:
         return str(self.GetType() + self.GetCategoryName())
 
     def GetCategoryName(self) -> str:
+        """ Get human readable singular name of the category of this configuration"""
         return CONFIG_CATEGORY_NAME[self.config_category]
 
     def GetConfigValue(self, config_key: str):
+        """Get the value of a config key
+
+        Args:
+            config_key (str): The key of the configuration
+
+        Raises:
+            ValueError: If the key is not found
+
+        Returns:
+            The value of the key.
+        """
         if config_key in self.configurations:
             return self.configurations[config_key]
         else:
             raise ValueError("Config key not set")
 
     def UpdateConfigValue(self, config_key: str, config_value: str) -> None:
+        """Update the value of the configuration. Overwrites existing value
+
+        Args:
+            config_key (str): The key of the configuration
+            config_value (str): The preferred value
+        """
         self.configurations[config_key] = config_value
 
     def UpdateConfigDict(self, config_dict: dict) -> None:
+        """Update all configurations with a dict. Overwrites existing values
+
+        Args:
+            config_dict (dict): The dict of configurations
+        """
         self.configurations.update(config_dict)
 
     def HasConfigKey(self, config_key: str) -> bool:
+        """Check if key has a value
+
+        Args:
+            config_key (str): The key of the configuration
+
+        Returns:
+            bool: If it has a value
+        """
         return bool(config_key in self.configurations)
 
     def ToDict(self) -> dict:
+        """Full configuration as a dict, as it would be saved to a file """
         full_dict = self.configurations
         if hasattr(self, KEY_ENTITY_TYPE):
             full_dict[KEY_ENTITY_TYPE] = getattr(self, KEY_ENTITY_TYPE)

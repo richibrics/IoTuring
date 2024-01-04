@@ -9,7 +9,7 @@ class ConfiguratorObject:
         self.configurations = single_configuration
 
     def GetConfigurations(self) -> dict:
-        """ return configuration as dict """
+        """ Return configuration as dict """
         return self.configurations.ToDict()
 
     def GetFromConfigurations(self, key):

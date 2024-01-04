@@ -22,11 +22,13 @@ LogLevelChoices = [{"name": l["string"], "value": l["const"]}
 
 
 class AppSettings(ConfiguratorObject, metaclass=Singleton):
+    """Singleton for storing AppSettings, not related to Entites or Warehouses """
 
     def __init__(self) -> None:
         pass
 
     def LoadConfiguration(self, configurator: "Configurator"):
+        """ Load/update configurations to the singleton """
         self.configurations = configurator.config.GetAppSettings()
         self.AddMissingDefaultConfigs()
 

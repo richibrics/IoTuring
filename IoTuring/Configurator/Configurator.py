@@ -167,7 +167,8 @@ class Configurator(LogObject):
         else:
             self.ManageSingleWarehouse(choice)
 
-    def ManageSettings(self):
+    def ManageSettings(self) -> None:
+        """ UI for changing AppSettings """
         preset = AppSettings.ConfigurationPreset()
 
         settingsChoices = []
@@ -199,6 +200,7 @@ class Configurator(LogObject):
                 self.ManageSettings()
 
     def ManageSingleSetting(self, q_preset: QuestionPreset):
+        """ UI for changing a single setting """
 
         appSettingsConfig = self.config.GetAppSettings()
 
@@ -215,6 +217,7 @@ class Configurator(LogObject):
         self.ManageSettings()
 
     def DisplayHelp(self) -> None:
+        """" Display the help message, and load the main menu """
         self.DisplayMessage(messages.HELP_MESSAGE)
         # Help message is too long:
         self.pinned_lines = 1
@@ -352,6 +355,12 @@ class Configurator(LogObject):
         return bool(self.config.GetConfigsOfType(whClass.NAME))
 
     def AddActiveClass(self, ioClass, config_category: str) -> None:
+        """Add a wh or Entity to configuration. 
+
+        Args:
+            ioClass: the WH or Entity class
+            config_category (str): KEY_ACTIVE_ENTITIES or KEY_ACTIVE_WAREHOUSES
+        """
         try:
             preset = ioClass.ConfigurationPreset()
 

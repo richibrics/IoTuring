@@ -61,5 +61,3 @@ class ConfiguratorLoader(LogObject):
     # - for each one:
     #   - pass the configuration to the warehouse function that uses the configuration to init the Warehouse
     #   - append the Warehouse to the list
-
-            

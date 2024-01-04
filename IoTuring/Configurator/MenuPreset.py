@@ -223,6 +223,7 @@ class MenuPreset():
         return next((entry for entry in self.results if entry.key == key), None)
 
     def GetPresetByKey(self, key: str) -> QuestionPreset | None:
+        """Get the QuestionPreset of this key. Returns None if not found"""
         return next((entry for entry in self.presets if entry.key == key), None)
 
     def GetDict(self) -> dict:
