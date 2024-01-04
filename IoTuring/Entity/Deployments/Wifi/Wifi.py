@@ -2,6 +2,7 @@ import re
 from socket import AddressFamily
 
 import psutil
+import locale
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity.Entity import Entity
@@ -163,26 +164,28 @@ class Wifi(Entity):
         if not wifiInfo:
             raise Exception("error while parsing wirelessInfo")
         # set signal strength
-        if hasattr(wifiInfo, "Signal"):  # Windows
+        if "Signal" in wifiInfo:  # Windows
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["Signal"]
             )
-        elif hasattr(wifiInfo, "Signal Level"):  # Linux
+        elif "Signal Level" in wifiInfo:  # Linux
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["Signal Level"]
             )
-        elif hasattr(wifiInfo, "agrCtlRSSI"):
+        elif "agrCtlRSSI" in wifiInfo:
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["agrCtlRSSI"]
             )
-        else:
-            raise Exception("no Signal Level found")
+        else: # if there is no signal level found the interface might not be connected to an access point
+            self.SetEntitySensorValue(
+                key=self.keySignalStrength, value="not connected"
+            )
         for key in self.patterns[self.platform]:
             extraKey = "EXTRA_KEY_" + key.upper().replace(" ", "_")
             self.SetEntitySensorExtraAttribute(
                 sensorDataKey=self.keySignalStrength,
                 attributeKey=globals()[extraKey],
-                attributeValue=wifiInfo[key],
+                attributeValue=wifiInfo[key] if key in wifiInfo else "not available",
             )
 
     def GetWirelessInfo(self, stdout):
@@ -212,15 +215,15 @@ class Wifi(Entity):
                 ):  # if there is nothing in stdout, nic is no wireless interface
                     continue
                 nicinfo = interfaces[interface]  # TODO Typehint
-                for family in nicinfo.family:
-                    if family.family == AddressFamily.AF_INET:
-                        nicip4 = family.address
+                for nicaddr in nicinfo:
+                    if nicaddr.family == AddressFamily.AF_INET:
+                        nicip4 = nicaddr.address
                         continue
-                    elif family.family == AddressFamily.AF_INET6:
-                        nicip6 = family.address
+                    elif nicaddr.family == AddressFamily.AF_INET6:
+                        nicip6 = nicaddr.address
                         continue
-                    elif family.family == psutil.AF_LINK:
-                        nicmac = family.address
+                    elif nicaddr.family == psutil.AF_LINK:
+                        nicmac = nicaddr.address
                         continue
 
                 NIC_CHOICES.append(
@@ -235,27 +238,80 @@ class Wifi(Entity):
                 )
         if OsD.IsWindows():
             p = OsD.RunCommand(["netsh", "wlan", "show", "interfaces"])
-            # TODO implement
+            if not (
+                p.stdout
+            ):  # if there is nothing in stdout, nic is no wireless interface
+                raise Exception("couldn't get netsh output")
+            output = p.stdout
+            numInterfacesMatch = re.search(r"There is (\d+) interface(?:s)? on the system", output)
+            numOfInterfaces = int(numInterfacesMatch.group(1))
+            if numOfInterfaces == 0:
+                raise Exception("no wireless interface found")
+            elif numOfInterfaces > 1:
+                raise Exception("more than one wireless interface not supported, create a github issue with the output of 'netsh wlan show interfaces' atached")
+            interfaceMatch = re.search(r"Name\s+:\s+(\w+)", output)
+            interfaceName = interfaceMatch.group(1)
+            nicinfo = interfaces[interfaceName]  # TODO Typehint
+            for nicaddr in nicinfo:
+                if nicaddr.family == AddressFamily.AF_INET:
+                    nicip4 = nicaddr.address
+                    continue
+                elif nicaddr.family == AddressFamily.AF_INET6:
+                    nicip6 = nicaddr.address
+                    continue
+                elif nicaddr.family == psutil.AF_LINK:
+                    nicmac = nicaddr.address
+                    continue
+
+            NIC_CHOICES.append(
+                    {
+                        "name": WIFI_CHOICE_STRING.format(
+                            interfaceName,
+                            nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
+                            nicmac,
+                        ),
+                        "value": interfaceName,
+                    }
+                )
+            
+            if OsD.IsMacos(): # TODO Test this code is mostly yolo'ed the linux way but with airport
+                for interface in interfaces:
+                    p = OsD.RunCommand(["airport", interface])
+                    if not (
+                        p.stdout
+                    ):  # if there is nothing in stdout, nic is no wireless interface
+                        continue
+                    nicinfo = interfaces[interface]  # TODO Typehint
+                    for nicaddr in nicinfo:
+                        if nicaddr.family == AddressFamily.AF_INET:
+                            nicip4 = nicaddr.address
+                            continue
+                        elif nicaddr.family == AddressFamily.AF_INET6:
+                            nicip6 = nicaddr.address
+                            continue
+                        elif nicaddr.family == psutil.AF_LINK:
+                            nicmac = nicaddr.address
+                            continue
+
+                    NIC_CHOICES.append(
+                        {
+                            "name": WIFI_CHOICE_STRING.format(
+                                interface,
+                                nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
+                                nicmac,
+                            ),
+                            "value": interface,
+                        }
+                    )
 
         preset = MenuPreset()
-        choiceAmount = len(NIC_CHOICES)
-        if not choiceAmount:
-            raise Exception("no wireless interfaces found")
-        elif choiceAmount == 1:
-            preset.AddEntry(
-                name="Is This the correct WiFi Interface",
-                key=CONFIG_KEY_WIFI,
-                mandatory=False,
-                question_type="yesno",
-            )
-        else:
-            preset.AddEntry(
-                name="Interface to check",
-                key=CONFIG_KEY_WIFI,
-                mandatory=True,
-                question_type="select",
-                choices=NIC_CHOICES,
-            )
+        preset.AddEntry(
+            name="Interface to check",
+            key=CONFIG_KEY_WIFI,
+            mandatory=True,
+            question_type="select",
+            choices=NIC_CHOICES,
+        )
         return preset
 
     @classmethod
@@ -267,7 +323,8 @@ class Wifi(Entity):
         elif OsD.IsWindows():
             if not OsD.CommandExists("netsh"):
                 raise Exception("netsh not found")
-
+            if "English" not in locale.getlocale():
+                raise Exception("locale not supported, create a github issue with the output of 'netsh wlan show interfaces' atached")
         elif OsD.IsMacos():
             if not OsD.CommandExists("airport"):
                 raise Exception("airport not found")
