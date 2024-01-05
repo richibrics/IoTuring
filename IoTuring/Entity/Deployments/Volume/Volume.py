@@ -25,21 +25,14 @@ class Volume(Entity):
     NAME = "Volume"
 
     def Initialize(self):
-        extra_attributes = False
 
-        if OsD.IsLinux():
-            if not OsD.CommandExists("pactl"):
-                raise Exception(
-                    "Only PulseAudio is supported on Linux! Please open an issue on Github!")
-        elif OsD.IsMacos():
-            extra_attributes = True
-        else:
-            raise Exception("System not supported!")
+        # Extra attributes only on macos:
+        extra_attributes = OsD.IsMacos()
 
         # Register:
         self.RegisterEntitySensor(EntitySensor(
             self, KEY_STATE,
-            supportsExtraAttributes=extra_attributes,  # Extra attributes only on macos
+            supportsExtraAttributes=extra_attributes,
             valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0))
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_CMD, self.Callback, KEY_STATE))
@@ -70,7 +63,8 @@ class Volume(Entity):
 
     def UpdateMac(self):
         # result like: output volume:44, input volume:89, alert volume:100, output muted:false
-        command = self.RunCommand(command=['osascript', '-e', 'get volume settings'])
+        command = self.RunCommand(
+            command=['osascript', '-e', 'get volume settings'])
         result = command.stdout.strip().split(',')
 
         output_volume = result[0].split(':')[1]
@@ -87,3 +81,12 @@ class Volume(Entity):
             KEY_STATE, EXTRA_KEY_ALERT_VOLUME, alert_volume, valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0)
         self.SetEntitySensorExtraAttribute(
             KEY_STATE, EXTRA_KEY_MUTED_OUTPUT, output_muted)
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.IsLinux():
+            if not OsD.CommandExists("pactl"):
+                raise Exception(
+                    "Only PulseAudio is supported on Linux! Please open an issue on Github!")
+        elif not OsD.IsMacos():
+            raise cls.UnsupportedOsException()

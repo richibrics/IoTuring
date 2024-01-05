@@ -25,27 +25,12 @@ class Lock(Entity):
     NAME = "Lock"
 
     def Initialize(self):
-        self.os = OsD.GetOs()
-        self.de = De.GetDesktopEnvironment()
 
-        if self.os not in commands:
-            raise Exception("Unsupported operating system for this entity")
+        if OsD.IsLinux():
+            self.command = self.GetLinuxCommand()
 
-        # Fallback to base, if unsupported de:
-        if self.de == "base" or self.de not in commands[self.os]:
-            desktops = ["base"]
-
-        # supported de, add base as fallback:
         else:
-            desktops = [self.de, "base"]
-
-        # Check if command works:
-        try:
-            self.command = next((commands[self.os][de] for de in desktops
-                                 if OsD.CommandExists(commands[self.os][de].split()[0])))
-
-        except StopIteration:
-            raise Exception(f"No lock command found for this system")
+            self.command = commands[OsD.GetOs()][De.GetDesktopEnvironment()]
 
         self.Log(self.LOG_DEBUG, f"Found lock command: {self.command}")
 
@@ -54,3 +39,24 @@ class Lock(Entity):
 
     def Callback_Lock(self, message):
         self.RunCommand(command=self.command)
+
+    @classmethod
+    def GetLinuxCommand(cls) -> str:
+        """ Get lock command for this DesktopEnvironment. Raises Exception if not found """
+        try:
+            cmd = next((commands[OsD.GetOs()][de] for de in [De.GetDesktopEnvironment(), "base"]
+                        if OsD.CommandExists(commands[OsD.GetOs()][de].split()[0])))
+            return cmd
+        except StopIteration:
+            raise Exception(f"No lock command found for this system")
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.GetOs() not in commands:
+            raise cls.UnsupportedOsException()
+
+        if OsD.IsLinux():
+            try:
+                cls.GetLinuxCommand()
+            except Exception as e:
+                raise Exception("Lock command error: " + str(e))

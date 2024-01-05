@@ -58,7 +58,7 @@ def loop():
             # Check old location:
             configurator.CheckFile()
 
-            configurator.Menu(clear_screen=False)
+            configurator.Menu()
         except KeyboardInterrupt:
             logger.Log(Logger.LOG_WARNING, "Configurator",
                        "Configuration NOT saved")

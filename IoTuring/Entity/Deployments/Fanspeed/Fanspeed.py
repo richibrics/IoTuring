@@ -20,21 +20,16 @@ class Fanspeed(Entity):
     def Initialize(self) -> None:
         """Initialize the Class, setup Formatter, determin specificInitialize and specificUpdate depending on OS"""
 
-        self.specificInitialize = None
-        self.specificUpdate = None
+        InitFunction = {
+            OsD.LINUX: self.InitLinux
+        }
 
-        if OsD.IsLinux():
-            # psutil docs: no attribute -> system not supported
-            if not hasattr(psutil, "sensors_fans"):
-                raise Exception("System not supported by psutil")
-            # psutil docs: empty dict -> no fancontrollers reporting
-            if not bool(psutil.sensors_fans()):
-                raise Exception("No fan found in system")
-            self.specificInitialize = self.InitLinux
-            self.specificUpdate = self.UpdateLinux
+        UpdateFunction = {
+            OsD.LINUX: self.UpdateLinux
+        }
 
-        else:
-            raise NotImplementedError
+        self.specificInitialize = InitFunction[OsD.GetOs()]
+        self.specificUpdate = UpdateFunction[OsD.GetOs()]
 
         self.specificInitialize()
 
@@ -93,3 +88,16 @@ class Fanspeed(Entity):
                         fan.current,
                         valueFormatterOptions=VALUEFORMATTEROPTIONS_FANSPEED_RPM,
                     )
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.IsLinux():
+            # psutil docs: no attribute -> system not supported
+            if not hasattr(psutil, "sensors_fans"):
+                raise Exception("System not supported by psutil")
+            # psutil docs: empty dict -> no fancontrollers reporting
+            if not bool(psutil.sensors_fans()):
+                raise Exception("No fan found in system")
+
+        else:
+            raise cls.UnsupportedOsException()

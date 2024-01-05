@@ -1,4 +1,6 @@
 import os
+import subprocess
+import shutil
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
@@ -33,7 +35,7 @@ class Configurator(LogObject):
 
     def __init__(self) -> None:
 
-        self.pinned_message = False
+        self.pinned_lines = 1
 
         self.configuratorIO = ConfiguratorIO.ConfiguratorIO()
         self.config = self.LoadConfigurations()
@@ -88,11 +90,8 @@ class Configurator(LogObject):
 
             self.Log(self.LOG_WARNING, "No editor found")
 
-    def Menu(self, clear_screen: bool = True) -> None:
+    def Menu(self) -> None:
         """ UI for Entities and Warehouses settings """
-
-        if not clear_screen:
-            self.pinned_message = True
 
         mainMenuChoices = [
             {"name": "Manage entities", "value": self.ManageEntities},
@@ -126,6 +125,7 @@ class Configurator(LogObject):
         manageEntitiesChoices = [
             CHOICE_GO_BACK,
             {"name": "+ Add a new entity", "value": "AddNewEntity"},
+            {"name": "? Unsupported entities", "value": "UnsupportedEntities"},
             Separator()
         ] + manageEntitiesChoices
 
@@ -136,6 +136,8 @@ class Configurator(LogObject):
 
         if choice == "AddNewEntity":
             self.SelectNewEntity(ecm)
+        elif choice == "UnsupportedEntities":
+            self.ShowUnsupportedEntities(ecm)
         elif choice == CHOICE_GO_BACK:
             self.Menu()
         else:
@@ -171,6 +173,8 @@ class Configurator(LogObject):
 
     def DisplayHelp(self) -> None:
         self.DisplayMessage(messages.HELP_MESSAGE)
+        # Help message is too long:
+        self.pinned_lines = 1
         self.Menu()
 
     def Quit(self) -> None:
@@ -249,7 +253,10 @@ class Configurator(LogObject):
     def SelectNewEntity(self, ecm: EntityClassManager):
         """ UI to add a new Entity """
 
-        entityList = ecm.ListAvailableClassesNames()
+        # entity classnames without unsupported entities:
+        entityList = [
+            e.NAME for e in ecm.ListAvailableClasses() if e.SystemSupported()]
+
         # Now I remove the entities that are active and that do not allow multi instances
         for activeEntity in self.config[KEY_ACTIVE_ENTITIES]:
             entityClass = ecm.GetClassFromName(
@@ -270,8 +277,7 @@ class Configurator(LogObject):
         choice = self.DisplayMenu(
             choices=sorted(entityList),
             message="Available entities:",
-            instruction="if you don't see the entity you want, it may be already active and may not accept another version of itself"
-
+            instruction="if you don't see the entity, it may be already active and not accept another activation, or not supported by your system"
         )
 
         if choice == CHOICE_GO_BACK:
@@ -279,20 +285,44 @@ class Configurator(LogObject):
         else:
             self.AddActiveEntity(choice, ecm)
 
+    def ShowUnsupportedEntities(self, ecm: EntityClassManager):
+        """ UI to show unsupported entities """
+
+        # entity classnames without unsupported entities:
+        unsupportedEntityList = []
+        for eClass in ecm.ListAvailableClasses():
+            try:
+                eClass.CheckSystemSupport()
+            except Exception as e:
+                unsupportedEntityList.append(f"\t{eClass.NAME}: {str(e)}")
+
+        if not unsupportedEntityList:
+            self.DisplayMessage("No unsupported entities :)")
+
+        else:
+            msg = "\n".join(sorted(unsupportedEntityList))
+            self.DisplayMessage("Unsupported entities:\n" + msg)
+
+        self.ManageEntities()
+
     def AddActiveEntity(self, entityName, ecm: EntityClassManager):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
         entityClass = ecm.GetClassFromName(entityName)
         try:
-            preset = entityClass.ConfigurationPreset()  # type: ignore
+            if not entityClass:
+                raise Exception(f"Entityclass not found: {entityName}")
+
+            preset = entityClass.ConfigurationPreset()
 
             if preset.HasQuestions():
                 # Ask for Tag if the entity allows multi-instance - multi-instance has sense only if a preset is available
-                if entityClass.AllowMultiInstance():  # type: ignore
+                if entityClass.AllowMultiInstance():
                     preset.AddTagQuestion()
 
                 self.DisplayMessage(messages.PRESET_RULES)
                 self.DisplayMessage(f"Configure {entityName} Entity")
                 preset.AskQuestions()
+                self.ClearScreen(force_clear=True)
 
             else:
                 self.DisplayMessage(
@@ -347,6 +377,7 @@ class Configurator(LogObject):
             if preset.HasQuestions():
                 self.DisplayMessage(messages.PRESET_RULES)
                 preset.AskQuestions()
+                self.ClearScreen(force_clear=True)
 
             else:
                 self.DisplayMessage(
@@ -398,29 +429,25 @@ class Configurator(LogObject):
         _dict = preset.GetDict()
         _dict[KEY_WAREHOUSE_TYPE] = whName.replace("Warehouse", "")
         self.config[KEY_ACTIVE_WAREHOUSES].append(_dict)
-        print("Configuration added for \""+whName+"\" :)")
+        self.DisplayMessage("Configuration added for \""+whName+"\" :)")
 
     def EntityMenuPresetToConfiguration(self, entityName, preset) -> None:
         """ Get a MenuPreset with responses and add the entries to the configurations dict in entity part """
         _dict = preset.GetDict()
         _dict[KEY_ENTITY_TYPE] = entityName
         self.config[KEY_ACTIVE_ENTITIES].append(_dict)
-        print("Configuration added for \""+entityName+"\" :)")
+        self.DisplayMessage("Configuration added for \""+entityName+"\" :)")
 
-    def ClearScreen(self, pin_next_message=False):
-        """ Clear the screen on any platform. If self.pinned_message is True, it won't be cleared.
+    def ClearScreen(self, force_clear=False):
+        """ Clear the screen on any platform. If self.pinned_lines greater than zero, it won't be cleared.
 
         Args:
-            pin_next_message (bool, optional): Set self.pinned_message after clear. Defaults to False.
+            force_clear (bool, optional): Clear even pinned messages. Defaults to False.
         """
 
-        if not self.pinned_message:
+        if self.pinned_lines == 0 or force_clear:
             self.ClearTerminal()
-
-        if pin_next_message:
-            self.pinned_message = True
-        else:
-            self.pinned_message = False
+            self.pinned_lines = 0
 
     def DisplayMenu(self, choices: list, message: str = "", add_back_choice=True, **kwargs):
         """ Wrapper for inquirer.select
@@ -440,9 +467,37 @@ class Configurator(LogObject):
                        ] + choices
 
         if "max_height" not in kwargs:
+
+            # Default max_height:
             kwargs["max_height"] = "100%"
 
+            # Actual lines in the terminal. fallback to 0 on error:
+            terminal_lines = shutil.get_terminal_size(fallback=(0, 0)).lines
+
+            # Check for pinned messages:
+            if terminal_lines > 0 and self.pinned_lines > 0:
+
+                # Lines of message and instruction if too long:
+                if "instruction" in kwargs:
+                    message_lines = ((len(kwargs["instruction"]) + len(message) + 3)
+                                     / shutil.get_terminal_size().columns) // 1
+                # Add only the line of the message:
+                else:
+                    message_lines = 1
+
+                # Calculate nr of lines required to display:
+                required_lines = len(choices) + \
+                    self.pinned_lines + message_lines
+
+                # Set the calculated height:
+                if required_lines > terminal_lines:
+                    kwargs["max_height"] = terminal_lines \
+                        - self.pinned_lines - message_lines
+
         self.ClearScreen()
+        # Reset pinned lines:
+        self.pinned_lines = 0
+
         prompt = inquirer.select(
             message=message, choices=choices, **kwargs)
 
@@ -462,9 +517,9 @@ class Configurator(LogObject):
             message (str): The message to display
             force_clear (bool): clear screen regardless previous
         """
-        if force_clear:
-            self.pinned_message = False
-        self.ClearScreen(pin_next_message=True)
+
+        self.ClearScreen(force_clear)
+        self.pinned_lines += message.count('\n') + 2
         print(message)
         print()
 

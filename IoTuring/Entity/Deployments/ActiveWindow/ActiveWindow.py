@@ -27,35 +27,15 @@ class ActiveWindow(Entity):
 
     def Initialize(self):
 
-        # Specific function for this os/de, set this here to avoid all OS
-        # filters on Update
-        self.UpdateSpecificFunction = None
+        UpdateFunction = {
+            OsD.LINUX: self.GetActiveWindow_Linux,
+            OsD.WINDOWS: self.GetActiveWindow_Windows,
+            OsD.MACOS: self.GetActiveWindow_macOS
+        }
 
-        if OsD.IsLinux():
-            if De.IsWayland():
-                raise Exception("Wayland is not supported")
-            elif not OsD.CommandExists("xprop"):
-                raise Exception("No xprop command found!")
-            else:
-                self.UpdateSpecificFunction = self.GetActiveWindow_Linux
+        self.UpdateSpecificFunction = UpdateFunction[OsD.GetOs()]
 
-        elif OsD.IsWindows():
-            if windows_support:
-                self.UpdateSpecificFunction = self.GetActiveWindow_Windows
-            else:
-                raise Exception("Unsatisfied dependencies for this entity")
-
-        elif OsD.IsMacos():
-            if macos_support:
-                self.UpdateSpecificFunction = self.GetActiveWindow_macOS
-            else:
-                raise Exception("Unsatisfied dependencies for this entity")
-        else:
-            raise Exception(
-                'Entity not available for this operating system')
-
-        if self.UpdateSpecificFunction:
-            self.RegisterEntitySensor(EntitySensor(self, KEY))
+        self.RegisterEntitySensor(EntitySensor(self, KEY))
 
     def Update(self):
         if self.UpdateSpecificFunction:
@@ -96,3 +76,20 @@ class ActiveWindow(Entity):
                     return match.group('name').strip('"')
 
         return 'Inactive'
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.IsLinux():
+            if De.IsWayland():
+                raise Exception("Wayland is not supported")
+            elif not OsD.CommandExists("xprop"):
+                raise Exception("No xprop command found!")
+
+        elif OsD.IsWindows() or OsD.IsMacos():
+
+            if (OsD.IsWindows() and not windows_support) or\
+                    (OsD.IsMacos() and not macos_support):
+                raise Exception("Unsatisfied dependencies for this entity")
+
+        else:
+            raise cls.UnsupportedOsException()
