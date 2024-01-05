@@ -239,9 +239,7 @@ class Wifi(Entity):
             
             for interface in interfaces:
                 p = OsD.RunCommand(["iwconfig", interface])
-                if not (
-                    p.stdout
-                ):  # if there is nothing in stdout, nic is no wireless interface
+                if p.returncode > 0: # if the returncode is 0 iwconfig succeeded, else continue with next interface
                     continue
                 nicinfo = interfaces[interface]  # TODO Typehint
                 for nicaddr in nicinfo:
@@ -264,10 +262,8 @@ class Wifi(Entity):
                 raise Exception("locale not supported, create a github issue with the output of 'netsh wlan show interfaces' atached")
             
             p = OsD.RunCommand(["netsh", "wlan", "show", "interfaces"])
-            if not (
-                p.stdout
-            ):  # if there is nothing in stdout, nic is no wireless interface
-                raise Exception("couldn't get netsh output")
+            if p.returncode > 0: # if the returncode is 0 iwconfig succeeded, else continue with next interface
+                continue
             output = p.stdout
             numInterfacesMatch = re.search(r"There is (\d+) interface(?:s)? on the system", output)
             numOfInterfaces = int(numInterfacesMatch.group(1))
@@ -299,9 +295,7 @@ class Wifi(Entity):
                 raise Exception("airport not found")
             for interface in interfaces: # TODO Test this code is mostly yolo'ed the linux way but with airport
                     p = OsD.RunCommand(["airport", interface])
-                    if not (
-                        p.stdout
-                    ):  # if there is nothing in stdout, nic is no wireless interface
+                    if p.returncode > 0: # if the returncode is 0 iwconfig succeeded, else continue with next interface
                         continue
                     nicinfo = interfaces[interface]  # TODO Typehint
                     for nicaddr in nicinfo:
