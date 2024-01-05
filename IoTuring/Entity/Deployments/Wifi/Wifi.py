@@ -17,6 +17,7 @@ valueFormatterOptions = ValueFormatterOptions(ValueFormatterOptions.TYPE_RADIOPO
 WIFI_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
 CONFIG_KEY_WIFI = "wifi"
+NIC_CHOICES = []
 
 KEY_SIGNAL_STRENGTH_PERCENT = "signal_strength_percent"
 KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
@@ -200,15 +201,42 @@ class Wifi(Entity):
         return wifi_info
 
     @classmethod
-    def ConfigurationPreset(cls) -> MenuPreset:
-        NIC_CHOICES = []
+    def ConfigurationPreset(cls) -> MenuPreset:         
 
-        nicip4 = ""
-        nicip6 = ""
-        nicmac = ""
+        preset = MenuPreset()
+        preset.AddEntry(
+            name="Interface to check",
+            key=CONFIG_KEY_WIFI,
+            mandatory=True,
+            question_type="select",
+            choices=NIC_CHOICES
+        )
+        return preset
+
+    @classmethod
+    def CheckSystemSupport(cls):
+
+        def appendNicChoice(interfaceName, nicip4 = "", nicip6 = "", nicmac = ""):
+            NIC_CHOICES.append(
+                    {
+                        "name": WIFI_CHOICE_STRING.format(
+                            interfaceName,
+                            nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
+                            nicmac,
+                        ),
+                        "value": interfaceName,
+                    }
+                )
+
+        ip4 = ""
+        ip6 = ""
+        mac = ""
         interfaces = psutil.net_if_addrs()
 
         if OsD.IsLinux():
+            if not OsD.CommandExists("iwconfig"):
+                raise Exception("iwconfig not found")
+            
             for interface in interfaces:
                 p = OsD.RunCommand(["iwconfig", interface])
                 if not (
@@ -218,26 +246,23 @@ class Wifi(Entity):
                 nicinfo = interfaces[interface]  # TODO Typehint
                 for nicaddr in nicinfo:
                     if nicaddr.family == AddressFamily.AF_INET:
-                        nicip4 = nicaddr.address
+                        ip4 = nicaddr.address
                         continue
                     elif nicaddr.family == AddressFamily.AF_INET6:
-                        nicip6 = nicaddr.address
+                        ip6 = nicaddr.address
                         continue
                     elif nicaddr.family == psutil.AF_LINK:
-                        nicmac = nicaddr.address
+                        mac = nicaddr.address
                         continue
 
-                NIC_CHOICES.append(
-                    {
-                        "name": WIFI_CHOICE_STRING.format(
-                            interface,
-                            nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
-                            nicmac,
-                        ),
-                        "value": interface,
-                    }
-                )
-        if OsD.IsWindows():
+                appendNicChoice(interface, ip4, ip6, mac)  
+
+        elif OsD.IsWindows():
+            if not OsD.CommandExists("netsh"):
+                raise Exception("netsh not found")
+            elif "English" not in locale.getlocale():
+                raise Exception("locale not supported, create a github issue with the output of 'netsh wlan show interfaces' atached")
+            
             p = OsD.RunCommand(["netsh", "wlan", "show", "interfaces"])
             if not (
                 p.stdout
@@ -255,28 +280,24 @@ class Wifi(Entity):
             nicinfo = interfaces[interfaceName]  # TODO Typehint
             for nicaddr in nicinfo:
                 if nicaddr.family == AddressFamily.AF_INET:
-                    nicip4 = nicaddr.address
+                    ip4 = nicaddr.address
                     continue
                 elif nicaddr.family == AddressFamily.AF_INET6:
-                    nicip6 = nicaddr.address
+                    ip6 = nicaddr.address
                     continue
                 elif nicaddr.family == psutil.AF_LINK:
-                    nicmac = nicaddr.address
+                    mac = nicaddr.address
                     continue
 
-            NIC_CHOICES.append(
-                    {
-                        "name": WIFI_CHOICE_STRING.format(
-                            interfaceName,
-                            nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
-                            nicmac,
-                        ),
-                        "value": interfaceName,
-                    }
-                )
+            appendNicChoice(interface, ip4, ip6, mac)
+
             
-            if OsD.IsMacos(): # TODO Test this code is mostly yolo'ed the linux way but with airport
-                for interface in interfaces:
+            
+
+        elif OsD.IsMacos(): 
+            if not OsD.CommandExists("airport"):
+                raise Exception("airport not found")
+            for interface in interfaces: # TODO Test this code is mostly yolo'ed the linux way but with airport
                     p = OsD.RunCommand(["airport", interface])
                     if not (
                         p.stdout
@@ -285,50 +306,16 @@ class Wifi(Entity):
                     nicinfo = interfaces[interface]  # TODO Typehint
                     for nicaddr in nicinfo:
                         if nicaddr.family == AddressFamily.AF_INET:
-                            nicip4 = nicaddr.address
+                            ip4 = nicaddr.address
                             continue
                         elif nicaddr.family == AddressFamily.AF_INET6:
-                            nicip6 = nicaddr.address
+                            ip6 = nicaddr.address
                             continue
                         elif nicaddr.family == psutil.AF_LINK:
-                            nicmac = nicaddr.address
+                            mac = nicaddr.address
                             continue
 
-                    NIC_CHOICES.append(
-                        {
-                            "name": WIFI_CHOICE_STRING.format(
-                                interface,
-                                nicip4 if nicip4 else nicip6,  # defaults to showing ipv4
-                                nicmac,
-                            ),
-                            "value": interface,
-                        }
-                    )
-
-        preset = MenuPreset()
-        preset.AddEntry(
-            name="Interface to check",
-            key=CONFIG_KEY_WIFI,
-            mandatory=True,
-            question_type="select",
-            choices=NIC_CHOICES,
-        )
-        return preset
-
-    @classmethod
-    def CheckSystemSupport(cls):
-        if OsD.IsLinux():
-            if not OsD.CommandExists("iwconfig"):
-                raise Exception("iwconfig not found")
-
-        elif OsD.IsWindows():
-            if not OsD.CommandExists("netsh"):
-                raise Exception("netsh not found")
-            if "English" not in locale.getlocale():
-                raise Exception("locale not supported, create a github issue with the output of 'netsh wlan show interfaces' atached")
-        elif OsD.IsMacos():
-            if not OsD.CommandExists("airport"):
-                raise Exception("airport not found")
+                    appendNicChoice(interface, ip4, ip6, mac)
 
         else:
             raise Exception("OS detection failed")
