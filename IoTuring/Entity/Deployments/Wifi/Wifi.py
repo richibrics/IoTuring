@@ -263,7 +263,7 @@ class Wifi(Entity):
             
             p = OsD.RunCommand(["netsh", "wlan", "show", "interfaces"])
             if p.returncode > 0: # if the returncode is 0 iwconfig succeeded, else continue with next interface
-                continue
+                raise Exception("RunCommand netsh returncode > 0")
             output = p.stdout
             numInterfacesMatch = re.search(r"There is (\d+) interface(?:s)? on the system", output)
             numOfInterfaces = int(numInterfacesMatch.group(1))
