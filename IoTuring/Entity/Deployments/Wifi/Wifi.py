@@ -82,7 +82,7 @@ class Wifi(Entity):
         self.commands = {
             OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
             OsD.LINUX: ["iwconfig", self.wifiInterface],
-            OsD.MACOS: ["airport", "-I"],
+            OsD.MACOS: ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
         }
         self.patterns = {
             OsD.WINDOWS: {
