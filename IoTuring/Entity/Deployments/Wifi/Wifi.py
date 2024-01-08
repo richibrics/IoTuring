@@ -82,7 +82,7 @@ class Wifi(Entity):
         self.commands = {
             OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
             OsD.LINUX: ["iwconfig", self.wifiInterface],
-            OsD.MACOS: ["airport", "I"],
+            OsD.MACOS: ["airport", "-I"],
         }
         self.patterns = {
             OsD.WINDOWS: {
@@ -160,23 +160,23 @@ class Wifi(Entity):
                     "Missed_beacon": r"Missed beacon:(\d+)",
                 },
             },
-            OsD.MACOS: {
+            OsD.MACOS: { # no language differentiation in macos: always english
                 "en": {
-                "agrCtlRSSI": r"agrCtlRSSI:\s+(-?\d+)",
-                "agrExtRSSI": r"agrExtRSSI:\s+(-?\d+)",
-                "agrCtlNoise": r"agrCtlNoise:\s+(-?\d+)",
-                "agrExtNoise": r"agrExtNoise:\s+(-?\d+)",
-                "state": r"state:\s+(\w+)",
-                "op mode": r"op mode:\s+(\w+)",
-                "lastTxRate": r"lastTxRate:\s+(\d+)",
-                "maxRate": r"maxRate:\s+(\d+)",
-                "lastAssocStatus": r"lastAssocStatus:\s+(\d+)",
-                "802.11 auth": r"802\.11 auth:\s+(\w+)",
-                "link auth": r"link auth:\s+(\w+-\w+)",
-                "BSSID": r"BSSID:\s+([\w:]+)",
-                "SSID": r"SSID:\s+([\w\s]+)",
-                "MCS": r"MCS:\s+(\d+)",
-                "channel": r"channel:\s+([\d,]+)",
+                    "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
+                    "agrExtRSSI": r"[^\n][\s]*agrExtRSSI:\s+(-?\d+)\n",
+                    "agrCtlNoise": r"[^\n][\s]*agrCtlNoise:\s+(-?\d+)\n",
+                    "agrExtNoise": r"[^\n][\s]*agrExtNoise:\s+(-?\d+)\n",
+                    "state": r"[^\n][\s]*state:\s+(\w+)\n",
+                    "op mode": r"[^\n][\s]*op mode:\s+(\w+)\n",
+                    "lastTxRate": r"[^\n][\s]*lastTxRate:\s+(\d+)\n",
+                    "maxRate": r"[^\n][\s]*maxRate:\s+(\d+)\n",
+                    "lastAssocStatus": r"[^\n][\s]*lastAssocStatus:\s+(\d+)\n",
+                    "802.11 auth": r"[^\n][\s]*802\.11 auth:\s+(\w+)\n",
+                    "link auth": r"[^\n][\s]*link auth:\s+(\w+-\w+)\n",
+                    "BSSID": r"[^\n][\s]*BSSID:\s+([\w:]+)\n",
+                    "SSID": r"\n[\s]*SSID:\s+([\w\s]+)\n",
+                    "MCS": r"[^\n][\s]*MCS:\s+(\d+)\n",
+                    "channel": r"[^\n][\s]*channel:\s+([\d,]+)\n",
                 }
             },
         }
@@ -184,8 +184,11 @@ class Wifi(Entity):
         self.locale_str, _ = locale.getlocale()
         self.language: str = self.locale_str.split("_")[0]
 
+        # In macos trick the language to be english since the output of airport is always in english
+        if OsD.IsMacos():
+            self.language = "en"
 
-        if self.platform == OsD.WINDOWS:
+        if OsD.IsWindows():
             self.keySignalStrength = KEY_SIGNAL_STRENGTH_PERCENT
             self.valueFormatterOptionsSignalStrength =  VALUEFORMATTEROPTIONS_PERCENTAGE
         else:
@@ -223,8 +226,10 @@ class Wifi(Entity):
             )
         else:  # if there is no signal level found the interface might not be connected to an access point
             self.SetEntitySensorValue(key=self.keySignalStrength, value="not connected")
+
+        # Extra attributes
         for key in self.patterns[self.platform][self.language]:
-            extraKey = "EXTRA_KEY_" + key.upper().replace(" ", "_")
+            extraKey = "EXTRA_KEY_" + key.upper().replace(" ", "_").replace(".", "_")
             if key in wifiInfo:
                 attributevalue = wifiInfo[key] 
             elif self.showNA:
