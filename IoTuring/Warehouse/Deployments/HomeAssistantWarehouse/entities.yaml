@@ -99,7 +99,6 @@ Volume:
   custom_type: number
 Wifi:
   icon: mdi:wifi
-  unit_of_measurement: dBm
 TerminalPayloadCommand:
   name: Terminal Command
   icon: mdi:console-line
