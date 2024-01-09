@@ -16,6 +16,7 @@ WIFI_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
 CONFIG_KEY_WIFI = "wifi"
 CONFIG_KEY_SHOW_NA = "show_na"
+CONFIG_KEY_SIGNAL_UNIT = ""
 
 KEY_SIGNAL_STRENGTH_PERCENT = "signal_strength_percent"
 KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
@@ -76,8 +77,13 @@ class Wifi(Entity):
     ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self):
-        self.wifiInterface = self.GetFromConfigurations(CONFIG_KEY_WIFI)
-        self.showNA = True if self.GetFromConfigurations(CONFIG_KEY_SHOW_NA) == "Y" else False
+        self.platform = OsD.GetOs()
+        self.locale_str, _ = locale.getlocale()
+        self.language: str = self.locale_str.split("_")[0]
+
+        self.config = self.GetConfigurations()
+        self.wifiInterface = self.config[CONFIG_KEY_WIFI]
+        self.signalUnit = self.config[CONFIG_KEY_SIGNAL_UNIT] if CONFIG_KEY_SIGNAL_UNIT in self.config else "dBm"
 
         self.commands = {
             OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
@@ -180,9 +186,7 @@ class Wifi(Entity):
                 }
             },
         }
-        self.platform = OsD.GetOs()
-        self.locale_str, _ = locale.getlocale()
-        self.language: str = self.locale_str.split("_")[0]
+
 
         # In macos trick the language to be english since the output of airport is always in english
         if OsD.IsMacos():
@@ -198,9 +202,9 @@ class Wifi(Entity):
         self.RegisterEntitySensor(
             EntitySensor(
                 self,
-                self.keySignalStrength,
+                key=self.keySignalStrength,
                 supportsExtraAttributes=True,
-                valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE if self.platform == OsD.WINDOWS else VALUEFORMATTEROPTIONS_DBM
+                valueFormatterOptions=self.valueFormatterOptionsSignalStrength
                 ),
             )
 
@@ -213,9 +217,14 @@ class Wifi(Entity):
             raise Exception("error while parsing wirelessInfo")
         # set signal strength
         if self.platform == OsD.WINDOWS and "Signal" in wifiInfo:
-            self.SetEntitySensorValue(
-                key=self.keySignalStrength, value=wifiInfo["Signal"]
-            )
+            if self.signalUnit == "%":
+                self.SetEntitySensorValue(
+                    key=self.keySignalStrength, value=wifiInfo["Signal"]
+                )
+            elif self.signalUnit == "dBm":
+                self.SetEntitySensorValue(
+                    key=self.keySignalStrength, value=self.PercentToDbm(int(wifiInfo["Signal"]))
+                )
         elif self.platform == OsD.LINUX and "Signal_Level" in wifiInfo:
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["Signal_Level"]
@@ -254,6 +263,7 @@ class Wifi(Entity):
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         NIC_CHOICES = Wifi.GetWifiNics(getInfo=True)
+        SIGNAL_CHOICES = ["%", "dBm"]
 
         preset = MenuPreset()
         preset.AddEntry(
@@ -263,13 +273,23 @@ class Wifi(Entity):
             question_type="select",
             choices=NIC_CHOICES,
         )
-        preset.AddEntry(
-            name="if attribute is not available, show it",
-            key=CONFIG_KEY_SHOW_NA,
-            mandatory=False,
-            question_type="yesno",
-        )
+        if OsD.IsWindows():
+            preset.AddEntry(
+                name="Signal Quality in dBm or percent",
+                key=CONFIG_KEY_SIGNAL_UNIT,
+                mandatory=True,
+                question_type="select",
+                choices=SIGNAL_CHOICES,
+            )
         return preset
+
+    @staticmethod
+    def PercentToDbm(percentage):
+        return (percentage / 2) - 100
+    
+    @staticmethod
+    def DbmToPercent(dbm):
+        return 2 * (dbm + 100)
 
     @staticmethod
     def GetWifiNics(getInfo=True):
