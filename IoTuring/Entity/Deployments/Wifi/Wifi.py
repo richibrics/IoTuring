@@ -11,15 +11,20 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 VALUEFORMATTEROPTIONS_DBM = ValueFormatterOptions(ValueFormatterOptions.TYPE_RADIOPOWER)
-VALUEFORMATTEROPTIONS_PERCENTAGE = ValueFormatterOptions(ValueFormatterOptions.TYPE_PERCENTAGE)
+VALUEFORMATTEROPTIONS_PERCENTAGE = ValueFormatterOptions(
+    ValueFormatterOptions.TYPE_PERCENTAGE
+)
+
 WIFI_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
 CONFIG_KEY_WIFI = "wifi"
-CONFIG_KEY_SHOW_NA = "show_na"
-CONFIG_KEY_SIGNAL_UNIT = ""
+
+SIGNAL_UNIT = "dBm"  # windows also supports "%"
+SHOW_NA = False  # don't show not available extraAttributes
 
 KEY_SIGNAL_STRENGTH_PERCENT = "signal_strength_percent"
 KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
+
 # WINDOWS
 EXTRA_KEY_NAME = "name"
 EXTRA_KEY_DESCRIPTION = "description"
@@ -78,17 +83,23 @@ class Wifi(Entity):
 
     def Initialize(self):
         self.platform = OsD.GetOs()
-        self.locale_str, _ = locale.getlocale()
+        self.locale_str, _ = locale.getdefaultlocale()
         self.language: str = self.locale_str.split("_")[0]
+        self.showNA = SHOW_NA
 
-        self.config = self.GetConfigurations()
-        self.wifiInterface = self.config[CONFIG_KEY_WIFI]
-        self.signalUnit = self.config[CONFIG_KEY_SIGNAL_UNIT] if CONFIG_KEY_SIGNAL_UNIT in self.config else "dBm"
+        # In macos trick the language to be english since the output of airport is always in english
+        if OsD.IsMacos():
+            self.language = "en"
+
+        self.wifiInterface = self.GetFromConfigurations(CONFIG_KEY_WIFI)
 
         self.commands = {
             OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
             OsD.LINUX: ["iwconfig", self.wifiInterface],
-            OsD.MACOS: ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
+            OsD.MACOS: [
+                "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
+                "-I",
+            ],
         }
         self.patterns = {
             OsD.WINDOWS: {
@@ -127,7 +138,7 @@ class Wifi(Entity):
                     "Empfangsrate (Mbps)": r"Empfangsrate \(Mbps\):\s+([\d.]+)",
                     "Übertragungsrate (Mbps)": r"Übertragungsrate \(Mbps\):\s+([\d.]+)",
                     "Signal": r"Signal:\s+(\d+%?)",
-                    "Profil": r"Profil:\s+(.+)"
+                    "Profil": r"Profil:\s+(.+)",
                 },
                 "sp": {
                     "Nombre de interfaz": r"Nombre de interfaz:\s+(.+)",
@@ -145,11 +156,11 @@ class Wifi(Entity):
                     "Velocidad de recepción (Mbps)": r"Velocidad de recepción \(Mbps\):\s+([\d.]+)",
                     "Velocidad de transmisión (Mbps)": r"Velocidad de transmisión \(Mbps\):\s+([\d.]+)",
                     "Señal": r"Señal:\s+(\d+%?)",
-                    "Perfil": r"Perfil:\s+(.+)"
-                }
+                    "Perfil": r"Perfil:\s+(.+)",
+                },
             },
             OsD.LINUX: {
-                "en" : { 
+                "en": {
                     "ESSID": r'ESSID:"([^"]*)"',
                     "Mode": r"Mode:([^\s]+)",
                     "Frequency": r"Frequency:([\d.]+) (GHz|Mhz)",
@@ -166,7 +177,7 @@ class Wifi(Entity):
                     "Missed_beacon": r"Missed beacon:(\d+)",
                 },
             },
-            OsD.MACOS: { # no language differentiation in macos: always english
+            OsD.MACOS: {  # no language differentiation in macos: always english
                 "en": {
                     "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
                     "agrExtRSSI": r"[^\n][\s]*agrExtRSSI:\s+(-?\d+)\n",
@@ -187,14 +198,9 @@ class Wifi(Entity):
             },
         }
 
-
-        # In macos trick the language to be english since the output of airport is always in english
-        if OsD.IsMacos():
-            self.language = "en"
-
         if OsD.IsWindows():
             self.keySignalStrength = KEY_SIGNAL_STRENGTH_PERCENT
-            self.valueFormatterOptionsSignalStrength =  VALUEFORMATTEROPTIONS_PERCENTAGE
+            self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_PERCENTAGE
         else:
             self.keySignalStrength = KEY_SIGNAL_STRENGTH_DBM
             self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_DBM
@@ -204,9 +210,9 @@ class Wifi(Entity):
                 self,
                 key=self.keySignalStrength,
                 supportsExtraAttributes=True,
-                valueFormatterOptions=self.valueFormatterOptionsSignalStrength
-                ),
-            )
+                valueFormatterOptions=self.valueFormatterOptionsSignalStrength,
+            ),
+        )
 
     def Update(self):
         p = self.RunCommand(self.commands[self.platform])
@@ -217,19 +223,20 @@ class Wifi(Entity):
             raise Exception("error while parsing wirelessInfo")
         # set signal strength
         if self.platform == OsD.WINDOWS and "Signal" in wifiInfo:
-            if self.signalUnit == "%":
+            if SIGNAL_UNIT == "%":
                 self.SetEntitySensorValue(
                     key=self.keySignalStrength, value=wifiInfo["Signal"]
                 )
-            elif self.signalUnit == "dBm":
+            elif SIGNAL_UNIT == "dBm":
                 self.SetEntitySensorValue(
-                    key=self.keySignalStrength, value=self.PercentToDbm(int(wifiInfo["Signal"]))
+                    key=self.keySignalStrength,
+                    value=self.PercentToDbm(int(wifiInfo["Signal"][:-1])),
                 )
         elif self.platform == OsD.LINUX and "Signal_Level" in wifiInfo:
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["Signal_Level"]
             )
-        elif self.platform == OsD.MACOS and "agrCtlRSSI" in wifiInfo: 
+        elif self.platform == OsD.MACOS and "agrCtlRSSI" in wifiInfo:
             self.SetEntitySensorValue(
                 key=self.keySignalStrength, value=wifiInfo["agrCtlRSSI"]
             )
@@ -240,16 +247,16 @@ class Wifi(Entity):
         for key in self.patterns[self.platform][self.language]:
             extraKey = "EXTRA_KEY_" + key.upper().replace(" ", "_").replace(".", "_")
             if key in wifiInfo:
-                attributevalue = wifiInfo[key] 
+                attributevalue = wifiInfo[key]
             elif self.showNA:
                 attributevalue = "not available"
-            else: 
+            else:
                 continue
-            
+
             self.SetEntitySensorExtraAttribute(
                 sensorDataKey=self.keySignalStrength,
                 attributeKey=globals()[extraKey],
-                attributeValue=attributevalue
+                attributeValue=attributevalue,
             )
 
     def GetWirelessInfo(self, stdout):
@@ -276,7 +283,7 @@ class Wifi(Entity):
         if OsD.IsWindows():
             preset.AddEntry(
                 name="Signal Quality in dBm or percent",
-                key=CONFIG_KEY_SIGNAL_UNIT,
+                key=SIGNAL_UNIT,
                 mandatory=True,
                 question_type="select",
                 choices=SIGNAL_CHOICES,
@@ -286,10 +293,6 @@ class Wifi(Entity):
     @staticmethod
     def PercentToDbm(percentage):
         return (percentage / 2) - 100
-    
-    @staticmethod
-    def DbmToPercent(dbm):
-        return 2 * (dbm + 100)
 
     @staticmethod
     def GetWifiNics(getInfo=True):
@@ -357,7 +360,7 @@ class Wifi(Entity):
             interfaceMatch = re.search(r"Name\s+:\s+(\w+)", output)
             interfaceName = interfaceMatch.group(1)
             if not getInfo:
-                appendNicChoice(interface)
+                appendNicChoice(interfaceName)
             else:
                 nicinfo = interfaces[interfaceName]  # TODO Typehint
                 for nicaddr in nicinfo:
@@ -370,7 +373,7 @@ class Wifi(Entity):
                     elif nicaddr.family == psutil.AF_LINK:
                         mac = nicaddr.address
                         continue
-                    appendNicChoice(interface, ip4, ip6, mac)
+                appendNicChoice(interfaceName, ip4, ip6, mac)
             return NIC_CHOICES
 
         elif OsD.IsMacos():
@@ -411,7 +414,7 @@ class Wifi(Entity):
         elif OsD.IsWindows():
             if not OsD.CommandExists("netsh"):
                 raise Exception("netsh not found")
-            elif "English" not in locale.getlocale():
+            elif "English" not in locale.getlocale()[0]:
                 raise Exception(
                     "locale not supported, create a github issue with the output of 'netsh wlan show interfaces' atached"
                 )
