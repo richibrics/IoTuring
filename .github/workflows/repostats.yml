@@ -8,6 +8,7 @@ on:
 jobs:
   j1:
     name: repostats-for-nice-project
+    if: github.repository == 'richibrics/IoTuring'
     runs-on: ubuntu-latest
     steps:
       - name: run-ghrs
