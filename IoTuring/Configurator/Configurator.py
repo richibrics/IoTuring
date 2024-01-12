@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import sys
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
@@ -180,7 +181,7 @@ class Configurator(LogObject):
     def Quit(self) -> None:
         """ Save configurations and quit """
         self.WriteConfigurations()
-        exit(0)
+        sys.exit(0)
 
     def LoadConfigurations(self) -> dict:
         """ Reads the configuration file and returns configuration dictionary.
