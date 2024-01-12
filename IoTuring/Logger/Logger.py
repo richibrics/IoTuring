@@ -155,7 +155,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
     def GetLogFileDescriptor(self) -> TextIOWrapper:
         if self.log_file_descriptor is None:
-            self.log_file_descriptor = open(self.log_filename, "a")
+            self.log_file_descriptor = open(self.log_filename, "a", encoding="utf-8")
 
         return self.log_file_descriptor
 
