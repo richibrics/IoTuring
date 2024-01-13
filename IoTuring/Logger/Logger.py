@@ -9,6 +9,21 @@ from io import TextIOWrapper
 from IoTuring.Logger import consts
 from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
+from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
+from IoTuring.Configurator.MenuPreset import MenuPreset
+
+
+CONFIG_KEY_CONSOLE_LOG_LEVEL = "console_log_level"
+CONFIG_KEY_FILE_LOG_LEVEL = "file_log_level"
+CONFIG_KEY_FILE_LOG_ENABLED = "file_log_enabled"
+CONFIG_KEY_FILE_LOG_PATH = "file_log_path"
+
+
+LogLevelChoices = [{"name": l["string"], "value": l["const"]}
+                   for l in consts.LOG_LEVELS]
+
+
+
 
 
 class Singleton(type):
@@ -24,7 +39,9 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Logger(LogLevelObject, metaclass=Singleton):
+class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
+
+    NAME = "Logger"
 
     lock = threading.Lock()
 
@@ -176,3 +193,26 @@ class Logger(LogLevelObject, metaclass=Singleton):
         # isatty is not always implemented, #6223.
         is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         return supported_platform and is_a_tty
+
+
+    @classmethod
+    def ConfigurationPreset(cls):
+        preset = MenuPreset()
+
+        preset.AddEntry(name="Console log level", key=CONFIG_KEY_CONSOLE_LOG_LEVEL,
+                        question_type="select", mandatory=True, default=consts.DEFAULT_LOG_LEVEL,
+                        instruction="IOTURING_LOG_LEVEL envvar overwrites this setting!",
+                        choices=LogLevelChoices)
+
+        preset.AddEntry(name="Enable file logging", key=CONFIG_KEY_FILE_LOG_ENABLED,
+                        question_type="yesno", default="Y")
+
+        preset.AddEntry(name="File log level", key=CONFIG_KEY_FILE_LOG_LEVEL,
+                        question_type="select", mandatory=True, default=consts.DEFAULT_LOG_LEVEL,
+                        choices=LogLevelChoices)
+
+        preset.AddEntry(name="File log path", key=CONFIG_KEY_FILE_LOG_PATH,
+                        question_type="filepath", mandatory=True, default=consts.DEFAULT_LOG_LEVEL,
+                        instruction="Directory where log files will be saved")
+
+        return preset

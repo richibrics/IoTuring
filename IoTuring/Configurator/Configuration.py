@@ -3,19 +3,19 @@ from __future__ import annotations
 # config categories:
 KEY_ACTIVE_ENTITIES = "active_entities"
 KEY_ACTIVE_WAREHOUSES = "active_warehouses"
-KEY_APP_SETTINGS = "app_settings"
+KEY_SETTINGS = "settings"
 
 CONFIG_CATEGORY_NAME = {
     KEY_ACTIVE_ENTITIES: "Entity",
     KEY_ACTIVE_WAREHOUSES: "Warehouse",
-    KEY_APP_SETTINGS: "AppSetting"
+    KEY_SETTINGS: "Setting"
 }
 
 
 BLANK_CONFIGURATION = {
     KEY_ACTIVE_ENTITIES: [{"type": "AppInfo"}],
     KEY_ACTIVE_WAREHOUSES: [],
-    KEY_APP_SETTINGS: []
+    KEY_SETTINGS: []
 }
 
 KEY_ENTITY_TAG = "tag"
@@ -38,14 +38,14 @@ class FullConfiguration:
         """Return all configurations in a category
 
         Args:
-            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_APP_SETTINGS
+            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_SETTINGS
 
         Returns:
             list: Configurations in the category. Empty list if none found.
         """
         return [config for config in self.configs if config.config_category == config_category]
 
-    def GetConfigsOfType(self, config_type: str, config_category: str = "") -> list["SingleConfiguration"]:
+    def GetAllConfigsOfType(self, config_type: str, config_category: str = "") -> list["SingleConfiguration"]:
         """Return all configs with the given type, from the given category
 
         Args:
@@ -62,6 +62,26 @@ class FullConfiguration:
 
         return [config for config in config_list if config.GetType() == config_type]
 
+    def GetSingleConfigOfType(self, config_type: str) -> None | SingleConfiguration:
+        """Return the only configuration of the given type. Raises exception if multiple found.
+
+        Args:
+            config_type (str): The type of config to return
+
+        Raises:
+            Exception: Multiple config found
+
+        Returns:
+            None | SingleConfiguration: The config, None if not found
+        """
+        configs = self.GetAllConfigsOfType(config_type=config_type)
+        if not configs:
+            return None
+        if len(configs) > 1:
+            raise Exception("Multiple configs found!")
+
+        return configs[0]
+
     def RemoveActiveConfiguration(self, config: "SingleConfiguration") -> None:
         """Remove a configuration from the list of active configurations"""
         if config in self.configs:
@@ -69,16 +89,19 @@ class FullConfiguration:
         else:
             raise ValueError("Configuration not found")
 
-    def AddConfiguration(self, config_category: str, single_config_dict: dict, config_type: str = "") -> None:
+    def AddConfiguration(self, config_category: str, single_config_dict: dict, config_type: str = "") -> "SingleConfiguration":
         """Add a new configuration to the list of active configurations
 
         Args:
-            config_category (str): KEY_ACTIVE_ENTITIES or KEY_ACTIVE_WAREHOUSES
+            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_SETTINGS
             single_config_dict (dict): all settings as a dict
             config_type (str, optional): The type of the configuration, if not included in the dict.
 
         Raises:
             ValueError: Config type not defined in the dict nor in the function call
+
+        Returns:
+            SingleConfiguration: The new single config
         """
 
         if KEY_ENTITY_TYPE not in single_config_dict:
@@ -87,21 +110,12 @@ class FullConfiguration:
             else:
                 raise ValueError("Configuration type not specified")
 
-        self.configs.append(SingleConfiguration(
-            config_category, single_config_dict))
+        single_config = SingleConfiguration(
+            config_category, single_config_dict)
 
-    def GetAppSettings(self) -> "SingleConfiguration":
-        """Find the AppSettings single configuration
+        self.configs.append(single_config)
 
-        Returns:
-            SingleConfiguration: The AppSettings as a SingleConfiguration
-        """
-        if self.GetConfigsInCategory(KEY_APP_SETTINGS):
-            return self.GetConfigsInCategory(KEY_APP_SETTINGS)[0]
-        else:
-            appconfig = SingleConfiguration(KEY_APP_SETTINGS, {})
-            self.configs.append(appconfig)
-            return appconfig
+        return single_config
 
     def ToDict(self) -> dict:
         """Full configuration as a dict, for saving to file """
@@ -119,39 +133,30 @@ class SingleConfiguration:
 
     config_category: str
     type: str
-    tag: str
     configurations: dict
 
     def __init__(self, config_category: str, config_dict: dict) -> None:
         """Create a new SingleConfiguration
 
         Args:
-            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_APP_SETTINGS
+            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_SETTINGS
             config_dict (dict): All options as in config file
         """
         self.config_category = config_category
 
-        if KEY_ENTITY_TYPE in config_dict:
-            config_type = config_dict.pop(KEY_ENTITY_TYPE)
-            setattr(self, KEY_ENTITY_TYPE, config_type)
-
-        if KEY_ENTITY_TAG in config_dict:
-            config_tag = config_dict.pop(KEY_ENTITY_TAG)
-            setattr(self, KEY_ENTITY_TAG, config_tag)
+        # self.type:
+        setattr(self, KEY_ENTITY_TYPE, config_dict.pop(KEY_ENTITY_TYPE))
 
         self.configurations = config_dict
 
     def GetType(self) -> str:
         """ Get the type name of entity"""
-        if hasattr(self, KEY_ENTITY_TYPE):
-            return getattr(self, KEY_ENTITY_TYPE)
-        else:
-            return self.config_category
+        return getattr(self, KEY_ENTITY_TYPE)
 
     def GetTag(self) -> str:
         """ Get the tag of entity"""
-        if hasattr(self, KEY_ENTITY_TAG):
-            return getattr(self, KEY_ENTITY_TAG)
+        if KEY_ENTITY_TAG in self.configurations:
+            return self.configurations[KEY_ENTITY_TAG]
         else:
             return ""
 
@@ -160,8 +165,8 @@ class SingleConfiguration:
 
         label = self.GetType()
 
-        if hasattr(self, KEY_ENTITY_TAG):
-            label += f" with tag {getattr(self, KEY_ENTITY_TAG)}"
+        if self.GetTag():
+            label += f" with tag {self.GetTag()}"
 
         return label
 
@@ -221,9 +226,5 @@ class SingleConfiguration:
     def ToDict(self) -> dict:
         """Full configuration as a dict, as it would be saved to a file """
         full_dict = self.configurations
-        if hasattr(self, KEY_ENTITY_TYPE):
-            full_dict[KEY_ENTITY_TYPE] = getattr(self, KEY_ENTITY_TYPE)
-        if hasattr(self, KEY_ENTITY_TAG):
-            full_dict[KEY_ENTITY_TAG] = getattr(self, KEY_ENTITY_TAG)
-
+        full_dict[KEY_ENTITY_TYPE] = getattr(self, KEY_ENTITY_TYPE)
         return full_dict

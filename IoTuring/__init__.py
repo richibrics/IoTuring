@@ -52,10 +52,6 @@ def loop():
     logger = Logger()
     configurator = Configurator()
 
-    # Load AppSettings:
-    AppSettings().LoadConfiguration(configurator)
-    
-
     logger.Log(Logger.LOG_DEBUG, "App", f"Selected options: {vars(args)}")
 
     if args.configurator:
@@ -76,11 +72,12 @@ def loop():
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
-    
-
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
     logger.Log(Logger.LOG_INFO, "Configurator",
                "Run the script with -c to enter configuration mode")
+
+    # Load AppSettings:
+    AppSettings().LoadConfiguration(configurator)
 
     eM = EntityManager()
 

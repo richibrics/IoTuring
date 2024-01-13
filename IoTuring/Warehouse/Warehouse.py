@@ -4,7 +4,7 @@ from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
 from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
-from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CATEGORY_NAME, KEY_ACTIVE_WAREHOUSES
+from IoTuring.Configurator.Configuration import SingleConfiguration
 
 from threading import Thread
 import time
@@ -12,7 +12,6 @@ import time
 
 class Warehouse(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
-    CATEGORY_NAME = CONFIG_CATEGORY_NAME[KEY_ACTIVE_WAREHOUSES]
 
     def __init__(self, single_configuration: SingleConfiguration) -> None:
         self.loopTimeout = float(AppSettings().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL))

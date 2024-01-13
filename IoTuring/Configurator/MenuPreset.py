@@ -28,7 +28,13 @@ class QuestionPreset():
         self.value = None
 
         self.question = self.name
-        if mandatory:
+
+        # yesno question cannot be mandatory:
+        if self.question_type == "yesno":
+            self.mandatory = False
+
+        # Add mandatory mark:
+        if self.mandatory:
             self.question += " {!}"
 
     def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
@@ -76,22 +82,22 @@ class QuestionPreset():
             })
 
         question_options["message"] = self.question + ":"
-        
+
         if self.default is not None:
             # yesno questions need boolean default:
             if self.question_type == "yesno":
                 question_options["default"] = \
                     bool(str(self.default).lower()
-                            in BooleanAnswers.TRUE_ANSWERS)
+                         in BooleanAnswers.TRUE_ANSWERS)
             elif self.question_type == "integer":
                 question_options["default"] = int(self.default)
             else:
                 question_options["default"] = self.default
         else:
             if self.question_type == "integer":
-                # The default default is 0, overwrite to None:
+                # The default integer is 0, overwrite to None:
                 question_options["default"] = None
-        
+
         # text:
         prompt_function = inquirer.text
 
@@ -117,6 +123,7 @@ class QuestionPreset():
         elif self.question_type == "filepath":
             prompt_function = inquirer.filepath
 
+        # Ask the question:
         prompt = prompt_function(
             instruction=self.instruction,
             **question_options

@@ -3,7 +3,7 @@ import time
 import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CATEGORY_NAME, KEY_ACTIVE_ENTITIES
+from IoTuring.Configurator.Configuration import SingleConfiguration
 from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
@@ -16,8 +16,6 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 class Entity(LogObject, ConfiguratorObject):
     NAME = "Unnamed"
     ALLOW_MULTI_INSTANCE = False
-    CATEGORY_NAME = CONFIG_CATEGORY_NAME[KEY_ACTIVE_ENTITIES]
-
 
     def __init__(self, single_configuration: SingleConfiguration) -> None:
         
