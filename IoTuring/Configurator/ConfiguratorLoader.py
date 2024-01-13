@@ -1,4 +1,6 @@
 from __future__ import annotations
+import sys
+
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES
@@ -20,7 +22,7 @@ class ConfiguratorLoader(LogObject):
         if not self.configurations.GetConfigsInCategory(KEY_ACTIVE_WAREHOUSES):
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one warehouse: configure it using -c argument")
-            exit(1)
+            sys.exit("No warehouse enabled")
         for whConfig in self.configurations.GetConfigsInCategory(KEY_ACTIVE_WAREHOUSES):
             # Get WareHouse named like in config type field, then init it with configs and add it to warehouses list
             whClass = wcm.GetClassFromName(whConfig.GetLongName())
@@ -42,7 +44,7 @@ class ConfiguratorLoader(LogObject):
         if not self.configurations.GetConfigsInCategory(KEY_ACTIVE_ENTITIES):
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one entity: configure it using -c argument")
-            exit(1)
+            sys.exit("No entity enabled")
         for entityConfig in self.configurations.GetConfigsInCategory(KEY_ACTIVE_ENTITIES):
             entityClass = ecm.GetClassFromName(entityConfig.GetType())
             if entityClass is None:

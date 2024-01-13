@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import inspect
+import sys
 
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.MyApp.App import App  # App name
@@ -30,24 +31,34 @@ class ConfiguratorIO(LogObject):
         """ Returns configurations dictionary. If does not exist the file where it should be stored, return None. """
         config = None
         try:
-            with open(self.getFilePath(), "r") as f:
+            with open(self.getFilePath(), "r", encoding="utf-8") as f:
                 config = json.loads(f.read())
             self.Log(self.LOG_MESSAGE, f"Loaded \"{self.getFilePath()}\"")
-        except:
+        except FileNotFoundError:
             self.Log(self.LOG_WARNING, f"It seems you don't have a configuration yet. Use configuration mode (-c) to enable your favourite entities and warehouses.\
                      \nConfigurations will be saved in \"{str(self.getFolderPath())}\"")
+        except Exception as e:
+            self.Log(self.LOG_ERROR, f"Error opening configuration file: {str(e)}")
+            sys.exit(str(e))
         return config
 
     def writeConfigurations(self, data):
         """ Writes configuration data in its file """
-        self.createFolderPathIfDoesNotExist()
-        with open(self.getFilePath(), "w") as f:
-            f.write(json.dumps(data, indent=4))
-        self.Log(self.LOG_MESSAGE, f"Saved \"{str(self.getFilePath())}\"")
+        try:
+            self.createFolderPathIfDoesNotExist()
+            with open(self.getFilePath(), "w", encoding="utf-8") as f:
+                f.write(json.dumps(data, indent=4, ensure_ascii=False))
+            self.Log(self.LOG_MESSAGE, f"Saved \"{str(self.getFilePath())}\"")
+        except Exception as e:
+            self.Log(self.LOG_ERROR, f"Error saving configuration file: {str(e)}")
+            sys.exit(str(e))
 
     def checkConfigurationFileExists(self) -> bool:
         """ Returns True if the configuration file exists in the correct folder, False otherwise. """
-        return self.getFilePath().exists() and self.getFilePath().is_file()
+        try:
+            return self.getFilePath().exists() and self.getFilePath().is_file()
+        except:
+            return False
 
     def getFilePath(self) -> Path:
         """ Returns the path to the configurations file. """
@@ -56,7 +67,7 @@ class ConfiguratorIO(LogObject):
     def createFolderPathIfDoesNotExist(self):
         """ Check if file exists, if not check if path exists: if not create both folder and file otherwise just the file """
         if not self.getFolderPath().exists():
-            self.getFolderPath().mkdir()
+            self.getFolderPath().mkdir(parents=True)
 
     def getFolderPath(self) -> Path:
         """ Returns the path to the configurations file. If the directory where the file
@@ -135,22 +146,26 @@ class ConfiguratorIO(LogObject):
             moveFile (bool): True: move the file. False: Create dontmove file
         """
 
-        if moveFile:
-            # create folder if not exists
-            self.createFolderPathIfDoesNotExist()
-            # copy file from old to new location
-            self.oldFolderPath().joinpath(CONFIGURATION_FILE_NAME).rename(self.getFilePath())
-            self.Log(self.LOG_MESSAGE,
-                     f"Copied to \"{str(self.getFilePath())}\"")
-        else:
-            # create dont move file
-            with open(self.oldFolderPath().joinpath(DONT_MOVE_FILE_FILENAME), "w") as f:
-                f.write(" ".join([
-                    "This file is here to remember you that you don't want to move the configuration file into the new location.",
-                    "If you want to move it, delete this file and run the script in -c mode."
+        try:
+            if moveFile:
+                # create folder if not exists
+                self.createFolderPathIfDoesNotExist()
+                # copy file from old to new location
+                self.oldFolderPath().joinpath(CONFIGURATION_FILE_NAME).rename(self.getFilePath())
+                self.Log(self.LOG_MESSAGE,
+                        f"Copied to \"{str(self.getFilePath())}\"")
+            else:
+                # create dont move file
+                with open(self.oldFolderPath().joinpath(DONT_MOVE_FILE_FILENAME), "w") as f:
+                    f.write(" ".join([
+                        "This file is here to remember you that you don't want to move the configuration file into the new location.",
+                        "If you want to move it, delete this file and run the script in -c mode."
+                    ]))
+                self.Log(self.LOG_MESSAGE, " ".join([
+                    "You won't be asked again. A new blank configuration will be used;",
+                    f"if you want to move the existing configuration file, delete \"{self.oldFolderPath().joinpath(DONT_MOVE_FILE_FILENAME)}",
+                    "and run the script in -c mode."
                 ]))
-            self.Log(self.LOG_MESSAGE, " ".join([
-                "You won't be asked again. A new blank configuration will be used;",
-                f"if you want to move the existing configuration file, delete \"{self.oldFolderPath().joinpath(DONT_MOVE_FILE_FILENAME)}",
-                "and run the script in -c mode."
-            ]))
+        except Exception as e:
+            self.Log(self.LOG_ERROR, f"Error saving file: {str(e)}")
+            sys.exit(str(e))

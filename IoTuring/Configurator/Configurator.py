@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import sys
 
 from IoTuring.Configurator.MenuPreset import QuestionPreset
 from IoTuring.Configurator.Configuration import FullConfiguration, SingleConfiguration, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_SETTINGS, CONFIG_CATEGORY_NAME
@@ -205,7 +206,7 @@ class Configurator(LogObject):
     def Quit(self) -> None:
         """ Save configurations and quit """
         self.WriteConfigurations()
-        exit(0)
+        sys.exit(0)
 
     def WriteConfigurations(self) -> None:
         """ Save to configurations file """
