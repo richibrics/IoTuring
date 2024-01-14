@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 import json
 import threading
@@ -319,4 +321,4 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
         if base_path:
             default_path = base_path.joinpath(App.getName())
 
-        return str(default_path.joinpath("Logs"))
+        return str(default_path.joinpath(consts.LOGS_FOLDER))
