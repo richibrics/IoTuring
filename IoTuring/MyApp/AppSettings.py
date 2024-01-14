@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from IoTuring.Configurator.Configurator import Configurator
-
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Logger.Logger import Singleton
@@ -19,10 +15,6 @@ class AppSettings(ConfiguratorObject, metaclass=Singleton):
     def __init__(self) -> None:
         pass
 
-    def LoadConfiguration(self, configurator: "Configurator"):
-        """ Load/update configurations to the singleton """
-        self.configurations = configurator.config.GetSingleConfigOfType(self.NAME)
-        self.AddMissingDefaultConfigs()
 
     @classmethod
     def ConfigurationPreset(cls):

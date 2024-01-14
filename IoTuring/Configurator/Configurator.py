@@ -152,7 +152,7 @@ class Configurator(LogObject):
         for whClass in availableWarehouses:
 
             enabled_sign = "X" \
-                if self.config.GetSingleConfigOfType(whClass.NAME) else " "
+                if self.config.GetAllConfigsOfType(whClass.NAME) else " "
 
             manageWhChoices.append(
                 {"name": f"[{enabled_sign}] - {whClass.NAME}",
@@ -184,13 +184,7 @@ class Configurator(LogObject):
             self.Menu()
 
         else:
-            settings_config = self.config.GetSingleConfigOfType(
-                choice.NAME)
-
-            # Add empty config if missing:
-            if not settings_config:
-                settings_config = self.config.AddConfiguration(
-                    KEY_SETTINGS, {}, config_type=choice.NAME)
+            settings_config = self.config.LoadSingleConfig(choice.NAME, KEY_SETTINGS)
 
             # Edit:
             self.EditActiveClass(choice, settings_config)
@@ -215,9 +209,9 @@ class Configurator(LogObject):
     def ManageSingleWarehouse(self, whClass):
         """UI for single Warehouse settings"""
 
-        whConfig = self.config.GetSingleConfigOfType(whClass.NAME)
+        whConfigList = self.config.GetAllConfigsOfType(whClass.NAME)
 
-        if whConfig:
+        if whConfigList:
             manageWhChoices = [
                 {"name": "Edit the warehouse settings", "value": "Edit"},
                 {"name": "Remove the warehouse", "value": "Remove"}
@@ -236,7 +230,8 @@ class Configurator(LogObject):
         elif choice == "Add":
             self.AddActiveClass(whClass, KEY_ACTIVE_WAREHOUSES)
             self.ManageWarehouses()
-        elif whConfig:
+        elif whConfigList:
+            whConfig = whConfigList[0]
             if choice == "Edit":
                 self.EditActiveClass(whClass, whConfig)
                 self.ManageSingleWarehouse(whClass)
@@ -419,7 +414,7 @@ class Configurator(LogObject):
         try:
             # Load config as default:
             if single_config.HasConfigKey(q_preset.key):
-                if q_preset.default:
+                if q_preset.default and q_preset.question_type != "yesno":
                     q_preset.instruction = f"Default: {q_preset.default}"
                 q_preset.default = single_config.GetConfigValue(q_preset.key)
 

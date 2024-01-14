@@ -27,15 +27,6 @@ class LogLevel:
     def __int__(self) -> int:
         return self.number
 
-    def get_colored_string(self, string: str) -> str:
-        """ Get colored text according to LogLevel """
-        if self.color:
-            out_string = self.color + string + Colors.reset
-        else:
-            out_string = string
-        return out_string
-
-
 
 class LogLevelObject:
     """ Base class for loglevel properties """

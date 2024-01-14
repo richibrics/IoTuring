@@ -62,21 +62,25 @@ class FullConfiguration:
 
         return [config for config in config_list if config.GetType() == config_type]
 
-    def GetSingleConfigOfType(self, config_type: str) -> None | SingleConfiguration:
-        """Return the only configuration of the given type. Raises exception if multiple found.
+    def LoadSingleConfig(self, config_type: str, config_category: str) -> SingleConfiguration:
+        """ Return the only configuration of the given type. Raises exception if multiple found.
+            Add the config if not found.
 
         Args:
             config_type (str): The type of config to return
+            config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_SETTINGS
 
         Raises:
             Exception: Multiple config found
 
         Returns:
-            None | SingleConfiguration: The config, None if not found
+            SingleConfiguration: The config
         """
         configs = self.GetAllConfigsOfType(config_type=config_type)
         if not configs:
-            return None
+            return self.AddConfiguration(
+                config_category, {}, config_type)
+
         if len(configs) > 1:
             raise Exception("Multiple configs found!")
 
