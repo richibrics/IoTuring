@@ -6,7 +6,6 @@ import time
 import argparse
 
 from IoTuring.MyApp.App import App
-from IoTuring.MyApp.AppSettings import AppSettings
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
