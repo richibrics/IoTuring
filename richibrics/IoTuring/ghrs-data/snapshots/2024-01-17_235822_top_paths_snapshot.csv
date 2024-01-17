@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/richibrics/IoTuring,149,67
+/richibrics/IoTuring/issues,29,8
+/richibrics/IoTuring/tree/main/IoTuring,22,4
+/richibrics/IoTuring/pulls,18,5
+/richibrics/IoTuring/pull/89,14,2
+/richibrics/IoTuring/tree/main/IoTuring/Entity,10,2
+/richibrics/IoTuring/tree/main/IoTuring/Entity/Deployments,10,2
+/richibrics/IoTuring/blob/main/docker-compose.yaml,8,4
+/richibrics/IoTuring/blob/main/IoTuring/Warehouse/Deployments/HomeAssistantWarehouse/HomeAssistantWarehouse.py,6,2
+/richibrics/IoTuring/blob/main/IoTuring/Protocols/MQTTClient/MQTTClient.py,6,1
