@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
+import signal
+import sys
+import time
+import argparse
+
 from IoTuring.MyApp.App import App
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
 from IoTuring.Logger.Logger import Logger
 from IoTuring.Logger.Colors import Colors
-import signal
-import os
-import time
-import argparse
 
 warehouses = []
 entities = []
@@ -40,9 +41,9 @@ def loop():
 
     # Only one argument should be used:
     if all(vars(args).values()):
-        print("error: use only one option!", end="\n\n")
         parser.print_help()
-        os._exit(0)
+        print()
+        sys.exit("Error: Invalid arguments!")
 
     # Clear the terminal
     Configurator.ClearTerminal()
@@ -66,7 +67,7 @@ def loop():
 
     elif args.open_config:
         configurator.OpenConfigInEditor()
-        os._exit(0)
+        sys.exit(0)
 
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
@@ -121,4 +122,4 @@ def Exit_SIGINT_handler(sig=None, frame=None):
                    writeToFile=False)  # to terminal
 
     logger.CloseFile()
-    os._exit(0)
+    sys.exit(0)
