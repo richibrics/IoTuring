@@ -87,7 +87,7 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
         else:
             diag_strings.append("Config not loaded yet")
 
-        self.Log(self.LOG_INFO, "Logger", diag_strings)
+        self.Log(self.LOG_DEVELOPMENT, "Logger", diag_strings)
 
         
 
