@@ -28,19 +28,12 @@ KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
 # WINDOWS
 EXTRA_KEY_NAME = "name"
 EXTRA_KEY_DESCRIPTION = "description"
-EXTRA_KEY_GUID = "guid"
 EXTRA_KEY_PHYSICAL_ADDRESS = "physical_address"
 EXTRA_KEY_STATE = "state"
 EXTRA_KEY_SSID = "ssid"
 EXTRA_KEY_BSSID = "bssid"
 EXTRA_KEY_NETWORK_TYPE = "network_type"
 EXTRA_KEY_RADIO_TYPE = "radio_type"
-EXTRA_KEY_AUTHENTICATION = "authentication"
-EXTRA_KEY_CIPHER = "cipher"
-EXTRA_KEY_CONNECTION_MODE = "connection_mode"
-EXTRA_KEY_CHANNEL = "channel"
-EXTRA_KEY_RECEIVE_RATE = "receive_rate"
-EXTRA_KEY_TRANSMIT_RATE = "transmit_rate"
 EXTRA_KEY_SIGNAL = "signal"
 EXTRA_KEY_PROFILE = "profile"
 EXTRA_KEY_HOSTED_NETWORK_STATUS = "hosted_network_status"
@@ -53,27 +46,16 @@ EXTRA_KEY_BIT_RATE = "Bit_Rate"
 EXTRA_KEY_TX_POWER = "Tx_Power"
 EXTRA_KEY_LINK_QUALITY = "Link_Quality"
 EXTRA_KEY_SIGNAL_LEVEL = "Signal_Level"
-EXTRA_KEY_RX_INVALID_NWID = "Rx_invalid_nwid"
-EXTRA_KEY_RX_INVALID_CRYPT = "Rx_invalid_crypt"
-EXTRA_KEY_RX_INVALID_FRAG = "Rx_invalid_frag"
-EXTRA_KEY_TX_EXCESSIVE_RETRIES = "Tx_excessive_retries"
-EXTRA_KEY_INVALID_MISC = "Invalid_misc"
-EXTRA_KEY_MISSED_BEACON = "Missed_beacon"
 # MACOS
 EXTRA_KEY_AGRCTLRSSI = "agrCtlRSSI"
 EXTRA_KEY_AGREXTRSSI = "agrExtRSSI"
-EXTRA_KEY_AGRCTLNOISE = "agrCtlNoise"
-EXTRA_KEY_AGREXTNOISE = "agrExtNoise"
 # EXTRA_KEY_STATE = 'state' # already in windows
 EXTRA_KEY_OP_MODE = "op mode"
 EXTRA_KEY_LASTTXRATE = "lastTxRate"
 EXTRA_KEY_MAXRATE = "maxRate"
-EXTRA_KEY_LASTASSOCSTATUS = "lastAssocStatus"
-EXTRA_KEY_802_11_AUTH = "802.11 auth"
-EXTRA_KEY_LINK_AUTH = "link auth"
+
 # EXTRA_KEY_BSSID = 'BSSID' # already in windows
 # EXTRA_KEY_SSID = 'SSID' # already in windows
-EXTRA_KEY_MCS = "MCS"
 # EXTRA_KEY_CHANNEL = 'channel' # already in windows
 
 
@@ -105,19 +87,12 @@ class Wifi(Entity):
             OsD.WINDOWS: {
                 "en": {
                     "Description": r"Description\s+:\s+(.*)",
-                    "GUID": r"GUID\s+:\s+([\w-]+)",
                     "Physical address": r"Physical address\s+:\s+([\w:]+)",
                     "State": r"State\s+:\s+(.*)",
                     "SSID": r"SSID\s+:\s+(.*)",
                     "BSSID": r"BSSID\s+:\s+([\w:]+)",
                     "Network type": r"Network type\s+:\s+(.*)",
                     "Radio type": r"Radio type\s+:\s+(.*)",
-                    "Authentication": r"Authentication\s+:\s+(.*)",
-                    "Cipher": r"Cipher\s+:\s+(.*)",
-                    "Connection mode": r"Connection mode\s+:\s+(.*)",
-                    "Channel": r"Channel\s+:\s+(\d+)",
-                    "Receive rate": r"Receive rate \(Mbps\)\s+:\s+([\d.]+)",
-                    "Transmit rate": r"Transmit rate \(Mbps\)\s+:\s+([\d.]+)",
                     "Signal": r"Signal\s+:\s+(\d+%?)",
                     "Profile": r"Profile\s+:\s+(.*)",
                     "Hosted network status": r"Hosted network status\s+:\s+(.*)",
@@ -131,12 +106,6 @@ class Wifi(Entity):
                     "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
                     "Netzwerktyp": r"Netzwerktyp:\s+(.+)",
                     "Funktyp": r"Funktyp:\s+(.+)",
-                    "Authentifizierung": r"Authentifizierung:\s+(.+)",
-                    "Verschlüsselung": r"Verschlüsselung:\s+(.+)",
-                    "Verbindungsmodus": r"Verbindungsmodus:\s+(.+)",
-                    "Kanal": r"Kanal:\s+(\d+)",
-                    "Empfangsrate (Mbps)": r"Empfangsrate \(Mbps\):\s+([\d.]+)",
-                    "Übertragungsrate (Mbps)": r"Übertragungsrate \(Mbps\):\s+([\d.]+)",
                     "Signal": r"Signal:\s+(\d+%?)",
                     "Profil": r"Profil:\s+(.+)",
                 },
@@ -148,13 +117,6 @@ class Wifi(Entity):
                     "SSID": r"SSID:\s+(.+)",
                     "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
                     "Tipo de red": r"Tipo de red:\s+(.+)",
-                    "Tipo de radio": r"Tipo de radio:\s+(.+)",
-                    "Autenticación": r"Autenticación:\s+(.+)",
-                    "Cifrado": r"Cifrado:\s+(.+)",
-                    "Modo de conexión": r"Modo de conexión:\s+(.+)",
-                    "Canal": r"Canal:\s+(\d+)",
-                    "Velocidad de recepción (Mbps)": r"Velocidad de recepción \(Mbps\):\s+([\d.]+)",
-                    "Velocidad de transmisión (Mbps)": r"Velocidad de transmisión \(Mbps\):\s+([\d.]+)",
                     "Señal": r"Señal:\s+(\d+%?)",
                     "Perfil": r"Perfil:\s+(.+)",
                 },
@@ -169,30 +131,18 @@ class Wifi(Entity):
                     "Tx_Power": r"Tx-Power=(-?\d+) (\w+)",
                     "Link_Quality": r"Link Quality=(\d+/\d+)",
                     "Signal_Level": r"Signal level=(-?\d+) (\w+)",
-                    "Rx_invalid_nwid": r"Rx invalid nwid:(\d+)",
-                    "Rx_invalid_crypt": r"Rx invalid crypt:(\d+)",
-                    "Rx_invalid_frag": r"Rx invalid frag:(\d+)",
-                    "Tx_excessive_retries": r"Tx excessive retries:(\d+)",
-                    "Invalid_misc": r"Invalid misc:(\d+)",
-                    "Missed_beacon": r"Missed beacon:(\d+)",
                 },
             },
             OsD.MACOS: {  # no language differentiation in macos: always english
                 "en": {
                     "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
                     "agrExtRSSI": r"[^\n][\s]*agrExtRSSI:\s+(-?\d+)\n",
-                    "agrCtlNoise": r"[^\n][\s]*agrCtlNoise:\s+(-?\d+)\n",
-                    "agrExtNoise": r"[^\n][\s]*agrExtNoise:\s+(-?\d+)\n",
                     "state": r"[^\n][\s]*state:\s+(\w+)\n",
                     "op mode": r"[^\n][\s]*op mode:\s+(\w+)\n",
                     "lastTxRate": r"[^\n][\s]*lastTxRate:\s+(\d+)\n",
                     "maxRate": r"[^\n][\s]*maxRate:\s+(\d+)\n",
-                    "lastAssocStatus": r"[^\n][\s]*lastAssocStatus:\s+(\d+)\n",
-                    "802.11 auth": r"[^\n][\s]*802\.11 auth:\s+(\w+)\n",
-                    "link auth": r"[^\n][\s]*link auth:\s+(\w+-\w+)\n",
                     "BSSID": r"[^\n][\s]*BSSID:\s+([\w:]+)\n",
                     "SSID": r"\n[\s]*SSID:\s+([\w\s]+)\n",
-                    "MCS": r"[^\n][\s]*MCS:\s+(\d+)\n",
                     "channel": r"[^\n][\s]*channel:\s+([\d,]+)\n",
                 }
             },
