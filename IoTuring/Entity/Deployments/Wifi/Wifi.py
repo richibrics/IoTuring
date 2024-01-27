@@ -375,7 +375,7 @@ class Wifi(Entity):
                 raise Exception("no wireless interface found")
 
         elif OsD.IsMacos():
-            if not OsD.CommandExists("airport"):
+            if not OsD.CommandExists("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"):
                 raise Exception("airport not found")
             wifiNics = Wifi.GetWifiNics(getInfo=False)
             if not wifiNics:
