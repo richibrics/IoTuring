@@ -38,14 +38,17 @@ EXTRA_KEY_SIGNAL = "signal"
 EXTRA_KEY_PROFILE = "profile"
 EXTRA_KEY_HOSTED_NETWORK_STATUS = "hosted_network_status"
 # LINUX
-EXTRA_KEY_ESSID = "ESSID"
-EXTRA_KEY_MODE = "Mode"
+# EXTRA_KEY_BSSID = "BSSID" # already in windows
+# EXTRA_KEY_SSID = "ssid" # already in windows
 EXTRA_KEY_FREQUENCY = "Frequency"
-EXTRA_KEY_ACCESS_POINT = "Access_Point"
-EXTRA_KEY_BIT_RATE = "Bit_Rate"
-EXTRA_KEY_TX_POWER = "Tx_Power"
-EXTRA_KEY_LINK_QUALITY = "Link_Quality"
-EXTRA_KEY_SIGNAL_LEVEL = "Signal_Level"
+# EXTRA_KEY_RX_BYTES = "RX_bytes"
+# EXTRA_KEY_TX_BYTES = "TX_bytes"
+EXTRA_KEY_SIGNAL = "Signal"
+# EXTRA_KEY_RX_BITRATE = "RX_bitrate"
+# EXTRA_KEY_TX_BITRATE = "TX_bitrate"
+# EXTRA_KEY_BSS_FLAGS = "BSS_flags"
+# EXTRA_KEY_DTIM_PERIOD = "DTIM_period"
+# EXTRA_KEY_BEACON_INTERVAL = "Beacon_interval"
 # MACOS
 EXTRA_KEY_AGRCTLRSSI = "agrCtlRSSI"
 EXTRA_KEY_AGREXTRSSI = "agrExtRSSI"
@@ -77,7 +80,7 @@ class Wifi(Entity):
 
         self.commands = {
             OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
-            OsD.LINUX: ["iwconfig", self.wifiInterface],
+            OsD.LINUX: ["iw", "dev", self.wifiInterface, "link"],
             OsD.MACOS: [
                 "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
                 "-I",
@@ -85,7 +88,7 @@ class Wifi(Entity):
         }
         self.patterns = {
             OsD.WINDOWS: {
-                "en": {
+                #"en": {
                     "Description": r"Description\s+:\s+(.*)",
                     "Physical address": r"Physical address\s+:\s+([\w:]+)",
                     "State": r"State\s+:\s+(.*)",
@@ -97,54 +100,53 @@ class Wifi(Entity):
                     "Profile": r"Profile\s+:\s+(.*)",
                     "Hosted network status": r"Hosted network status\s+:\s+(.*)",
                 },
-                "de": {
-                    "Schnittstellenname": r"Schnittstellenname:\s+(.+)",
-                    "Beschreibung": r"Beschreibung:\s+(.+)",
-                    "Physische Adresse": r"Physische Adresse:\s+([0-9A-Fa-f-]+)",
-                    "Status": r"Status:\s+(.+)",
-                    "SSID": r"SSID:\s+(.+)",
-                    "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
-                    "Netzwerktyp": r"Netzwerktyp:\s+(.+)",
-                    "Funktyp": r"Funktyp:\s+(.+)",
-                    "Signal": r"Signal:\s+(\d+%?)",
-                    "Profil": r"Profil:\s+(.+)",
-                },
-                "sp": {
-                    "Nombre de interfaz": r"Nombre de interfaz:\s+(.+)",
-                    "Descripción": r"Descripción:\s+(.+)",
-                    "Dirección física": r"Dirección física:\s+([0-9A-Fa-f-]+)",
-                    "Estado": r"Estado:\s+(.+)",
-                    "SSID": r"SSID:\s+(.+)",
-                    "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
-                    "Tipo de red": r"Tipo de red:\s+(.+)",
-                    "Señal": r"Señal:\s+(\d+%?)",
-                    "Perfil": r"Perfil:\s+(.+)",
-                },
-            },
+                #"de": {
+                #    "Schnittstellenname": r"Schnittstellenname:\s+(.+)",
+                #    "Beschreibung": r"Beschreibung:\s+(.+)",
+                #    "Physische Adresse": r"Physische Adresse:\s+([0-9A-Fa-f-]+)",
+                #    "Status": r"Status:\s+(.+)",
+                #    "SSID": r"SSID:\s+(.+)",
+                #    "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
+                #    "Netzwerktyp": r"Netzwerktyp:\s+(.+)",
+                #    "Funktyp": r"Funktyp:\s+(.+)",
+                #    "Signal": r"Signal:\s+(\d+%?)",
+                #    "Profil": r"Profil:\s+(.+)",
+                #},
+                #"sp": {
+                #    "Nombre de interfaz": r"Nombre de interfaz:\s+(.+)",
+                #    "Descripción": r"Descripción:\s+(.+)",
+                #    "Dirección física": r"Dirección física:\s+([0-9A-Fa-f-]+)",
+                #    "Estado": r"Estado:\s+(.+)",
+                #    "SSID": r"SSID:\s+(.+)",
+                #    "BSSID": r"BSSID:\s+([0-9A-Fa-f-]+)",
+                #    "Tipo de red": r"Tipo de red:\s+(.+)",
+                #    "Señal": r"Señal:\s+(\d+%?)",
+                #    "Perfil": r"Perfil:\s+(.+)",
+                #},
+            #},
             OsD.LINUX: {
-                "en": {
-                    "ESSID": r'ESSID:"([^"]*)"',
-                    "Mode": r"Mode:([^\s]+)",
-                    "Frequency": r"Frequency:([\d.]+) (GHz|Mhz)",
-                    "Access_Point": r"Access Point: ([\w:]+)",
-                    "Bit_Rate": r"Bit Rate=([\d.]+) (\w+/s)",
-                    "Tx_Power": r"Tx-Power=(-?\d+) (\w+)",
-                    "Link_Quality": r"Link Quality=(\d+/\d+)",
-                    "Signal_Level": r"Signal level=(-?\d+) (\w+)",
-                },
+                "BSSID": r'Connected to (\S+) \(on \S+\)',
+                "SSID": r'SSID: (.+)',
+                "Frequency": r'freq: ([\d.]+)',
+                #"RX_bytes": r'RX: (\d+) bytes \(\d+ packets\)',
+                #"TX_bytes": r'TX: (\d+) bytes \(\d+ packets\)',
+                "Signal": r'signal: (-?\d+) dBm',
+                #"RX_bitrate": r'rx bitrate: ([\d.]+) MBit/s',
+                #"TX_bitrate": r'tx bitrate: ([\d.]+) MBit/s',
+                #"BSS_flags": r'bss flags: (.+)',
+                #"DTIM_period": r'dtim period: (\d+)',
+                #"Beacon_interval": r'beacon int: (\d+)'
             },
             OsD.MACOS: {  # no language differentiation in macos: always english
-                "en": {
-                    "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
-                    "agrExtRSSI": r"[^\n][\s]*agrExtRSSI:\s+(-?\d+)\n",
-                    "state": r"[^\n][\s]*state:\s+(\w+)\n",
-                    "op mode": r"[^\n][\s]*op mode:\s+(\w+)\n",
-                    "lastTxRate": r"[^\n][\s]*lastTxRate:\s+(\d+)\n",
-                    "maxRate": r"[^\n][\s]*maxRate:\s+(\d+)\n",
-                    "BSSID": r"[^\n][\s]*BSSID:\s+([\w:]+)\n",
-                    "SSID": r"\n[\s]*SSID:\s+([\w\s]+)\n",
-                    "channel": r"[^\n][\s]*channel:\s+([\d,]+)\n",
-                }
+                "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
+                "agrExtRSSI": r"[^\n][\s]*agrExtRSSI:\s+(-?\d+)\n",
+                "state": r"[^\n][\s]*state:\s+(\w+)\n",
+                "op mode": r"[^\n][\s]*op mode:\s+(\w+)\n",
+                "lastTxRate": r"[^\n][\s]*lastTxRate:\s+(\d+)\n",
+                "maxRate": r"[^\n][\s]*maxRate:\s+(\d+)\n",
+                "BSSID": r"[^\n][\s]*BSSID:\s+([\w:]+)\n",
+                "SSID": r"\n[\s]*SSID:\s+([\w\s]+)\n",
+                "channel": r"[^\n][\s]*channel:\s+([\d,]+)\n",
             },
         }
 
@@ -182,9 +184,9 @@ class Wifi(Entity):
                     key=self.keySignalStrength,
                     value=self.PercentToDbm(int(wifiInfo["Signal"][:-1])),
                 )
-        elif self.platform == OsD.LINUX and "Signal_Level" in wifiInfo:
+        elif self.platform == OsD.LINUX and "Signal" in wifiInfo:
             self.SetEntitySensorValue(
-                key=self.keySignalStrength, value=wifiInfo["Signal_Level"]
+                key=self.keySignalStrength, value=wifiInfo["Signal"]
             )
         elif self.platform == OsD.MACOS and "agrCtlRSSI" in wifiInfo:
             self.SetEntitySensorValue(
@@ -194,7 +196,7 @@ class Wifi(Entity):
             self.SetEntitySensorValue(key=self.keySignalStrength, value="not connected")
 
         # Extra attributes
-        for key in self.patterns[self.platform][self.language]:
+        for key in self.patterns[self.platform]:
             extraKey = "EXTRA_KEY_" + key.upper().replace(" ", "_").replace(".", "_")
             if key in wifiInfo:
                 attributevalue = wifiInfo[key]
@@ -211,7 +213,7 @@ class Wifi(Entity):
 
     def GetWirelessInfo(self, stdout):
         wifi_info = {}
-        for key, pattern in self.patterns[self.platform][self.language].items():
+        for key, pattern in self.patterns[self.platform].items():
             match = re.search(pattern, stdout, re.IGNORECASE)
             if match:
                 wifi_info[key] = match.group(1) if match.group(1) else match.group(0)
@@ -267,7 +269,7 @@ class Wifi(Entity):
 
         if OsD.IsLinux():
             for interface in interfaces:
-                p = OsD.RunCommand(["iwconfig", interface])
+                p = OsD.RunCommand(["iw", "dev", interface, "link"])
                 if (
                     p.returncode > 0
                 ):  # if the returncode is 0 iwconfig succeeded, else continue with next interface
@@ -355,8 +357,8 @@ class Wifi(Entity):
     @classmethod
     def CheckSystemSupport(cls):
         if OsD.IsLinux():
-            if not OsD.CommandExists("iwconfig"):
-                raise Exception("iwconfig not found")
+            if not OsD.CommandExists("iw"):
+                raise Exception("iw not found")
             wifiNics = Wifi.GetWifiNics(getInfo=False)
             if not wifiNics:
                 raise Exception("no wireless interface found")
