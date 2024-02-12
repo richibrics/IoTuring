@@ -4,11 +4,13 @@ from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.App import App
 
 KEY_NAME = 'name'
-KEY_VERSION = 'version'
 KEY_UPDATE = 'update'
 PYPI_URL = 'https://pypi.org/pypi/ioturing/json'
 
 GET_UPDATE_ERROR_MESSAGE = "Error while checking, try to update to solve this problem. Alert the developers if the problem persists."
+
+EXTRA_ATTRIBUTE_NAME_VERSION = 'Version'
+EXTRA_ATTRIBUTE_UPDATE_CURRENT_VERSION = 'Current version'
 
 EXTRA_ATTRIBUTE_UPDATE_LATEST = 'Latest version'
 EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
@@ -17,12 +19,12 @@ class AppInfo(Entity):
     NAME = "AppInfo"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_NAME))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_VERSION))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_NAME, supportsExtraAttributes=True))
         self.RegisterEntitySensor(EntitySensor(self, KEY_UPDATE, supportsExtraAttributes=True))
 
         self.SetEntitySensorValue(KEY_NAME, App.getName())
-        self.SetEntitySensorValue(KEY_VERSION, App.getVersion())
+        self.SetEntitySensorExtraAttribute(KEY_NAME, EXTRA_ATTRIBUTE_NAME_VERSION, App.getVersion())
+        self.SetEntitySensorExtraAttribute(KEY_UPDATE, EXTRA_ATTRIBUTE_UPDATE_CURRENT_VERSION, App.getVersion())
         self.SetUpdateTimeout(600)
 
     def Update(self):
