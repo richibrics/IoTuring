@@ -133,13 +133,13 @@ class FullConfiguration:
 
 
 class SingleConfiguration:
-    """Single configuraiton of an entity or warehouse or AppSettings"""
+    """Single configuration of an entity or warehouse or setting"""
 
     config_category: str
     type: str
     configurations: dict
 
-    def __init__(self, config_category: str, config_dict: dict) -> None:
+    def __init__(self, config_category: str = "", config_dict: dict = {}) -> None:
         """Create a new SingleConfiguration
 
         Args:
@@ -149,7 +149,11 @@ class SingleConfiguration:
         self.config_category = config_category
 
         # self.type:
-        setattr(self, KEY_ENTITY_TYPE, config_dict.pop(KEY_ENTITY_TYPE))
+        type_name = ""
+        if KEY_ENTITY_TYPE in config_dict:
+            type_name = config_dict.pop(KEY_ENTITY_TYPE)
+        
+        setattr(self, KEY_ENTITY_TYPE, type_name)
 
         self.configurations = config_dict
 
@@ -227,8 +231,9 @@ class SingleConfiguration:
         """
         return bool(config_key in self.configurations)
 
-    def ToDict(self) -> dict:
+    def ToDict(self, include_type: bool = True) -> dict:
         """Full configuration as a dict, as it would be saved to a file """
         full_dict = self.configurations
-        full_dict[KEY_ENTITY_TYPE] = getattr(self, KEY_ENTITY_TYPE)
+        if include_type:
+            full_dict[KEY_ENTITY_TYPE] = getattr(self, KEY_ENTITY_TYPE)
         return full_dict

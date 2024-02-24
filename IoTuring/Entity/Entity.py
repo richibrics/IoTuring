@@ -4,13 +4,12 @@ import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Configurator.Configuration import SingleConfiguration
-from IoTuring.MyApp.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import CONFIG_KEY_UPDATE_INTERVAL
+from IoTuring.Settings.SettingsManager import SettingsManager
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
-
-
 
 
 class Entity(LogObject, ConfiguratorObject):
@@ -18,19 +17,18 @@ class Entity(LogObject, ConfiguratorObject):
     ALLOW_MULTI_INSTANCE = False
 
     def __init__(self, single_configuration: SingleConfiguration) -> None:
-        
+
         # Prepare the entity
         self.entitySensors = []
         self.entityCommands = []
 
         self.configurations = single_configuration
         self.tag = self.configurations.GetTag()
-        
 
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
-        self.updateTimeout = float(AppSettings().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
-        
+
+        self.updateTimeout = float(SettingsManager().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
 
     def Initialize(self):
         """ Must be implemented in sub-classes, may be useful here to use the configuration """
@@ -165,7 +163,6 @@ class Entity(LogObject, ConfiguratorObject):
 
     def LogSource(self):
         return self.GetEntityId()
-
 
     def RunCommand(self,
                    command: str | list,

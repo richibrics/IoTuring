@@ -12,12 +12,12 @@ from IoTuring.Exceptions.Exceptions import UserCancelledException
 
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
+from IoTuring.ClassManager.SettingsClassManager import SettingsClassManager
 
 from IoTuring.Configurator import ConfiguratorIO
 from IoTuring.Configurator import messages
 
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
-from IoTuring.MyApp.AppSettings import AppSettings
 
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
@@ -170,10 +170,19 @@ class Configurator(LogObject):
 
     def ManageSettings(self) -> None:
         """ UI for App and Log Settings """
-        choices = [
-            {"name": "Log Settings", "value": Logger},
-            {"name": "App Settings", "value": AppSettings}
-        ]
+
+        scm = SettingsClassManager()
+
+        choices = []
+
+        availableSettings = scm.ListAvailableClasses()
+        for sClass in availableSettings:
+
+            
+
+            choices.append(
+                {"name": sClass.NAME + " Settings",
+                 "value": sClass})
 
         choice = self.DisplayMenu(
             choices=choices,

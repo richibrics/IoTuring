@@ -1,20 +1,14 @@
-from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.Logger.Logger import Singleton
+from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 
 
 CONFIG_KEY_UPDATE_INTERVAL = "update_interval"
 CONFIG_KEY_SLOW_INTERVAL = "slow_interval"
 
 
-
-class AppSettings(ConfiguratorObject, metaclass=Singleton):
+class AppSettings(ConfiguratorObject):
     """Singleton for storing AppSettings, not related to Entites or Warehouses """
-    NAME = "AppSettings"
-
-    def __init__(self) -> None:
-        pass
-
+    NAME = "App"
 
     @classmethod
     def ConfigurationPreset(cls):

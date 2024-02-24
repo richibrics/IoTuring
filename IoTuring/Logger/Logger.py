@@ -6,33 +6,15 @@ import threading
 from pathlib import Path
 
 
-from IoTuring.MyApp.App import App
+
 from IoTuring.Logger import consts
 from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 from IoTuring.Logger.Colors import Colors
 from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
-from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Configurator.MenuPreset import MenuPreset
+
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.MyApp.SystemConsts import TerminalDetection as TD
 
-# macOS dep (in PyObjC)
-try:
-    from AppKit import *  # type:ignore
-    from Foundation import *  # type:ignore
-    macos_support = True
-except:
-    macos_support = False
-
-
-CONFIG_KEY_CONSOLE_LOG_LEVEL = "console_log_level"
-CONFIG_KEY_FILE_LOG_LEVEL = "file_log_level"
-CONFIG_KEY_FILE_LOG_ENABLED = "file_log_enabled"
-CONFIG_KEY_FILE_LOG_PATH = "file_log_path"
-
-
-LogLevelChoices = [{"name": l["string"], "value": l["const"]}
-                   for l in consts.LOG_LEVELS]
 
 
 class Singleton(type):
@@ -48,16 +30,12 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
-    NAME = "Logger"
+class Logger(LogLevelObject, metaclass=Singleton):
 
     startupTimeString = datetime.now().strftime(
         consts.LOG_FILENAME_FORMAT).replace(":", "_")
 
     terminalSupportsColors = TD.CheckTerminalSupportsColors()
-
-    # Logger starts before configurator
-    configurations = None
 
     # Default log levels:
     console_log_level = LogLevel(consts.DEFAULT_LOG_LEVEL)
@@ -66,13 +44,13 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
     # File logs stored here, before configurator loaded.
     file_log_buffer = []
 
-    file_log_enabled = None
-    file_log_filename = None
+    # For writing to file:
     file_log_descriptor = None
     lock = None
 
     def __init__(self) -> None:
 
+        # Set loglevel from envvar:
         self.SetConsoleLogLevel()
 
         diag_strings = [
@@ -80,50 +58,21 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
             f"Console Loglevel: {str(self.console_log_level)}",
             f"File Loglevel: {str(self.file_log_level)}"
         ]
-        if self.configurations:
-            diag_strings.extend([
-                "Configurations:",
-                self.configurations.ToDict()])
-        else:
-            diag_strings.append("Config not loaded yet")
+
 
         self.Log(self.LOG_DEVELOPMENT, "Logger", diag_strings)
 
-        
 
 
-        if self.configurations:
-
-            try:
-                # set up and start file logging:
-                if self.GetTrueOrFalseFromConfigurations(CONFIG_KEY_FILE_LOG_ENABLED):
-
-                    # Update file log level:
-                    new_file_loglevel = self.SanitizeLoglevel(self.GetFromConfigurations(CONFIG_KEY_FILE_LOG_LEVEL))
-                    if new_file_loglevel:
-                        self.file_log_level = new_file_loglevel
-
-                    self.SetupFileLogging()
-
-                    self.WriteFileLogBuffer()
-
-                    self.file_log_enabled = True
-                else:
-                    self.DisableFileLogging()
-            except:
-
-                self.DisableFileLogging()
-
-    def SetConsoleLogLevel(self):
+    def SetConsoleLogLevel(self, loglevel_string:str = ""):
         new_loglevel = None
         # Override log level from envvar:
         if OsD.GetEnv("IOTURING_LOG_LEVEL"):
             new_loglevel = self.SanitizeLoglevel(OsD.GetEnv("IOTURING_LOG_LEVEL"))
 
         # Read from config:
-        if not new_loglevel and self.configurations:
-            new_loglevel = self.SanitizeLoglevel(
-                self.GetFromConfigurations(CONFIG_KEY_CONSOLE_LOG_LEVEL))
+        if not new_loglevel and loglevel_string:
+            new_loglevel = self.SanitizeLoglevel(loglevel_string)
 
         if new_loglevel:
             self.console_log_level = new_loglevel
@@ -142,32 +91,34 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
                      f"Unknown Loglevel: {e.loglevel}")
             return None
 
-    def SetupFileLogging(self) -> None:
-        log_dir_path = Path(
-            self.GetFromConfigurations(CONFIG_KEY_FILE_LOG_PATH))
+    # Called from LogSettings
+    def StartFileLogging(self, loglevel_string:str, log_dir_path:Path) -> None:
+        
+        self.file_log_level = self.SanitizeLoglevel(loglevel_string) or self.file_log_level
+
+
         if not log_dir_path.exists():
             log_dir_path.mkdir(parents=True)
 
-        self.file_log_filename = log_dir_path.joinpath(self.startupTimeString)
+        file_log_filename = log_dir_path.joinpath(self.startupTimeString)
 
         self.file_log_descriptor = \
-            open(self.file_log_filename, "a", encoding="utf-8")
+            open(file_log_filename, "a", encoding="utf-8")
 
         self.lock = threading.Lock()
 
         self.Log(self.LOG_DEBUG, "Logger",
                      f"File Log setup finished.")
 
-
-    def WriteFileLogBuffer(self):
+        # Write buffer to disk:
         while self.file_log_buffer:
             line = self.file_log_buffer[0]
             self.WriteFileLogLine(line["string"], line["loglevel"])
             del self.file_log_buffer[0]
 
+    # Called from LogSettings
     def DisableFileLogging(self) -> None:
-        self.file_log_enabled = False
-        self.file_log_buffer = []
+        self.file_log_buffer = None
         self.CloseFile()
         self.Log(self.LOG_DEBUG, "Logger",
                      f"File logging disabled.")
@@ -250,14 +201,14 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
                 print(string)
 
         # Config is not loaded, write to buffer:
-        if self.file_log_enabled is None:
+        if self.file_log_buffer is not None:
             self.file_log_buffer.append({
                 "string": string,
                 "loglevel": loglevel
             })
 
         # Real file logging
-        elif self.file_log_enabled and writeToFile:
+        elif self.file_log_descriptor and writeToFile:
             self.WriteFileLogLine(string, loglevel)
 
     def WriteFileLogLine(self, string: str, loglevel: LogLevel) -> None:
@@ -277,48 +228,3 @@ class Logger(LogLevelObject, ConfiguratorObject, metaclass=Singleton):
             self.file_log_descriptor = None
 
 
-    @classmethod
-    def ConfigurationPreset(cls):
-        preset = MenuPreset()
-
-        preset.AddEntry(name="Console log level", key=CONFIG_KEY_CONSOLE_LOG_LEVEL,
-                        question_type="select", mandatory=True, default=consts.DEFAULT_LOG_LEVEL,
-                        instruction="IOTURING_LOG_LEVEL envvar overwrites this setting!",
-                        choices=LogLevelChoices)
-
-        preset.AddEntry(name="Enable file logging", key=CONFIG_KEY_FILE_LOG_ENABLED,
-                        question_type="yesno", default="N")
-
-        preset.AddEntry(name="File log level", key=CONFIG_KEY_FILE_LOG_LEVEL,
-                        question_type="select", mandatory=True, default=consts.DEFAULT_LOG_LEVEL,
-                        choices=LogLevelChoices)
-
-        preset.AddEntry(name="File log path", key=CONFIG_KEY_FILE_LOG_PATH,
-                        question_type="filepath", mandatory=True, default=cls.GetDefaultLogPath(),
-                        instruction="Directory where log files will be saved")
-
-        return preset
-
-    @staticmethod
-    def GetDefaultLogPath() -> str:
-
-        default_path = Path(__file__).parent
-        base_path = None
-
-        if OsD.IsMacos() and macos_support:
-            base_path = \
-                Path(NSSearchPathForDirectoriesInDomains(  # type: ignore
-                    NSLibraryDirectory,  # type: ignore
-                    NSUserDomainMask, True)[0])  # type: ignore
-        elif OsD.IsWindows():
-            base_path = Path(OsD.GetEnv("LOCALAPPDATA"))
-        elif OsD.IsLinux():
-            if OsD.GetEnv("XDG_CACHE_HOME"):
-                base_path = Path(OsD.GetEnv("XDG_CACHE_HOME"))
-            elif OsD.GetEnv("HOME"):
-                base_path = Path(OsD.GetEnv("HOME")).joinpath(".cache")
-
-        if base_path:
-            default_path = base_path.joinpath(App.getName())
-
-        return str(default_path.joinpath(consts.LOGS_FOLDER))

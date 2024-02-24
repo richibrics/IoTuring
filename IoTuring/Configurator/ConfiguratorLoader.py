@@ -6,10 +6,9 @@ from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_SETTINGS
 from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
 from IoTuring.ClassManager.EntityClassManager import EntityClassManager
+from IoTuring.ClassManager.SettingsClassManager import SettingsClassManager
 from IoTuring.Warehouse.Warehouse import Warehouse
 
-from IoTuring.MyApp.AppSettings import AppSettings
-from IoTuring.Logger.Logger import Logger
 
 
 class ConfiguratorLoader(LogObject):
@@ -35,7 +34,6 @@ class ConfiguratorLoader(LogObject):
                     self.LOG_ERROR, f"Can't find {whConfig.GetType()} warehouse, check your configurations.")
             else:
                 wh = whClass(whConfig)
-                wh.AddMissingDefaultConfigs()
                 self.Log(
                     self.LOG_DEBUG, f"Full configuration with defaults: {wh.configurations.ToDict()}")
                 warehouses.append(wh)
@@ -57,7 +55,6 @@ class ConfiguratorLoader(LogObject):
                     self.LOG_ERROR, f"Can't find {entityConfig.GetType()} entity, check your configurations.")
             else:
                 ec = entityClass(entityConfig)
-                ec.AddMissingDefaultConfigs()
                 self.Log(
                     self.LOG_DEBUG, f"Full configuration with defaults: {ec.configurations.ToDict()}")
                 entities.append(ec)  # Entity instance
@@ -71,11 +68,15 @@ class ConfiguratorLoader(LogObject):
     #   - pass the configuration to the warehouse function that uses the configuration to init the Warehouse
     #   - append the Warehouse to the list
 
-    def LoadSettings(self) -> None:
-        settingsClasses = [AppSettings, Logger]
+    def LoadSettings(self) -> list:
+        scm = SettingsClassManager()
+        settings = []
+        settingsClasses = scm.ListAvailableClasses()
+        
         for settingsClass in settingsClasses:
-            sc = settingsClass()
-            sc.configurations = self.configurations.LoadSingleConfig(
-                sc.NAME, KEY_SETTINGS)
-            sc.AddMissingDefaultConfigs()
-            sc.__init__()
+            settingsConfig = self.configurations.LoadSingleConfig(
+                settingsClass.NAME, KEY_SETTINGS)
+            sc = settingsClass(settingsConfig)
+            settings.append(sc)
+        return settings
+            

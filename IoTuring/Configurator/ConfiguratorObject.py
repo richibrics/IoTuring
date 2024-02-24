@@ -4,21 +4,34 @@ from IoTuring.Configurator.Configuration import SingleConfiguration
 
 class ConfiguratorObject:
     """ Base class for configurable classes """
+    NAME = "Unnamed"
 
     def __init__(self, single_configuration: SingleConfiguration) -> None:
         self.configurations = single_configuration
 
-    def GetConfigurations(self) -> dict:
-        """ Return configuration as dict """
-        return self.configurations.ToDict()
+        # Add missing default values:
+        preset = self.ConfigurationPreset()
+        defaults = preset.GetDefaults()
+
+        if defaults:
+            for default_key, default_value in defaults.items():
+                if not self.GetConfigurations().HasConfigKey(default_key):
+                    self.GetConfigurations().UpdateConfigValue(default_key, default_value)
+
+    def GetConfigurations(self) -> SingleConfiguration:
+        """ Safe return single_configuration object """
+        if self.configurations:
+            return self.configurations
+        else:
+            raise Exception(f"Configuration not loaded for {self.NAME}")
 
     def GetFromConfigurations(self, key):
         """ Get value from confiugurations with key (if not present raise Exception)."""
-        if self.configurations.HasConfigKey(key):
-            return self.configurations.GetConfigValue(key)
+        if self.GetConfigurations().HasConfigKey(key):
+            return self.GetConfigurations().GetConfigValue(key)
         else:
             raise Exception("Can't find key " + key + " in configurations")
-        
+
     def GetTrueOrFalseFromConfigurations(self, key) -> bool:
         """ Get boolean value from confiugurations with key (if not present raise Exception) """
         value = self.GetFromConfigurations(key).lower()
@@ -26,17 +39,6 @@ class ConfiguratorObject:
             return True
         else:
             return False
-
-    def AddMissingDefaultConfigs(self) -> None:
-        """ If some default values are missing add them to the running configuration"""
-        preset = self.ConfigurationPreset()
-        defaults = preset.GetDefaults()
-
-        if defaults:
-            for default_key, default_value in defaults.items():
-                if not self.configurations.HasConfigKey(default_key):
-                    self.configurations.UpdateConfigValue(default_key, default_value)
-
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
