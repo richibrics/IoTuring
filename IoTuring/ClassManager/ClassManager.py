@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-from pathlib import Path
 import importlib.util
 import importlib.machinery
 import sys
 import inspect
+from pathlib import Path
+
 from IoTuring.Logger.LogObject import LogObject
-
-# This is a parent class
-
-# This class is used to find and load classes without importing them
-# The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
 
 
 class ClassManager(LogObject):
+    """Base class for ClassManagers
+
+    This class is used to find and load classes without importing them
+    The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
+    """
 
     # Set up these class variables in subclasses:
     classesRelativePath = None  # Change in subclasses
-
 
     def __init__(self) -> None:
 
@@ -30,12 +30,13 @@ class ClassManager(LogObject):
 
         # Store loaded classes here:
         self.loadedClasses = []
-        
+
         # Collect paths
         self.moduleFilePaths = self.GetModuleFilePaths()
 
+    def GetModuleFilePaths(self) -> list[Path]:
+        """Get the paths of of python files of this class"""
 
-    def GetModuleFilePaths(self) -> list:
         if not self.classesRelativePath:
             raise Exception("Path to deployments not defined")
 
@@ -58,6 +59,14 @@ class ClassManager(LogObject):
         return filepaths
 
     def GetClassFromName(self, wantedName: str) -> type | None:
+        """Get the class of given name, and load it
+
+        Args:
+            wantedName (str): The name to look for
+
+        Returns:
+            type | None: The class if found, None if not found
+        """
 
         # Check from already loaded classes:
         module_class = next(
@@ -105,5 +114,10 @@ class ClassManager(LogObject):
         raise Exception(f"No class found: {module.__name__}")
 
     def ListAvailableClasses(self) -> list:
+        """Get all classes of this ClassManager
+
+        Returns:
+            list: The list of classes
+        """
 
         return [self.GetClassFromName(f.stem) for f in self.moduleFilePaths]

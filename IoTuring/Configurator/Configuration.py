@@ -145,6 +145,7 @@ class SingleConfiguration:
         Args:
             config_category (str): KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES or KEY_SETTINGS
             config_dict (dict): All options as in config file
+            Both optional, it will create an empty configuration without them
         """
         self.config_category = config_category
 

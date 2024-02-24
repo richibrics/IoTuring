@@ -178,8 +178,6 @@ class Configurator(LogObject):
         availableSettings = scm.ListAvailableClasses()
         for sClass in availableSettings:
 
-            
-
             choices.append(
                 {"name": sClass.NAME + " Settings",
                  "value": sClass})
@@ -193,7 +191,8 @@ class Configurator(LogObject):
             self.Menu()
 
         else:
-            settings_config = self.config.LoadSingleConfig(choice.NAME, KEY_SETTINGS)
+            settings_config = self.config.LoadSingleConfig(
+                choice.NAME, KEY_SETTINGS)
 
             # Edit:
             self.EditActiveClass(choice, settings_config)

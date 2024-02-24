@@ -80,3 +80,8 @@ class ConfiguratorLoader(LogObject):
             settings.append(sc)
         return settings
             
+    # How SettingsConfigurations work:
+    # - LogSettings are added to Logger in LogSettings.__init__()
+    # - Other settings' configs are added to SettingsManager singleton on main __init__
+    # - Entities can get configurations from this singleton, e.g.:
+    #   SettingsManager().GetFromConfigurations(CONFIG_KEY_UPDATE_INTERVAL)

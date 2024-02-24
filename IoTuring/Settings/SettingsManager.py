@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from IoTuring.Logger.Logger import Singleton
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Configurator.Configuration import SingleConfiguration
 
 
 class SettingsManager(ConfiguratorObject, metaclass=Singleton):
+    """Singleton for storing configurations of Settings"""
+
     def __init__(self) -> None:
         self.configurations = SingleConfiguration()
 
