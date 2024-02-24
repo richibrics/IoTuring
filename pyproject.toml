@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "paho-mqtt",
+  "paho-mqtt<2.0.0",
   "psutil",
   "PyYAML",
     "requests",
