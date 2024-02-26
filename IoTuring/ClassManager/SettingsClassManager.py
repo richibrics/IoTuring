@@ -3,5 +3,8 @@ from IoTuring.ClassManager import consts
 
 
 # Class to load Entities from the Entitties dir
-class EntityClassManager(ClassManager):
-    classesRelativePath = consts.ENTITIES_PATH
+class SettingsClassManager(ClassManager):
+    
+    classesRelativePath = consts.SETTINGS_PATH
+    
+

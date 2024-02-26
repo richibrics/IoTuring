@@ -46,13 +46,13 @@ class Notify(Entity):
     def Initialize(self):
 
         # Check if both config is defined or both is empty:
-        if not bool(self.GetConfigurations()[CONFIG_KEY_TITLE]) == bool(self.GetConfigurations()[CONFIG_KEY_MESSAGE]):
+        if not bool(self.GetFromConfigurations(CONFIG_KEY_TITLE)) == bool(self.GetFromConfigurations(CONFIG_KEY_MESSAGE)):
             raise Exception(
                 "Configuration error: Both title and message should be defined, or both should be empty!")
 
         try:
-            self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
-            self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
+            self.config_title = self.GetFromConfigurations(CONFIG_KEY_TITLE)
+            self.config_message = self.GetFromConfigurations(CONFIG_KEY_MESSAGE)
             self.data_mode = MODE_DATA_VIA_CONFIG
         except Exception as e:
             self.data_mode = MODE_DATA_VIA_PAYLOAD
@@ -67,7 +67,7 @@ class Notify(Entity):
             self.Log(self.LOG_INFO, "Using data from payload")
 
         # Set and check icon path:
-        self.config_icon_path = self.GetConfigurations()[CONFIG_KEY_ICON_PATH]
+        self.config_icon_path = self.GetFromConfigurations(CONFIG_KEY_ICON_PATH)
 
         if not os.path.exists(self.config_icon_path):
             self.Log(

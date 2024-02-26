@@ -11,6 +11,7 @@ from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
 from IoTuring.Logger.Logger import Logger
 from IoTuring.Logger.Colors import Colors
+from IoTuring.Settings.SettingsManager import SettingsManager
 
 warehouses = []
 entities = []
@@ -52,6 +53,9 @@ def loop():
     logger = Logger()
     configurator = Configurator()
 
+    # Load Logger settings before everything:
+    ConfiguratorLoader(configurator).LoadSettings()
+
     logger.Log(Logger.LOG_DEBUG, "App", f"Selected options: {vars(args)}")
 
     if args.configurator:
@@ -72,17 +76,24 @@ def loop():
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
-    logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
-    logger.Log(Logger.LOG_INFO, "Configurator",
-               "Run the script with -c to enter configuration mode")
+    # Load Settings:
+    settings = ConfiguratorLoader(configurator).LoadSettings()
+    sM = SettingsManager()
+    sM.AddSettings(settings)
 
-    eM = EntityManager()
+    logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
+
+    # Add help if not started from Configurator
+    if not args.configurator:
+        logger.Log(Logger.LOG_INFO, "Configurator",
+                   "Run the script with -c to enter configuration mode")
 
     # These will be done from the configuration reader
     entities = ConfiguratorLoader(configurator).LoadEntities()
     warehouses = ConfiguratorLoader(configurator).LoadWarehouses()
 
     # Add entites to the EntityManager
+    eM = EntityManager()
     for entity in entities:
         eM.AddActiveEntity(entity)
 
@@ -108,18 +119,10 @@ def Exit_SIGINT_handler(sig=None, frame=None):
     logger.Log(Logger.LOG_INFO, "Main", "Application closed by SigInt",
                printToConsole=False)  # to file
 
-    messages = ["Exiting...",
-                "Thanks for using IoTuring !"]
     print()  # New line
-    for message in messages:
-        text = ""
-        if (Logger.checkTerminalSupportsColors()):
-            text += Colors.cyan
-        text += message
-        if (Logger.checkTerminalSupportsColors()):
-            text += Colors.reset
-        logger.Log(Logger.LOG_INFO, "Main", text,
-                   writeToFile=False)  # to terminal
+    goodByeMessage = "Exiting...\nThanks for using IoTuring !"
+    logger.Log(Logger.LOG_INFO, "Main", goodByeMessage,
+               writeToFile=False, color=Colors.cyan)  # to terminal
 
     logger.CloseFile()
     sys.exit(0)
