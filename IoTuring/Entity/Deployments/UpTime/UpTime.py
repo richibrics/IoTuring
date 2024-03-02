@@ -7,7 +7,7 @@ from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 KEY = 'uptime'
 
 
-class Uptime(Entity):
+class UpTime(Entity):
     NAME = "UpTime"
 
     def Initialize(self):
