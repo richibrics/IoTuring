@@ -166,7 +166,7 @@ class Entity(LogObject, ConfiguratorObject):
     def SetTagFromConfiguration(self):
         """ Set tag from configuration or set it blank if not present there """
         if self.GetConfigurations() is not None and KEY_ENTITY_TAG in self.GetConfigurations():
-            self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
+            self.tag = self.GetFromConfigurations(KEY_ENTITY_TAG)
         else:
             self.tag = ""
 
