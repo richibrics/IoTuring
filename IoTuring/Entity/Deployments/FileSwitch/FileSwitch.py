@@ -17,7 +17,7 @@ class FileSwitch(Entity):
     def Initialize(self):
 
         try:
-            self.config_path = self.GetConfigurations()[CONFIG_KEY_PATH]
+            self.config_path = self.GetFromConfigurations(CONFIG_KEY_PATH)
         except Exception as e:
             raise Exception("Configuration error: " + str(e))
 
