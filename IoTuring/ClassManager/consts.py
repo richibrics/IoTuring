@@ -1,2 +1,7 @@
-ENTITIES_PATH = "Entity/Deployments"
-WAREHOUSES_PATH = "Warehouse/Deployments"
+KEY_ENTITY = "entity"
+KEY_WAREHOUSE = "warehouse"
+
+CLASS_PATH = {
+    KEY_ENTITY: "Entity/Deployments",
+    KEY_WAREHOUSE: "Warehouse/Deployments"
+}

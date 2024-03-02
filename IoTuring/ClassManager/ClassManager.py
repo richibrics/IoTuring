@@ -6,6 +6,7 @@ import sys
 import inspect
 from pathlib import Path
 
+from IoTuring.ClassManager.consts import *
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.MyApp.App import App
 
@@ -17,10 +18,12 @@ class ClassManager(LogObject):
     The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
     """
 
-    # Set up these class variables in subclasses:
-    classesRelativePath = None  # Change in subclasses!
+    def __init__(self, class_key:str) -> None:
 
-    def __init__(self) -> None:
+        if class_key not in CLASS_PATH:
+            raise Exception(f"Invalid class key {class_key}")
+        else:
+            self.classesRelativePath = CLASS_PATH[class_key]
 
         # Store loaded classes here:
         self.loadedClasses = []

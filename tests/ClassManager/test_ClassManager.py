@@ -1,22 +1,13 @@
-from IoTuring.ClassManager.EntityClassManager import EntityClassManager
-from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
+from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE
 
 
-class TestEntityClassManager:
+class TestClassManager:
     def testClassCount(self):
-        ecm = EntityClassManager()
-        assert bool(ecm.loadedClasses) == False
-        
-        class_num = len(ecm.ListAvailableClasses())
-        assert class_num == len(ecm.GetModuleFilePaths())
-        assert class_num == len(ecm.loadedClasses)
+        for class_key in [KEY_ENTITY, KEY_WAREHOUSE]:
 
+            cm = ClassManager(class_key)
+            assert bool(cm.loadedClasses) == False
 
-class TestWarehouseClassManager:
-    def testClassCount(self):
-        wcm = WarehouseClassManager()
-        assert bool(wcm.loadedClasses) == False
-        
-        class_num = len(wcm.ListAvailableClasses())
-        assert class_num == len(wcm.GetModuleFilePaths())
-        assert class_num == len(wcm.loadedClasses)
+            class_num = len(cm.ListAvailableClasses())
+            assert class_num == len(cm.GetModuleFilePaths())
+            assert class_num == len(cm.loadedClasses)

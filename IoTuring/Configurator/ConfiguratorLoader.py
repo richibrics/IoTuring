@@ -4,8 +4,7 @@ import sys
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import KEY_ENTITY_TYPE, Configurator, KEY_ACTIVE_ENTITIES, KEY_ACTIVE_WAREHOUSES, KEY_WAREHOUSE_TYPE
-from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
-from IoTuring.ClassManager.EntityClassManager import EntityClassManager
+from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE
 from IoTuring.Warehouse.Warehouse import Warehouse
 
 
@@ -18,7 +17,7 @@ class ConfiguratorLoader(LogObject):
     # Return list of instances initialized using their configurations
     def LoadWarehouses(self) -> list[Warehouse]:
         warehouses = []
-        wcm = WarehouseClassManager()
+        wcm = ClassManager(KEY_WAREHOUSE)
         if not KEY_ACTIVE_WAREHOUSES in self.configurations:
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one warehouse: configure it using -c argument")
@@ -41,7 +40,7 @@ class ConfiguratorLoader(LogObject):
     # Return list of entities initialized
     def LoadEntities(self) -> list[Entity]:
         entities = []
-        ecm = EntityClassManager()
+        ecm = ClassManager(KEY_ENTITY)
         if not KEY_ACTIVE_ENTITIES in self.configurations:
             self.Log(
                 self.LOG_ERROR, "You have to enable at least one entity: configure it using -c argument")
