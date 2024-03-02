@@ -6,8 +6,7 @@ import sys
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
 
-from IoTuring.ClassManager.EntityClassManager import EntityClassManager
-from IoTuring.ClassManager.WarehouseClassManager import WarehouseClassManager
+from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE
 
 from IoTuring.Configurator import ConfiguratorIO
 from IoTuring.Configurator import messages
@@ -111,7 +110,7 @@ class Configurator(LogObject):
 
     def ManageEntities(self) -> None:
         """ UI for Entities settings """
-        ecm = EntityClassManager()
+        ecm = ClassManager(KEY_ENTITY)
 
         manageEntitiesChoices = []
 
@@ -146,21 +145,19 @@ class Configurator(LogObject):
 
     def ManageWarehouses(self) -> None:
         """ UI for Warehouses settings """
-        wcm = WarehouseClassManager()
+        wcm = ClassManager(KEY_WAREHOUSE)
 
         manageWhChoices = []
 
-        availableWarehouses = wcm.ListAvailableClassesNames()
-        for whName in availableWarehouses:
-            short_wh_name = whName.replace("Warehouse", "")
+        availableWarehouses = wcm.ListAvailableClasses()
+        for whClass in availableWarehouses:
 
-            enabled_sign = " "
-            if self.IsWarehouseActive(short_wh_name):
-                enabled_sign = "X"
+            enabled_sign = "X" \
+                if self.IsWarehouseActive(whClass.NAME) else " "
 
             manageWhChoices.append(
-                {"name": f"[{enabled_sign}] - {short_wh_name}",
-                 "value": short_wh_name})
+                {"name": f"[{enabled_sign}] - {whClass.NAME}",
+                 "value": whClass})
 
         choice = self.DisplayMenu(
             choices=manageWhChoices,
@@ -170,7 +167,7 @@ class Configurator(LogObject):
         if choice == CHOICE_GO_BACK:
             self.Menu()
         else:
-            self.ManageSingleWarehouse(choice, wcm)
+            self.ManageSingleWarehouse(choice)
 
     def DisplayHelp(self) -> None:
         self.DisplayMessage(messages.HELP_MESSAGE)
@@ -195,10 +192,10 @@ class Configurator(LogObject):
         """ Save to configurations file """
         self.configuratorIO.writeConfigurations(self.config)
 
-    def ManageSingleWarehouse(self, warehouseName, wcm: WarehouseClassManager):
+    def ManageSingleWarehouse(self, whClass):
         """UI for single Warehouse settings"""
 
-        if self.IsWarehouseActive(warehouseName):
+        if self.IsWarehouseActive(whClass.NAME):
             manageWhChoices = [
                 {"name": "Edit the warehouse settings", "value": "Edit"},
                 {"name": "Remove the warehouse", "value": "Remove"}
@@ -209,24 +206,24 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=manageWhChoices,
-            message=f"Manage warehouse {warehouseName}"
+            message=f"Manage warehouse {whClass.NAME}"
         )
 
         if choice == CHOICE_GO_BACK:
             self.ManageWarehouses()
         elif choice == "Edit":
-            self.EditActiveWarehouse(warehouseName, wcm)
+            self.EditActiveWarehouse(whClass.NAME)
         elif choice == "Add":
-            self.AddActiveWarehouse(warehouseName, wcm)
+            self.AddActiveWarehouse(whClass)
         elif choice == "Remove":
             confirm = inquirer.confirm(message="Are you sure?").execute()
 
             if confirm:
-                self.RemoveActiveWarehouse(warehouseName)
+                self.RemoveActiveWarehouse(whClass.NAME)
             else:
                 self.ManageWarehouses()
 
-    def ManageSingleEntity(self, entityConfig, ecm: EntityClassManager):
+    def ManageSingleEntity(self, entityConfig, ecm: ClassManager):
         """ UI to manage an active warehouse (edit config/remove) """
 
         manageEntityChoices = [
@@ -251,7 +248,7 @@ class Configurator(LogObject):
             else:
                 self.ManageEntities()
 
-    def SelectNewEntity(self, ecm: EntityClassManager):
+    def SelectNewEntity(self, ecm: ClassManager):
         """ UI to add a new Entity """
 
         # entity classnames without unsupported entities:
@@ -286,7 +283,7 @@ class Configurator(LogObject):
         else:
             self.AddActiveEntity(choice, ecm)
 
-    def ShowUnsupportedEntities(self, ecm: EntityClassManager):
+    def ShowUnsupportedEntities(self, ecm: ClassManager):
         """ UI to show unsupported entities """
 
         # entity classnames without unsupported entities:
@@ -306,7 +303,7 @@ class Configurator(LogObject):
 
         self.ManageEntities()
 
-    def AddActiveEntity(self, entityName, ecm: EntityClassManager):
+    def AddActiveEntity(self, entityName, ecm: ClassManager):
         """ From entity name, get its class and retrieve the configuration preset, then add to configuration dict """
         entityClass = ecm.GetClassFromName(entityName)
         try:
@@ -368,10 +365,9 @@ class Configurator(LogObject):
                 return True
         return False
 
-    def AddActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+    def AddActiveWarehouse(self, whClass) -> None:
         """ Add warehouse to the preferences using a menu with the warehouse preset if available """
 
-        whClass = wcm.GetClassFromName(warehouseName + "Warehouse")
         try:
             preset = whClass.ConfigurationPreset()  # type: ignore
 
@@ -385,7 +381,7 @@ class Configurator(LogObject):
                     "No configuration needed for this Warehouse :)")
 
             # Save added settings
-            self.WarehouseMenuPresetToConfiguration(warehouseName, preset)
+            self.WarehouseMenuPresetToConfiguration(whClass.NAME, preset)
 
         except UserCancelledException:
             self.DisplayMessage("Configuration cancelled", force_clear=True)
@@ -395,7 +391,7 @@ class Configurator(LogObject):
 
         self.ManageWarehouses()
 
-    def EditActiveWarehouse(self, warehouseName, wcm: WarehouseClassManager) -> None:
+    def EditActiveWarehouse(self, warehouseName) -> None:
         """ UI for single Warehouse settings edit """
         self.DisplayMessage(
             "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
@@ -406,7 +402,7 @@ class Configurator(LogObject):
         # WarehouseMenuPresetToConfiguration appends a warehosue to the conf so here I should remove it to read it later
         # TO implement only when I know how to add removable value while editing configurations
 
-    def EditActiveEntity(self, entityConfig, ecm: WarehouseClassManager) -> None:
+    def EditActiveEntity(self, entityConfig, ecm: ClassManager) -> None:
         """ UI for single Entity settings edit """
         self.DisplayMessage(
             "You can't do that at the moment, change the configuration file manually. Sorry for the inconvenience")
