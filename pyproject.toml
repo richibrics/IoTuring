@@ -11,7 +11,8 @@ authors = [
   {name = "infeeeee", email = "gyetpet@mailbox.org"}
 ]
 maintainers = [
-  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"}
+  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"},
+  {name = "infeeeee", email = "gyetpet@mailbox.org"}
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -21,7 +22,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "paho-mqtt<2.0.0",
+  "paho-mqtt>=2.0.0",
   "psutil",
   "PyYAML",
     "requests",
