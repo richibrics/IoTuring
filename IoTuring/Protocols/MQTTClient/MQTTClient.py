@@ -1,8 +1,14 @@
+import sys
+
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.MyApp.App import App
 import paho.mqtt.client as MqttClient
-import paho.mqtt.publish as publish
-import paho.mqtt.enums as mqttEnums
+
+try:
+    import paho.mqtt.enums as mqttEnums
+except ModuleNotFoundError:
+    sys.exit("paho.mqtt.enums not found! Update paho-mqtt package to 2.0.0! Exiting...")
+
 
 from IoTuring.Protocols.MQTTClient.TopicCallback import TopicCallback
 
