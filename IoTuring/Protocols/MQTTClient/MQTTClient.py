@@ -1,7 +1,14 @@
+import sys
+
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.MyApp.App import App
 import paho.mqtt.client as MqttClient
-import paho.mqtt.publish as publish
+
+try:
+    import paho.mqtt.enums as mqttEnums
+except ModuleNotFoundError:
+    sys.exit("paho.mqtt.enums not found! Update paho-mqtt package to 2.0.0! Exiting...")
+
 
 from IoTuring.Protocols.MQTTClient.TopicCallback import TopicCallback
 
@@ -42,7 +49,7 @@ class MQTTClient(LogObject):
         return self.connected
 
     def SetupClient(self) -> None:
-        self.client = MqttClient.Client(self.name)
+        self.client = MqttClient.Client(callback_api_version=mqttEnums.CallbackAPIVersion.VERSION2, client_id=self.name)
 
         if self.username != "" and self.password != "":
             self.client.username_pw_set(self.username, self.password)
@@ -61,15 +68,15 @@ class MQTTClient(LogObject):
 
     # EVENTS
 
-    def Event_OnClientConnect(self, client, userdata, flags, rc) -> None:
-        if rc == 0:  # Connections is OK
+    def Event_OnClientConnect(self, client, userdata, flags, reason_code, properties)-> None:
+        if reason_code==0:  # Connections is OK
             self.Log(self.LOG_INFO, "Connection established")
             self.connected = True
             self.SubscribeToAllTopics()
         else:
-            self.Log(self.LOG_ERROR, "Connection error")
+            self.Log(self.LOG_ERROR, "Connection error: code " + str(reason_code))
 
-    def Event_OnClientDisconnect(self, client, userdata, rc) -> None:
+    def Event_OnClientDisconnect(self, client, userdata, flags, reason_code, properties)-> None:
         self.Log(self.LOG_ERROR, "Connection lost")
         self.connected = False
 
