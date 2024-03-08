@@ -29,10 +29,11 @@ class SingleConfiguration:
         """
         self.config_class = config_class
         self.config_type = config_dict.pop(CONFIG_KEY_TYPE)
+        print(self.GetLongName())
         self.configurations = config_dict
 
     def GetType(self) -> str:
-        """Get the type name of entity"""
+        """Get the type name of entity or warehouse (e.g. Cpu, Battery, HomeAssistant)"""
         return self.config_type
 
     def GetTag(self) -> str:
@@ -53,7 +54,9 @@ class SingleConfiguration:
         return label
 
     def GetLongName(self) -> str:
-        """Add category name to the end """
+        """ Get the type with the category name at the end (e.g. CpuEntity, HomeAssistantWarehouse)"""
+        
+        # Add category name to the end 
         return str(self.GetType() + self.GetClassKey().capitalize())
 
     def GetClassKey(self) -> str:
@@ -98,7 +101,7 @@ class SingleConfiguration:
         return bool(config_key in self.configurations)
 
     def ToDict(self, include_type: bool = True) -> dict:
-        """Full configuration as a dict, as it would be saved to a file """
+        """ SingleConfiguration as a dict, as it would be saved to a file """
         full_dict = self.configurations
         if include_type:
             full_dict[CONFIG_KEY_TYPE] = self.GetType()
@@ -136,7 +139,9 @@ class FullConfiguration:
         return [config for config in self.configs if config.config_class == CONFIG_CLASS[class_key]]
 
     def GetConfigsOfType(self, config_type: str) -> list[SingleConfiguration]:
-        """Return all configs with the given type
+        """Return all configs with the given type.
+
+        For example all configurations of Notify entity.
 
         Args:
             config_type (str): The type of config to return
