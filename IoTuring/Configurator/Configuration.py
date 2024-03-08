@@ -29,7 +29,6 @@ class SingleConfiguration:
         """
         self.config_class = config_class
         self.config_type = config_dict.pop(CONFIG_KEY_TYPE)
-        print(self.GetLongName())
         self.configurations = config_dict
 
     def GetType(self) -> str:
