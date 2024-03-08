@@ -334,22 +334,24 @@ class Configurator(LogObject):
                 preset.AddTagQuestion()
 
             for entry in preset.presets:
-                # Load config instead of default:
-                if single_config.HasConfigKey(entry.key):
-                    value = single_config.GetConfigValue(entry.key)
-                    if entry.question_type == "secret":
-                        value = "*" * len(value)
-                else:
-                    value = entry.default
+                if entry.ShouldDisplay(single_config.ToDict(include_type=False)):
 
-                # Nice display for None:
-                if value is None:
-                    value = ""
+                    # Load config instead of default:
+                    if single_config.HasConfigKey(entry.key):
+                        value = single_config.GetConfigValue(entry.key)
+                        if entry.question_type == "secret":
+                            value = "*" * len(value)
+                    else:
+                        value = entry.default
 
-                choices.append({
-                    "name": f"{entry.name}: {value}",
-                    "value": entry.key
-                })
+                    # Nice display for None:
+                    if value is None:
+                        value = ""
+
+                    choices.append({
+                        "name": f"{entry.name}: {value}",
+                        "value": entry.key
+                    })
 
             choice = self.DisplayMenu(
                 choices=choices,

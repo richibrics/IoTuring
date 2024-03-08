@@ -37,8 +37,15 @@ class QuestionPreset():
         if self.mandatory:
             self.question += " {!}"
 
-    def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
-        """Check if this question should be displayed"""
+    def ShouldDisplay(self, answer_dict: dict) -> bool:
+        """Check if this question should be displayed
+
+        Args:
+            answer_dict (dict): A dict of previous answers
+
+        Returns:
+            bool: If this question should be displayed
+        """
 
         should_display = True
 
@@ -46,19 +53,16 @@ class QuestionPreset():
         if self.dependsOn:
             dependencies_ok = []
             for key, value in self.dependsOn.items():
-                answered = menupreset.GetAnsweredPresetByKey(key)
                 dependency_ok = False
-
-                # Found the key in results:
-                if answered:
+                if key in answer_dict:
 
                     # Value is True or False:
                     if isinstance(value, bool):
-                        if answered.value:
+                        if answer_dict[key]:
                             dependency_ok = True
 
                     # Value must match:
-                    elif isinstance(value, str) and answered.value == value:
+                    elif isinstance(value, str) and answer_dict[key] == value:
                         dependency_ok = True
 
                 dependencies_ok.append(dependency_ok)
@@ -212,7 +216,7 @@ class MenuPreset():
             try:
 
                 # It should be displayed, ask question:
-                if q_preset.ShouldDisplay(self):
+                if q_preset.ShouldDisplay(self.GetDict()):
 
                     value = q_preset.Ask()
 
@@ -225,9 +229,6 @@ class MenuPreset():
                 raise UserCancelledException
             except Exception as e:
                 print(f"Error while making question for {q_preset.name}:", e)
-
-    def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
-        return next((entry for entry in self.results if entry.key == key), None)
 
     def GetPresetByKey(self, key: str) -> QuestionPreset | None:
         """Get the QuestionPreset of this key. Returns None if not found"""
