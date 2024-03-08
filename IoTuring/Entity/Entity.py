@@ -3,27 +3,25 @@ import time
 import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
+from IoTuring.Configurator.Configuration import SingleConfiguration
 from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
-KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
-
 DEFAULT_UPDATE_TIMEOUT = 10
 
 
-class Entity(LogObject, ConfiguratorObject):
-    NAME = "Unnamed"
-    ALLOW_MULTI_INSTANCE = False
+class Entity(ConfiguratorObject, LogObject):
 
-    def __init__(self, configurations) -> None:
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        super().__init__(single_configuration)
+
         # Prepare the entity
         self.entitySensors = []
         self.entityCommands = []
 
-        self.configurations = configurations
-        self.SetTagFromConfiguration()
+        self.tag = self.GetConfigurations().GetTag()
 
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
@@ -145,7 +143,7 @@ class Entity(LogObject, ConfiguratorObject):
 
     def GetEntityTag(self) -> str:
         """ Return entity identifier tag """
-        return self.tag  # Set from SetTagFromConfiguration on entity init
+        return self.tag
 
     def GetEntityNameWithTag(self) -> str:
         """ Return entity name and tag combined (or name alone if no tag is present) """
@@ -162,13 +160,6 @@ class Entity(LogObject, ConfiguratorObject):
 
     def LogSource(self):
         return self.GetEntityId()
-
-    def SetTagFromConfiguration(self):
-        """ Set tag from configuration or set it blank if not present there """
-        if self.GetConfigurations() is not None and KEY_ENTITY_TAG in self.GetConfigurations():
-            self.tag = self.GetFromConfigurations(KEY_ENTITY_TAG)
-        else:
-            self.tag = ""
 
     def RunCommand(self,
                    command: str | list,
@@ -225,12 +216,6 @@ class Entity(LogObject, ConfiguratorObject):
             raise Exception(f"Error during {command_name} command: {str(e)}")
 
         return p
-
-    @classmethod
-    def AllowMultiInstance(cls):
-        """ Return True if this Entity can have multiple instances, useful for customizable entities 
-            These entities are the ones that must have a tag to be recognized """
-        return cls.ALLOW_MULTI_INSTANCE
 
     @classmethod
     def CheckSystemSupport(cls):

@@ -28,11 +28,24 @@ class QuestionPreset():
         self.value = None
 
         self.question = self.name
-        if mandatory:
+
+        # yesno question cannot be mandatory:
+        if self.question_type == "yesno":
+            self.mandatory = False
+
+        # Add mandatory mark:
+        if self.mandatory:
             self.question += " {!}"
 
-    def ShouldDisplay(self, menupreset: "MenuPreset") -> bool:
-        """Check if this question should be displayed"""
+    def ShouldDisplay(self, answer_dict: dict) -> bool:
+        """Check if this question should be displayed
+
+        Args:
+            answer_dict (dict): A dict of previous answers
+
+        Returns:
+            bool: If this question should be displayed
+        """
 
         should_display = True
 
@@ -40,19 +53,16 @@ class QuestionPreset():
         if self.dependsOn:
             dependencies_ok = []
             for key, value in self.dependsOn.items():
-                answered = menupreset.GetAnsweredPresetByKey(key)
                 dependency_ok = False
-
-                # Found the key in results:
-                if answered:
+                if key in answer_dict:
 
                     # Value is True or False:
                     if isinstance(value, bool):
-                        if answered.value:
+                        if answer_dict[key]:
                             dependency_ok = True
 
                     # Value must match:
-                    elif isinstance(value, str) and answered.value == value:
+                    elif isinstance(value, str) and answer_dict[key] == value:
                         dependency_ok = True
 
                 dependencies_ok.append(dependency_ok)
@@ -62,6 +72,82 @@ class QuestionPreset():
                 should_display = False
 
         return should_display
+
+    def Ask(self):
+        """Ask a single question preset"""
+
+        question_options = {}
+
+        if self.mandatory:
+            def validate(x): return bool(x)
+            question_options.update({
+                "validate": validate,
+                "invalid_message": "You must provide a value for this key"
+            })
+
+        question_options["message"] = self.question + ":"
+
+        if self.default is not None:
+            # yesno questions need boolean default:
+            if self.question_type == "yesno":
+                question_options["default"] = \
+                    bool(str(self.default).lower()
+                         in BooleanAnswers.TRUE_ANSWERS)
+            elif self.question_type == "integer":
+                question_options["default"] = int(self.default)
+            else:
+                question_options["default"] = self.default
+        else:
+            if self.question_type == "integer":
+                # The default integer is 0, overwrite to None:
+                question_options["default"] = None
+
+        # text:
+        prompt_function = inquirer.text
+
+        if self.question_type == "secret":
+            prompt_function = inquirer.secret
+
+        elif self.question_type == "yesno":
+            prompt_function = inquirer.confirm
+            question_options.update({
+                "filter": lambda x: "Y" if x else "N"
+            })
+
+        elif self.question_type == "select":
+            prompt_function = inquirer.select
+            question_options.update({
+                "choices": self.choices
+            })
+
+        elif self.question_type == "integer":
+            prompt_function = inquirer.number
+            question_options["float_allowed"] = False
+
+        elif self.question_type == "filepath":
+            prompt_function = inquirer.filepath
+
+        # Ask the question:
+        prompt = prompt_function(
+            instruction=self.instruction,
+            **question_options
+        )
+
+        self.cancelled = False
+
+        @prompt.register_kb("escape")
+        def _handle_esc(event):
+            prompt._mandatory = False
+            prompt._handle_skip(event)
+            # exception raised here catched by inquirer.
+            self.cancelled = True
+
+        value = prompt.execute()
+
+        if self.cancelled:
+            raise UserCancelledException
+
+        return value
 
 
 class MenuPreset():
@@ -130,77 +216,9 @@ class MenuPreset():
             try:
 
                 # It should be displayed, ask question:
-                if q_preset.ShouldDisplay(self):
+                if q_preset.ShouldDisplay(self.GetDict()):
 
-                    question_options = {}
-
-                    if q_preset.mandatory:
-                        def validate(x): return bool(x)
-                        question_options.update({
-                            "validate": validate,
-                            "invalid_message": "You must provide a value for this key"
-                        })
-
-                    question_options["message"] = q_preset.question + ":"
-
-                    if q_preset.default is not None:
-                        # yesno questions need boolean default:
-                        if q_preset.question_type == "yesno":
-                            question_options["default"] = \
-                                bool(str(q_preset.default).lower()
-                                     in BooleanAnswers.TRUE_ANSWERS)
-                        elif q_preset.question_type == "integer":
-                            question_options["default"] = int(q_preset.default)
-                        else:
-                            question_options["default"] = q_preset.default
-                    else:
-                        if q_preset.question_type == "integer":
-                            # The default default is 0, overwrite to None:
-                            question_options["default"] = None
-
-                    # text:
-                    prompt_function = inquirer.text
-
-                    if q_preset.question_type == "secret":
-                        prompt_function = inquirer.secret
-
-                    elif q_preset.question_type == "yesno":
-                        prompt_function = inquirer.confirm
-                        question_options.update({
-                            "filter": lambda x: "Y" if x else "N"
-                        })
-
-                    elif q_preset.question_type == "select":
-                        prompt_function = inquirer.select
-                        question_options.update({
-                            "choices": q_preset.choices
-                        })
-
-                    elif q_preset.question_type == "integer":
-                        prompt_function = inquirer.number
-                        question_options["float_allowed"] = False
-
-                    elif q_preset.question_type == "filepath":
-                        prompt_function = inquirer.filepath
-
-                    # Create the prompt:
-                    prompt = prompt_function(
-                        instruction=q_preset.instruction,
-                        **question_options
-                    )
-
-                    # Handle escape keypress:
-                    @prompt.register_kb("escape")
-                    def _handle_esc(event):
-                        prompt._mandatory = False
-                        prompt._handle_skip(event)
-                        # exception raised here catched by inquirer.
-                        self.cancelled = True
-
-                    value = prompt.execute()
-
-                    if self.cancelled:
-                        raise UserCancelledException
+                    value = q_preset.Ask()
 
                     if value:
                         q_preset.value = value
@@ -212,8 +230,9 @@ class MenuPreset():
             except Exception as e:
                 print(f"Error while making question for {q_preset.name}:", e)
 
-    def GetAnsweredPresetByKey(self, key: str) -> QuestionPreset | None:
-        return next((entry for entry in self.results if entry.key == key), None)
+    def GetPresetByKey(self, key: str) -> QuestionPreset | None:
+        """Get the QuestionPreset of this key. Returns None if not found"""
+        return next((entry for entry in self.presets if entry.key == key), None)
 
     def GetDict(self) -> dict:
         """ Get a dict with keys and responses"""
