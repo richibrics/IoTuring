@@ -2,6 +2,7 @@ from __future__ import annotations
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
+from IoTuring.Configurator.Configuration import SingleConfiguration
 from IoTuring.Entity.EntityManager import EntityManager
 
 from threading import Thread
@@ -10,12 +11,12 @@ import time
 DEFAULT_LOOP_TIMEOUT = 10
 
 
-class Warehouse(LogObject, ConfiguratorObject):
-    NAME = "Unnamed"
+class Warehouse(ConfiguratorObject, LogObject):
 
-    def __init__(self, configurations) -> None:
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        super().__init__(single_configuration)
+
         self.loopTimeout = DEFAULT_LOOP_TIMEOUT
-        self.configurations = configurations
 
     def Start(self) -> None:
         """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
@@ -35,7 +36,7 @@ class Warehouse(LogObject, ConfiguratorObject):
     def LoopThread(self) -> None:
         """ Entry point of the warehouse thread, will run Loop() periodically """
         self.Loop()  # First call without sleep before
-        while(True):
+        while (True):
             if self.ShouldCallLoop():
                 self.Loop()
 
@@ -56,4 +57,3 @@ class Warehouse(LogObject, ConfiguratorObject):
 
     def LogSource(self):
         return self.GetWarehouseId()
-
