@@ -1,6 +1,6 @@
 [project]
 name = "IoTuring"
-version = "2024.1.1"
+version = "2024.2.1"
 description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -11,7 +11,8 @@ authors = [
   {name = "infeeeee", email = "gyetpet@mailbox.org"}
 ]
 maintainers = [
-  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"}
+  {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"},
+  {name = "infeeeee", email = "gyetpet@mailbox.org"}
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -21,7 +22,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "paho-mqtt",
+  "paho-mqtt>=2.0.0",
   "psutil",
   "PyYAML",
     "requests",

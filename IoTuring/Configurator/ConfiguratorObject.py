@@ -1,21 +1,35 @@
-from IoTuring.Configurator.MenuPreset import BooleanAnswers
-from IoTuring.Configurator.MenuPreset import MenuPreset
+from IoTuring.Configurator.MenuPreset import BooleanAnswers, MenuPreset
+from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CLASS
 
 
 class ConfiguratorObject:
     """ Base class for configurable classes """
+    NAME = "Unnamed"
+    ALLOW_MULTI_INSTANCE = False
 
-    def __init__(self, configurations) -> None:
-        self.configurations = configurations
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        self.configurations = single_configuration
 
-    def GetConfigurations(self) -> dict:
-        """ Safe return configurations dict """
-        return self.configurations.copy()
+        # Add missing default values:
+        preset = self.ConfigurationPreset()
+        defaults = preset.GetDefaults()
+
+        if defaults:
+            for default_key, default_value in defaults.items():
+                if not self.GetConfigurations().HasConfigKey(default_key):
+                    self.GetConfigurations().UpdateConfigValue(default_key, default_value)
+
+    def GetConfigurations(self) -> SingleConfiguration:
+        """ Safe return single_configuration object """
+        if self.configurations:
+            return self.configurations
+        else:
+            raise Exception(f"Configuration not loaded for {self.NAME}")
 
     def GetFromConfigurations(self, key):
-        """ Get value from confiugurations with key (if not present raise Exception) """
-        if key in self.GetConfigurations():
-            return self.GetConfigurations()[key]
+        """ Get value from confiugurations with key (if not present raise Exception)."""
+        if self.GetConfigurations().HasConfigKey(key):
+            return self.GetConfigurations().GetConfigValue(key)
         else:
             raise Exception("Can't find key " + key + " in configurations")
 
@@ -27,17 +41,21 @@ class ConfiguratorObject:
         else:
             return False
 
-    def AddMissingDefaultConfigs(self) -> None:
-        """ If some default values are missing add them to the running configuration"""
-        preset = self.ConfigurationPreset()
-        defaults = preset.GetDefaults()
-
-        if defaults:
-            for default_key in defaults:
-                if default_key not in self.GetConfigurations():
-                    self.configurations[default_key] = defaults[default_key]
-
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
         """ Prepare a preset to manage settings insert/edit for the warehouse or entity """
         return MenuPreset()
+
+    @classmethod
+    def AllowMultiInstance(cls):
+        """ Return True if this Entity can have multiple instances, useful for customizable entities 
+            These entities are the ones that must have a tag to be recognized """
+        return cls.ALLOW_MULTI_INSTANCE
+
+    @classmethod
+    def GetClassKey(cls) -> str:
+        """Get the CLASS_KEY of this configuration, e.g. KEY_ENTITY, KEY_WAREHOUSE"""
+        class_key = cls.__bases__[0].__name__.lower()
+        if class_key not in CONFIG_CLASS:
+            raise Exception(f"Invalid class {class_key}")
+        return class_key

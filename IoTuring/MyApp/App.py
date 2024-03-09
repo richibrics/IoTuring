@@ -1,4 +1,5 @@
 from importlib.metadata import metadata
+from pathlib import Path
 
 class App():
     METADATA = metadata('IoTuring')
@@ -39,6 +40,15 @@ class App():
     @staticmethod
     def getUrlReleases() -> str:
         return App.URL_RELEASES
+
+    @staticmethod
+    def getRootPath() -> Path:
+        """Get the project root path
+
+        Returns:
+            Path: The path to th project root as a pathlib.Path
+        """
+        return Path(__file__).parents[1]
 
     def __str__(self) -> str:
         msg = ""
