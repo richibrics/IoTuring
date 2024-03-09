@@ -71,6 +71,8 @@ AppInfo:
 AppInfo - update:
   custom_type: update
   device_class: firmware
+  latest_version_topic: IoTuring/LenovoYogaHomeAssistant/Entity/AppInfo/current_version_extraattributes
+  latest_version_template: value_json['update'].latest_version
 Temperature:
   icon: mdi:thermometer-lines
   unit_of_measurement: °C

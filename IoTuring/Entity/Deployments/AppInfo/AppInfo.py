@@ -18,9 +18,9 @@ class AppInfo(Entity):
     NAME = "AppInfo"
 
     def Initialize(self):
-        self.RegisterEntitySensor(EntitySensor(self, KEY_NAME, supportsExtraAttributes=True))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_NAME))
         self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION, supportsExtraAttributes=True))
-        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION))
+        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION, self.UpdateCustomDiscoveryPayload()))
 
         self.SetEntitySensorValue(KEY_NAME, App.getName())
         self.SetEntitySensorValue(KEY_CURRENT_VERSION, App.getVersion())
@@ -68,6 +68,12 @@ class AppInfo(Entity):
         else:
             raise UpdateCheckException()
     
+    def UpdateCustomDiscoveryPayload(self):
+        return {
+            "name": App.getName(),
+            "latest_version_topic": self.GetEntitySensorByKey(KEY_CURRENT_VERSION).Get
+        }
+
 def versionToInt(version: str):
     return int(''.join([i for i in version if i.isdigit()]))
     
