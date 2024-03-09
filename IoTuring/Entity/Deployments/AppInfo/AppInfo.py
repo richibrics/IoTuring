@@ -21,7 +21,7 @@ class AppInfo(Entity):
         self.RegisterEntitySensor(EntitySensor(self, KEY_NAME, supportsExtraAttributes=True))
         self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION))
         self.RegisterEntitySensor(EntitySensor(self, KEY_LATEST_VERSION, supportsExtraAttributes=True))
-        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION, [KEY_LATEST_VERSION]))
+        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION, [KEY_LATEST_VERSION], self.UpdateCommandCustomPayload()))
 
         self.SetEntitySensorValue(KEY_NAME, App.getName())
         self.SetEntitySensorValue(KEY_CURRENT_VERSION, App.getVersion())
@@ -35,10 +35,7 @@ class AppInfo(Entity):
         try:
             new_version = self.GetUpdateInformation()
             
-            if not new_version: # signal no update and current version (as its the latest)
-                self.SetEntitySensorValue(KEY_LATEST_VERSION, App.getVersion())
-            else: # signal update and latest version
-                self.SetEntitySensorValue(KEY_LATEST_VERSION, new_version)
+            self.SetEntitySensorValue(KEY_LATEST_VERSION, "2025.1.1")
         except Exception as e:
             # connection error or pypi name changed or something else
             # add extra attribute to show error message
@@ -69,6 +66,13 @@ class AppInfo(Entity):
         else:
             raise UpdateCheckException()
     
+    def UpdateCommandCustomPayload(self):
+        return {
+            "title": App.getName(),
+            "name": App.getName(),
+            "release_url": App.getUrlReleases()
+        }
+
 def versionToInt(version: str):
     return int(''.join([i for i in version if i.isdigit()]))
     

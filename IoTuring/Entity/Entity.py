@@ -126,8 +126,9 @@ class Entity(ConfiguratorObject, LogObject):
         connected_sensors = [command.GetConnectedPrimaryEntitySensor()
                              for command in self.entityCommands
                              if command.SupportsState()]
-        connected_sensors += [command.GetConnectedSecondaryEntitySensors()
-                              for command in self.entityCommands]
+        connected_sensors += [secondary
+                              for command in self.entityCommands 
+                              for secondary in command.GetConnectedSecondaryEntitySensors()]
         unconnected_sensors = [sensor for sensor in self.entitySensors
                                if sensor not in connected_sensors]
         return self.entityCommands.copy() + unconnected_sensors.copy()
