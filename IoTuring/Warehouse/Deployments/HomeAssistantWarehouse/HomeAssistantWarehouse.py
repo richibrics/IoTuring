@@ -289,7 +289,7 @@ class HomeAssistantCommand(HomeAssistantEntity):
         """ Get the connected sensor of this command """
         if self.entityCommand.SupportsState():
             return HomeAssistantSensor(
-                entityData=self.entityCommand.GetConnectedPrimaryEntitySensor(),
+                entityData=self.entityCommand.GetConnectedEntitySensor(),
                 wh=self.wh)
         else:
             return None

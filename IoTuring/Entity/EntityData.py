@@ -118,31 +118,23 @@ class EntitySensor(EntityData):
 class EntityCommand(EntityData):
 
     def __init__(self, entity, key, callbackFunction,
-                 primaryConnectedEntitySensorKey=None, secondaryConnectedEntitySensorKeys=[], customPayload={}):
+                 connectedEntitySensorKey=None, customPayload={}):
         """
         If a key for the entity sensor is passed, warehouses that support it use this command as a switch with state.
-        Better to register the sensor before this command to avoid unexpected behaviours.
-        CustomPayload overrides HomeAssistant discovery configuration.
-        Secondary connected sensors can be used for additional data of the commands.
+        Better to register the sensor before this command to avoud unexpected behaviours.
+        CustomPayload overrides HomeAssistant discovery configuration
         """
         EntityData.__init__(self, entity, key, customPayload)
         self.callbackFunction = callbackFunction
-        self.primaryConnectedEntitySensorKey = primaryConnectedEntitySensorKey
-        self.secondaryConnectedEntitySensorKeys = secondaryConnectedEntitySensorKeys
+        self.connectedEntitySensorKey = connectedEntitySensorKey
 
     def SupportsState(self):
-        """ True if this command supports state (has a primary connected sensor) """
-        return self.primaryConnectedEntitySensorKey is not None
+        return self.connectedEntitySensorKey is not None
 
-    def GetConnectedPrimaryEntitySensor(self) -> EntitySensor:
-        """ Returns the entity sensor connected to this command as primary sensor, if this command supports state.
+    def GetConnectedEntitySensor(self) -> EntitySensor:
+        """ Returns the entity sensor connected to this command, if this command supports state.
             Otherwise returns None. """
-        return self.GetEntity().GetEntitySensorByKey(self.primaryConnectedEntitySensorKey)
-
-    def GetConnectedSecondaryEntitySensors(self) -> list[EntitySensor]:
-        """ Returns the entity sensors connected to this command as secondary sensors.
-            If none, returns an empty list. """
-        return [self.GetEntity().GetEntitySensorByKey(key) for key in self.secondaryConnectedEntitySensorKeys]
+        return self.GetEntity().GetEntitySensorByKey(self.connectedEntitySensorKey)
 
     def CallCallback(self, message):
         """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage).

@@ -5,13 +5,13 @@ from IoTuring.MyApp.App import App
 
 KEY_NAME = 'name'
 KEY_CURRENT_VERSION = 'current_version'
-KEY_LATEST_VERSION = 'latest_version'
 KEY_UPDATE = 'update'
 
 PYPI_URL = 'https://pypi.org/pypi/ioturing/json'
 
 GET_UPDATE_ERROR_MESSAGE = "Error while checking, try to update to solve this problem. Alert the developers if the problem persists."
 
+EXTRA_ATTRIBUTE_LATEST_VERSION = 'latest_version'
 EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
 
 class AppInfo(Entity):
@@ -19,9 +19,8 @@ class AppInfo(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_NAME, supportsExtraAttributes=True))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_LATEST_VERSION, supportsExtraAttributes=True))
-        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION, [KEY_LATEST_VERSION]))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION, supportsExtraAttributes=True))
+        self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION))
 
         self.SetEntitySensorValue(KEY_NAME, App.getName())
         self.SetEntitySensorValue(KEY_CURRENT_VERSION, App.getVersion())
@@ -36,13 +35,13 @@ class AppInfo(Entity):
             new_version = self.GetUpdateInformation()
             
             if not new_version: # signal no update and current version (as its the latest)
-                self.SetEntitySensorValue(KEY_LATEST_VERSION, App.getVersion())
+                self.SetEntitySensorExtraAttribute(KEY_CURRENT_VERSION,EXTRA_ATTRIBUTE_LATEST_VERSION, App.getVersion())
             else: # signal update and latest version
-                self.SetEntitySensorValue(KEY_LATEST_VERSION, new_version)
+                self.SetEntitySensorExtraAttribute(KEY_CURRENT_VERSION,EXTRA_ATTRIBUTE_LATEST_VERSION, new_version)
         except Exception as e:
             # connection error or pypi name changed or something else
             # add extra attribute to show error message
-            self.SetEntitySensorExtraAttribute(KEY_LATEST_VERSION, EXTRA_ATTRIBUTE_UPDATE_ERROR, GET_UPDATE_ERROR_MESSAGE)
+            self.SetEntitySensorExtraAttribute(KEY_CURRENT_VERSION, EXTRA_ATTRIBUTE_UPDATE_ERROR, GET_UPDATE_ERROR_MESSAGE)
             
 
     def GetUpdateInformation(self):

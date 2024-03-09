@@ -51,7 +51,7 @@ class Entity(ConfiguratorObject, LogObject):
         except Exception as exc:
             # TODO I need an exception manager
             self.Log(self.LOG_ERROR, 'Error occured during update: ' + str(exc))
-            #  self.entityManager.UnloadEntity(self) # TODO Think how to improve this
+            #  self.entityManager.UnloadEntity(self) # TODO Think how to improve this
 
     def Update(self):
         """ Must be implemented in sub-classes """
@@ -123,11 +123,9 @@ class Entity(ConfiguratorObject, LogObject):
 
     def GetAllUnconnectedEntityData(self) -> list[EntityData]:
         """ safe - Return All EntityCommands and EntitySensors without connected sensors """
-        connected_sensors = [command.GetConnectedPrimaryEntitySensor()
+        connected_sensors = [command.GetConnectedEntitySensor()
                              for command in self.entityCommands
                              if command.SupportsState()]
-        connected_sensors += [command.GetConnectedSecondaryEntitySensors()
-                              for command in self.entityCommands]
         unconnected_sensors = [sensor for sensor in self.entitySensors
                                if sensor not in connected_sensors]
         return self.entityCommands.copy() + unconnected_sensors.copy()
