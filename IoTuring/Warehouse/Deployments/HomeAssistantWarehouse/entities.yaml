@@ -66,14 +66,11 @@ Time:
 Monitor:
   icon: mdi:monitor-shimmer
   custom_type: switch
-AppInfo - update:
-  custom_type: binary_sensor
-  icon: mdi:package-up
-  device_class: update
-  payload_on: "True"
-  payload_off: "False"
 AppInfo:
   icon: mdi:information-outline
+AppInfo - update:
+  custom_type: update
+  device_class: firmware
 Temperature:
   icon: mdi:thermometer-lines
   unit_of_measurement: °C
