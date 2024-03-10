@@ -19,8 +19,8 @@ class AppInfo(Entity):
 
     def Initialize(self):
         self.RegisterEntitySensor(EntitySensor(self, KEY_NAME, supportsExtraAttributes=True))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION))
-        self.RegisterEntitySensor(EntitySensor(self, KEY_LATEST_VERSION, supportsExtraAttributes=True))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_CURRENT_VERSION, supportsExtraAttributes=True))
+        self.RegisterEntitySensor(EntitySensor(self, KEY_LATEST_VERSION))
         self.RegisterEntityCommand(EntityCommand(self, KEY_UPDATE, self.InstallUpdate, KEY_CURRENT_VERSION, [KEY_LATEST_VERSION], self.UpdateCommandCustomPayload()))
 
         self.SetEntitySensorValue(KEY_NAME, App.getName())
