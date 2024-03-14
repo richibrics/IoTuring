@@ -14,7 +14,7 @@ GET_UPDATE_ERROR_MESSAGE = "Error while checking, try to update to solve this pr
 
 EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
 
-NO_REMOTE_INSTALL_AVAILABLE_MSG = "<b>⚠️ Currently the Install process cannot be started from HomeAssistant. Please update it manually. ⚠️</b>"
+NO_REMOTE_INSTALL_AVAILABLE_MSG = "⚠️ Currently the Install process cannot be started from HomeAssistant. Please update it manually. ⚠️</b>"
 
 class AppInfo(Entity):
     NAME = "AppInfo"
@@ -53,7 +53,6 @@ class AppInfo(Entity):
         Returns False if no update is available
         Otherwise returns the latest version (could be set as extra attribute)
         """
-        return "2025.1.1"
         latest = ""
         res = requests.get(PYPI_URL)
         if res.status_code == 200:
@@ -77,7 +76,7 @@ class AppInfo(Entity):
             "title": App.getName(),
             "name": App.getName(),
             "release_url": App.getUrlReleases(), 
-            "release_summary": App.getDescription() + "<br><br>" + NO_REMOTE_INSTALL_AVAILABLE_MSG,
+            "release_summary": NO_REMOTE_INSTALL_AVAILABLE_MSG,
         }
 
 def versionToInt(version: str):
