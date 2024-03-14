@@ -118,7 +118,8 @@ class EntitySensor(EntityData):
 class EntityCommand(EntityData):
 
     def __init__(self, entity, key, callbackFunction,
-                 primaryConnectedEntitySensorKey=None, secondaryConnectedEntitySensorKeys=[], customPayload={}):
+                 primaryConnectedEntitySensorKey=None,
+                 secondaryConnectedEntitySensorKeys=[], customPayload={}):
         """
         If a key for the entity sensor is passed, warehouses that support it use this command as a switch with state.
         Better to register the sensor before this command to avoid unexpected behaviours.

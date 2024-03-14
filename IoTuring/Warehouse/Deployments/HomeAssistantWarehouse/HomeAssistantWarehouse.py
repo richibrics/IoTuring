@@ -305,7 +305,7 @@ class HomeAssistantCommand(HomeAssistantEntity):
         else:
             return None
 
-    def GetSecondaryConnectedSensors(self) -> list[HomeAssistantSensor]:
+    def GetSecondaryConnectedSensors(self) -> list[SecondarySensor]:
         """ Get the connected sensor of this command """
         return [SecondarySensor(
             entityData=entityData,
