@@ -14,7 +14,7 @@ GET_UPDATE_ERROR_MESSAGE = "Error while checking, try to update to solve this pr
 
 EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
 
-NO_REMOTE_INSTALL_AVAILABLE_MSG = "⚠️ Currently the Install process cannot be started from HomeAssistant. Please update it manually. ⚠️</b>"
+NO_REMOTE_INSTALL_AVAILABLE_MSG = "<b>⚠️ Currently the Install process cannot be started from HomeAssistant. Please update it manually. ⚠️</b>"
 
 class AppInfo(Entity):
     NAME = "AppInfo"
