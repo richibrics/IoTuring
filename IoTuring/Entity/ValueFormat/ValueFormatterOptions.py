@@ -7,6 +7,9 @@ class ValueFormatterOptions():
     TYPE_MILLISECONDS = 5
     TYPE_TEMPERATURE = 6
     TYPE_ROTATION = 7
+    TYPE_RADIOPOWER = 8
+    TYPE_BYTE_PER_SECOND = 9
+    TYPE_BIT_PER_SECOND = 10
 
     DO_NOT_TOUCH_DECIMALS = -1
       
