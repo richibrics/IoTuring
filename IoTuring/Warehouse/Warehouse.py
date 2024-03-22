@@ -1,14 +1,17 @@
 from __future__ import annotations
-from IoTuring.Entity.Entity import Entity
-from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Configurator.Configuration import SingleConfiguration
-from IoTuring.Entity.EntityManager import EntityManager
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Entity.Entity import Entity
+    from IoTuring.Configurator.Configuration import SingleConfiguration
 
 from threading import Thread
 import time
 
-DEFAULT_LOOP_TIMEOUT = 10
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
+from IoTuring.Entity.EntityManager import EntityManager
+
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 
 
 class Warehouse(ConfiguratorObject, LogObject):
@@ -16,7 +19,8 @@ class Warehouse(ConfiguratorObject, LogObject):
     def __init__(self, single_configuration: SingleConfiguration) -> None:
         super().__init__(single_configuration)
 
-        self.loopTimeout = DEFAULT_LOOP_TIMEOUT
+        self.loopTimeout = int(
+            AppSettings.GetFromSettingsConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
 
     def Start(self) -> None:
         """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
