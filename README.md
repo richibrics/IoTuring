@@ -8,7 +8,7 @@ If you really like this project and you would like to support it:
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/richibrics)
 
-# The project
+## The project
 
 Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like **HomeAssistant**.
 
@@ -128,7 +128,7 @@ IoTuring
 
 To see all command options run `IoTuring --help`:
 
-```shell
+```
 > IoTuring --help
 usage: IoTuring [-h] [-v] [-c] [-o]
 
