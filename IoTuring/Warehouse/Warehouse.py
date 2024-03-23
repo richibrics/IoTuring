@@ -11,7 +11,7 @@ from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
 from IoTuring.Entity.EntityManager import EntityManager
 
-from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL, CONFIG_KEY_RETRY_INTERVAL
 
 
 class Warehouse(ConfiguratorObject, LogObject):
@@ -21,6 +21,8 @@ class Warehouse(ConfiguratorObject, LogObject):
 
         self.loopTimeout = int(
             AppSettings.GetFromSettingsConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
+        self.retry_interval = int(AppSettings
+                                  .GetFromSettingsConfigurations(CONFIG_KEY_RETRY_INTERVAL))
 
     def Start(self) -> None:
         """ Initial configuration and start the thread that will loop the Warehouse.Loop() function"""
