@@ -8,16 +8,33 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 KEY_USED_PERCENTAGE = "space_used_percentage"
 CONFIG_KEY_DU_PATH = "path"
 
+CONFIG_KEY_DISKIO = "IO"
+
 EXTRA_KEY_DISK_MOUNTPOINT = "Mountpoint"
 EXTRA_KEY_DISK_FSTYPE = "Filesystem"
 EXTRA_KEY_DISK_DEVICE = "Device"
 EXTRA_KEY_DISK_TOTAL = "Total"
 EXTRA_KEY_DISK_USED = "Used"
 EXTRA_KEY_DISK_FREE = "Free"
+EXTRA_KEY_DISK_READ_COUNT = "Read count"
+EXTRA_KEY_DISK_WRITE_COUNT = "Write count"
+EXTRA_KEY_DISK_READ_BYTES = "Read bytes"
+EXTRA_KEY_DISK_WRITE_BYTES = "Write bytes"
+EXTRA_KEY_DISK_READ_TIME = "Read time"
+EXTRA_KEY_DISK_WRTIE_TIME = "Write time"
+EXTRA_KEY_DISK_READ_MERGED_COUNT = "Read merged count"
+EXTRA_KEY_DISK_WRITE_MERGED_COUNT = "Write merged count"
+EXTRA_KEY_DISK_BUSY_TIME = "Busy time"
+
 
 VALUEFORMATOPTIONS_DISK_GB = ValueFormatterOptions(
     ValueFormatterOptions.TYPE_BYTE, 0, "GB")
 
+VALUEFORMATOPTIONS_DISK_B = ValueFormatterOptions(
+    ValueFormatterOptions.TYPE_BYTE, 0, "B")
+
+VALUEFORMATOPTIONS_TIME = ValueFormatterOptions(
+    ValueFormatterOptions.TYPE_TIME, 0, "ms")
 
 DEFAULT_PATH = {
     OsD.WINDOWS: "C:\\",
@@ -41,9 +58,10 @@ class Disk(Entity):
         """
 
         self.configuredPath = self.GetFromConfigurations(CONFIG_KEY_DU_PATH)
+        self.configuredIo = self.GetFromConfigurations(CONFIG_KEY_DISKIO)
 
         try:
-            # Get partision info for extra attributes:
+            # Get partition info for extra attributes:
             self.disk_partition = next(
                 (d for d in psutil.disk_partitions() if d.mountpoint == self.configuredPath))
         except StopIteration:
@@ -103,6 +121,64 @@ class Disk(Entity):
             attributeKey=EXTRA_KEY_DISK_FREE,
             attributeValue=usage.free,
             valueFormatterOptions=VALUEFORMATOPTIONS_DISK_GB)
+        
+        if self.configuredIo and OsD.IsLinux():
+            # the following are supported on nearly every OS, Windows drivenames/devnames are complicated, so no Windows support
+            
+            devname = self.disk_partition.device.split("/")[-1]
+            disk_io = psutil.disk_io_counters(perdisk=True)[devname]
+
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_COUNT,
+                attributeValue=disk_io.read_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_COUNT,
+                attributeValue=disk_io.write_count)
+
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_BYTES,
+                attributeValue=disk_io.read_bytes,
+                valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_BYTES,
+                attributeValue=disk_io.write_bytes,
+                valueFormatterOptions=VALUEFORMATOPTIONS_DISK_B)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_TIME,
+                attributeValue=disk_io.read_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRTIE_TIME,
+                attributeValue=disk_io.write_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+            
+            # the following are only supported in linux
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_READ_MERGED_COUNT,
+                attributeValue=disk_io.read_merged_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_WRITE_MERGED_COUNT,
+                attributeValue=disk_io.write_merged_count)
+            
+            self.SetEntitySensorExtraAttribute(
+                sensorDataKey=KEY_USED_PERCENTAGE,
+                attributeKey=EXTRA_KEY_DISK_BUSY_TIME,
+                attributeValue=disk_io.busy_time,
+                valueFormatterOptions=VALUEFORMATOPTIONS_TIME)
+        
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -115,11 +191,16 @@ class Disk(Entity):
                 {"name":
                  DISK_CHOICE_STRING[OsD.GetOs()].format(
                      disk.device, disk.mountpoint),
-                 "value": disk.mountpoint}
+                 "value": disk.mountpoint,
+                 }
             )
 
         preset = MenuPreset()
         preset.AddEntry(name="Drive to check",
                         key=CONFIG_KEY_DU_PATH, mandatory=False,
                         question_type="select", choices=DISK_CHOICES)
+        if OsD.IsLinux():
+            preset.AddEntry(name="Update DiskIO",
+                            key=CONFIG_KEY_DISKIO, mandatory=False,
+                            question_type="yesno")
         return preset
