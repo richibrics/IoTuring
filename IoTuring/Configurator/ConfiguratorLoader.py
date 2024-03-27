@@ -1,15 +1,18 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Entity.Entity import Entity
+    from IoTuring.Warehouse.Warehouse import Warehouse
+    from IoTuring.Settings.Settings import Settings
+
 import sys
 
-from IoTuring.Entity.Entity import Entity
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Configurator.Configurator import Configurator
-from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE
-from IoTuring.Warehouse.Warehouse import Warehouse
+from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE, KEY_SETTINGS
 
 
 class ConfiguratorLoader(LogObject):
-    configurator = None
 
     def __init__(self, configurator: Configurator) -> None:
         self.configurations = configurator.config
@@ -64,3 +67,31 @@ class ConfiguratorLoader(LogObject):
     # - for each one:
     #   - pass the configuration to the warehouse function that uses the configuration to init the Warehouse
     #   - append the Warehouse to the list
+
+    def LoadSettings(self) -> list[Settings]:
+        settings = []
+        scm = ClassManager(KEY_SETTINGS)
+        settingsClasses = scm.ListAvailableClasses()
+
+        for sClass in settingsClasses:
+
+            # Check if config was saved:
+            savedConfigs = self.configurations\
+                .GetConfigsOfType(sClass.NAME)
+
+            if savedConfigs:
+                sc = sClass(savedConfigs[0])
+
+            # Fallback to default:
+            else:
+                sc = sClass(sClass.GetDefaultConfigurations())
+
+            settings.append(sc)
+        return settings
+
+    # How Settings configurations work:
+    # - Settings' configs are added to SettingsManager singleton on main __init__
+    # - For advanced usage custom loading could be set up in the class' __init()__
+    # - Setting classes has classmethods to get their configs from SettingsManager Singleton,
+    #   SettingsManager shouldn't be called directly, e.g: 
+    #   AppSettings.GetFromSettingsConfigurations(CONFIG_KEY_UPDATE_INTERVAL)

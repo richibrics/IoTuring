@@ -15,11 +15,12 @@ from IoTuring.MyApp.App import App
 from IoTuring.Logger import consts
 from IoTuring.Entity.ValueFormat import ValueFormatter
 
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
+
 
 INCLUDE_UNITS_IN_SENSORS = False
 INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES = True
 
-SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
 # That stands for: App name, Client name, EntityData Id
 TOPIC_DATA_FORMAT = "{}/{}HomeAssistant/{}"
@@ -240,8 +241,12 @@ class HomeAssistantSensor(HomeAssistantEntity):
         if self.supports_extra_attributes:
             self.AddTopic("json_attributes_topic")
 
-        # Extra payload for sensors:
-        self.discovery_payload['expire_after'] = 600  # TODO Improve
+        # Make sure expire_after is greater than the loop timeout:
+        loop_timeout = int(AppSettings.GetFromSettingsConfigurations(
+            CONFIG_KEY_UPDATE_INTERVAL))
+        sensor_expire_seconds = 600 if loop_timeout < 600 else int(
+            loop_timeout * 1.5)
+        self.discovery_payload['expire_after'] = sensor_expire_seconds
 
     def SendValues(self):
         """ Send values of the sensor to the state topic """
@@ -404,7 +409,7 @@ class HomeAssistantWarehouse(Warehouse):
     def Loop(self):
 
         while (not self.client.IsConnected()):
-            time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
+            time.sleep(self.retry_interval)
 
         # Mechanism to call the function to send discovery data every CONFIGURATION_SEND_LOOP_SKIP_NUMBER loop
         if self.loopCounter == 0:
@@ -434,7 +439,7 @@ class HomeAssistantWarehouse(Warehouse):
     def NormalizeTopic(topicstring: str) -> str:
         """ Home assistant requires stricter topic names """
         # Remove non ascii characters:
-        topicstring=topicstring.encode("ascii", "ignore").decode()
+        topicstring = topicstring.encode("ascii", "ignore").decode()
         return MQTTClient.NormalizeTopic(topicstring).replace(" ", "_")
 
     @classmethod

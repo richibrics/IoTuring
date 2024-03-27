@@ -1,15 +1,20 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Configurator.Configuration import SingleConfiguration
+    from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+
+
 import time
 import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Configurator.Configuration import SingleConfiguration
-from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
+
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
-DEFAULT_UPDATE_TIMEOUT = 10
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 
 
 class Entity(ConfiguratorObject, LogObject):
@@ -25,7 +30,9 @@ class Entity(ConfiguratorObject, LogObject):
 
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
-        self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
+
+        self.updateTimeout = int(
+            AppSettings.GetFromSettingsConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
 
     def Initialize(self):
         """ Must be implemented in sub-classes, may be useful here to use the configuration """

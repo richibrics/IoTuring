@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from IoTuring.ClassManager.consts import KEY_ENTITY, KEY_WAREHOUSE
+from IoTuring.ClassManager.consts import KEY_ENTITY, KEY_WAREHOUSE, KEY_SETTINGS
 
 CONFIG_CLASS = {
     KEY_ENTITY: "active_entities",
-    KEY_WAREHOUSE: "active_warehouses"
+    KEY_WAREHOUSE: "active_warehouses",
+    KEY_SETTINGS: "settings"
 }
 
 BLANK_CONFIGURATION = {
-    CONFIG_CLASS[KEY_ENTITY]: [{"type": "AppInfo"}],
-    CONFIG_CLASS[KEY_WAREHOUSE]: []
+    CONFIG_CLASS[KEY_ENTITY]: [{"type": "AppInfo"}]
 }
 
 

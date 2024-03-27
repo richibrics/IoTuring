@@ -1,5 +1,5 @@
 from IoTuring.Configurator.MenuPreset import BooleanAnswers, MenuPreset
-from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CLASS
+from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CLASS, CONFIG_KEY_TYPE
 
 
 class ConfiguratorObject:
@@ -11,8 +11,7 @@ class ConfiguratorObject:
         self.configurations = single_configuration
 
         # Add missing default values:
-        preset = self.ConfigurationPreset()
-        defaults = preset.GetDefaults()
+        defaults = self.ConfigurationPreset().GetDefaults()
 
         if defaults:
             for default_key, default_value in defaults.items():
@@ -59,3 +58,13 @@ class ConfiguratorObject:
         if class_key not in CONFIG_CLASS:
             raise Exception(f"Invalid class {class_key}")
         return class_key
+
+    @classmethod
+    def GetDefaultConfigurations(cls) -> SingleConfiguration:
+        """Get the default configuration of this class"""
+
+        # Get default configs as dict:
+        config_dict = cls.ConfigurationPreset().GetDefaults()
+        config_dict[CONFIG_KEY_TYPE] = cls.NAME
+
+        return SingleConfiguration(cls.GetClassKey(), config_dict=config_dict)

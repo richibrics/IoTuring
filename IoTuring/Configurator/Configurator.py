@@ -5,15 +5,13 @@ import sys
 
 from IoTuring.Configurator.MenuPreset import QuestionPreset
 from IoTuring.Configurator.Configuration import FullConfiguration, SingleConfiguration
-
-from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Exceptions.Exceptions import UserCancelledException
-
-from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE
-
 from IoTuring.Configurator import ConfiguratorIO
 from IoTuring.Configurator import messages
 
+from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAREHOUSE, KEY_SETTINGS
+
+from IoTuring.Logger.LogObject import LogObject
+from IoTuring.Exceptions.Exceptions import UserCancelledException
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 from InquirerPy import inquirer
@@ -88,6 +86,7 @@ class Configurator(LogObject):
         mainMenuChoices = [
             {"name": "Manage entities", "value": self.ManageEntities},
             {"name": "Manage warehouses", "value": self.ManageWarehouses},
+            {"name": "Settings", "value": self.ManageSettings},
             {"name": "Start IoTuring", "value": self.WriteConfigurations},
             {"name": "Help", "value": self.DisplayHelp},
             {"name": "Quit", "value": self.Quit},
@@ -167,6 +166,39 @@ class Configurator(LogObject):
             else:
                 self.AddNewWarehouse(choice)
 
+    def ManageSettings(self) -> None:
+        """ UI for App and other Settings """
+
+        scm = ClassManager(KEY_SETTINGS)
+
+        choices = []
+
+        availableSettings = scm.ListAvailableClasses()
+        for sClass in availableSettings:
+
+            choices.append(
+                {"name": sClass.NAME + " Settings",
+                 "value": sClass})
+
+        choice = self.DisplayMenu(
+            choices=choices,
+            message=f"Select settings to edit"
+        )
+
+        if choice == CHOICE_GO_BACK:
+            self.Menu()
+
+        else:
+            if not self.IsClassActive(choice):
+                self.config.configs.append(choice.GetDefaultConfigurations())
+
+            settings_config = self.config.GetConfigsOfType(choice.NAME)[0]
+
+            self.EditActiveConfiguration(
+                choice, settings_config)
+
+            self.ManageSettings()
+
     def IsClassActive(self, typeClass) -> bool:
         """Check if class has an active configuration """
         return bool(self.config.GetConfigsOfType(typeClass.NAME))
@@ -206,7 +238,8 @@ class Configurator(LogObject):
 
     def ManageActiveConfiguration(self, typeClass, single_config: SingleConfiguration) -> None:
         choices = [
-            {"name": f"Edit the {typeClass.GetClassKey()} settings", "value": "Edit"},
+            {"name": f"Edit the {typeClass.GetClassKey()} settings",
+             "value": "Edit"},
             {"name": f"Remove the {typeClass.GetClassKey()}", "value": "Remove"}
         ]
 
