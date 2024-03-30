@@ -14,6 +14,9 @@ DEFAULT_UPDATE_TIMEOUT = 10
 
 class Entity(ConfiguratorObject, LogObject):
 
+    entitySensors: list[EntitySensor]
+    entityCommands: list[EntityCommand]
+
     def __init__(self, single_configuration: SingleConfiguration) -> None:
         super().__init__(single_configuration)
 
@@ -121,14 +124,12 @@ class Entity(ConfiguratorObject, LogObject):
         """ safe - Return list of entity sensors and commands """
         return self.entityCommands.copy() + self.entitySensors.copy()  # Safe return: nobody outside can change the callback !
 
-    def GetAllUnconnectedEntityData(self) -> list[EntityData]:
+    def GetAllUnconnectedEntityData(self) -> list:
         """ safe - Return All EntityCommands and EntitySensors without connected sensors """
-        connected_sensors = [command.GetConnectedPrimaryEntitySensor()
-                             for command in self.entityCommands
-                             if command.SupportsState()]
-        connected_sensors += [secondary
-                              for command in self.entityCommands 
-                              for secondary in command.GetConnectedSecondaryEntitySensors()]
+        connected_sensors = []
+        for command in self.entityCommands:
+            connected_sensors.extend(command.GetConnectedEntitySensors())
+        
         unconnected_sensors = [sensor for sensor in self.entitySensors
                                if sensor not in connected_sensors]
         return self.entityCommands.copy() + unconnected_sensors.copy()

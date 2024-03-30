@@ -48,6 +48,7 @@ PAYLOAD_OFF = consts.STATE_OFF
 
 SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY = "state_topic_key"
 
+
 class HomeAssistantEntityBase(LogObject):
     """ Base class for all entities in HomeAssistantWarehouse """
 
@@ -241,6 +242,13 @@ class HomeAssistantSensor(HomeAssistantEntity):
         if self.supports_extra_attributes:
             self.AddTopic("json_attributes_topic")
 
+        # Custom state topic:
+        if SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY in self.discovery_payload:
+            self.key_for_state_topic = self.discovery_payload.pop(
+                SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY)
+
+            self.discovery_payload[self.key_for_state_topic] = self.state_topic
+
         # Extra payload for sensors:
         self.discovery_payload['expire_after'] = 600  # TODO Improve
 
@@ -272,58 +280,49 @@ class HomeAssistantCommand(HomeAssistantEntity):
         self.AddTopic("availability_topic")
         self.AddTopic("command_topic")
 
-        # Primary sensors are used to retrieve the state of the command and to use it as a switch if present
-        self.primary_connected_sensor = self.GetPrimaryConnectedSensor()
-        # Secondary sensors are used to provide additional information to the command and they will be configured
-        # in the command discovery payload in a custom topic specified in the yaml file (like for Update latest version)
-        self.secondary_connected_sensors = self.GetSecondaryConnectedSensors()
+        self.connected_sensors = self.GetConnectedSensors()
 
-        if self.primary_connected_sensor:
+        if self.connected_sensors:
             self.SetDefaultDataType("switch")
-            # Get discovery payload from primary connected sensor
-            for payload_key in self.primary_connected_sensor.discovery_payload:
-                if payload_key not in self.discovery_payload:
-                    self.discovery_payload[payload_key] = self.primary_connected_sensor.discovery_payload[payload_key]
+            # Get discovery payload from sensors
+            for connected_sensor in self.connected_sensors:
+                for payload_key, payload_value in connected_sensor.discovery_payload.items():
+                    if payload_key not in self.discovery_payload:
+                        self.discovery_payload[payload_key] = payload_value
+
         else:
             # Button as default data type:
             self.SetDefaultDataType("button")
-        
-        # Get the discovery payload from the secondary connected sensors
-        for secondary_sensor in self.secondary_connected_sensors:
-            for payload_key in secondary_sensor.discovery_payload:
-                if payload_key not in self.discovery_payload:
-                    self.discovery_payload[payload_key] = secondary_sensor.discovery_payload[payload_key]
 
         self.command_callback = self.GenerateCommandCallback()
 
-    def GetPrimaryConnectedSensor(self) -> HomeAssistantSensor | None:
+    def GetConnectedSensors(self) -> list[HomeAssistantSensor]:
         """ Get the connected sensor of this command """
-        if self.entityCommand.SupportsState():
-            return HomeAssistantSensor(
-                entityData=self.entityCommand.GetConnectedPrimaryEntitySensor(),
-                wh=self.wh)
-        else:
-            return None
-
-    def GetSecondaryConnectedSensors(self) -> list[SecondarySensor]:
-        """ Get the connected sensor of this command """
-        return [SecondarySensor(
-            entityData=entityData,
-            wh=self.wh)
-            for entityData in self.entityCommand.GetConnectedSecondaryEntitySensors()]
+        return [HomeAssistantSensor(entityData=sensor, wh=self.wh)
+                for sensor in self.entityCommand.GetConnectedEntitySensors()]
 
     def GenerateCommandCallback(self) -> Callable:
         """ Generate the callback function """
         def CommandCallback(message):
             status = self.entityCommand.CallCallback(message)
             if status and self.wh.client.IsConnected():
-                if self.primary_connected_sensor:
+
+                if self.connected_sensors:
+                    # First sensor, update state from callback:
+
                     # Only set value if it was already set, to exclude optimistic switches
-                    if self.primary_connected_sensor.entitySensor.HasValue():
+                    if self.connected_sensors[0].entitySensor.HasValue():
                         self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
-                                 self.primary_connected_sensor.state_topic)
+                                 self.connected_sensors[0].state_topic)
                         self.SendTopicData(
-                            self.primary_connected_sensor.state_topic, message.payload.decode('utf-8'))
+                            self.connected_sensors[0].state_topic, message.payload.decode('utf-8'))
+
+                if len(self.connected_sensors) > 1:
+                    # Other sensors, full update:
+                    self.entity.CallUpdate()
+                    for connected_sensor in self.connected_sensors[1:]:
+                        connected_sensor.SendValues()
+
         return CommandCallback
 
 
@@ -345,41 +344,6 @@ class LwtSensor(HomeAssistantEntityBase):
 
     def SendValues(self):
         self.SendTopicData(self.state_topic, LWT_PAYLOAD_ONLINE)
-
-
-class SecondarySensor(HomeAssistantEntity):
-    # All secondary sensors won't have a discovery payload that will be sent alone
-    # but joined with the one of the command they are connected to.
-    # The state topic is set to a topic, but published in discovery payload not as state topic
-    # but with that MUST be present in the YAML file: look at the Update latest version sensor
-    def __init__(self,  entityData: EntitySensor, wh: "HomeAssistantWarehouse") -> None:
-        super().__init__(entityData=entityData, wh=wh)
-
-        self.entitySensor = entityData
-
-        # Default data type:
-        self.SetDefaultDataType("sensor")
-
-        self.AddTopic("state_topic")
-
-        # The state topic to use is in the discovery payload as SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY
-        if not SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY in self.discovery_payload:
-            raise Exception(f"Secondary sensor {self.id} must define the discovery state topic key in entity data configuration")
-
-        self.key_for_state_topic = self.discovery_payload.pop(SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY)
-
-        self.discovery_payload[self.key_for_state_topic] = self.state_topic
-
-
-    def SendValues(self):
-        """ Send values of the sensor to the custom topic """
-        if self.entitySensor.HasValue():
-            sensor_value = ValueFormatter.FormatValue(
-                self.entitySensor.GetValue(),
-                self.entitySensor.GetValueFormatterOptions(),
-                INCLUDE_UNITS_IN_SENSORS)
-
-            self.SendTopicData(self.state_topic, sensor_value)
 
 
 class HomeAssistantWarehouse(Warehouse):
@@ -431,13 +395,12 @@ class HomeAssistantWarehouse(Warehouse):
             for entityData in entity.GetAllUnconnectedEntityData():
                 # It's a command:
                 if isinstance(entityData, EntityCommand):
+
                     hasscommand = HomeAssistantCommand(entityData, self)
-                    if hasscommand.primary_connected_sensor:
-                        self.homeAssistantEntities["connected_sensors"].append(
-                            hasscommand.primary_connected_sensor)
-                    for secondary in hasscommand.secondary_connected_sensors:
-                        self.homeAssistantEntities["connected_sensors"].append(
-                            secondary)
+                    if hasscommand.connected_sensors:
+                        for connected_sensor in hasscommand.connected_sensors:
+                            self.homeAssistantEntities["connected_sensors"].append(
+                                connected_sensor)
                     self.homeAssistantEntities["commands"].append(hasscommand)
 
                 # It's a sensor:
@@ -489,7 +452,7 @@ class HomeAssistantWarehouse(Warehouse):
     def NormalizeTopic(topicstring: str) -> str:
         """ Home assistant requires stricter topic names """
         # Remove non ascii characters:
-        topicstring=topicstring.encode("ascii", "ignore").decode()
+        topicstring = topicstring.encode("ascii", "ignore").decode()
         return MQTTClient.NormalizeTopic(topicstring).replace(" ", "_")
 
     @classmethod
@@ -497,10 +460,12 @@ class HomeAssistantWarehouse(Warehouse):
         preset = MenuPreset()
         preset.AddEntry("Home assistant MQTT broker address",
                         CONFIG_KEY_ADDRESS, mandatory=True)
-        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883, question_type="integer")
+        preset.AddEntry("Port", CONFIG_KEY_PORT,
+                        default=1883, question_type="integer")
         preset.AddEntry("Client name", CONFIG_KEY_NAME, mandatory=True)
         preset.AddEntry("Username", CONFIG_KEY_USERNAME)
-        preset.AddEntry("Password", CONFIG_KEY_PASSWORD, question_type="secret")
+        preset.AddEntry("Password", CONFIG_KEY_PASSWORD,
+                        question_type="secret")
         preset.AddEntry("Add computer name to entity name",
                         CONFIG_KEY_ADD_NAME_TO_ENTITY, default="Y", question_type="yesno")
         preset.AddEntry("Use tag as entity name for multi instance entities",
