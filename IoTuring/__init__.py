@@ -47,7 +47,7 @@ def loop():
         sys.exit("Error: Invalid arguments!")
 
     # Clear the terminal
-    Configurator.ClearTerminal()
+    # Configurator.ClearTerminal()
 
     # Start logger:
     logger = Logger()
@@ -130,5 +130,5 @@ def Exit_SIGINT_handler(sig=None, frame=None):
         logger.Log(Logger.LOG_INFO, "Main", text,
                    writeToFile=False)  # to terminal
 
-    logger.CloseFile()
+    # logger.CloseFile()
     sys.exit(0)

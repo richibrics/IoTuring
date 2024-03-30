@@ -7,37 +7,37 @@ LOG_LEVELS = [
     {
         "const": "LOG_MESSAGE",
         "string": "Message",
-        "number": 0,
+        "number": 50,
         "color": "green"
     },
     {
         "const": "LOG_ERROR",
         "string": "Error",
-        "number": 1,
+        "number": 40,
         "color": "red"
     },
     {
         "const": "LOG_WARNING",
         "string": "Warning",
-        "number": 2,
+        "number": 30,
         "color": "yellow"
     },
     {
         "const": "LOG_INFO",
         "string": "Info",
-        "number": 3,
+        "number": 20,
 
     },
     {
         "const": "LOG_DEBUG",
         "string": "Debug",
-        "number": 4,
+        "number": 10,
 
     },
     {
         "const": "LOG_DEVELOPMENT",
         "string": "Dev",
-        "number": 5,
+        "number": 0,
 
     }
 ]
