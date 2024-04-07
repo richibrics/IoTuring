@@ -29,7 +29,7 @@ The device will also have some properties like connectivity and battery status.
 
 All sensors and switches will be ready to be added to your dashboard in your favourite cards !
 
-For detailed instructions about how to add your computer to HomeAssistant, look at the section "HomeAssistant setup" below.
+For detailed instructions about how to add your computer to HomeAssistant, look at the [HomeAssistant setup](#homeassistant-setup) section below.
 
 ## Install
 
