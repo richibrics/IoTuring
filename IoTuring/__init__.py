@@ -9,6 +9,7 @@ from IoTuring.MyApp.App import App
 from IoTuring.Configurator.Configurator import Configurator
 from IoTuring.Configurator.ConfiguratorLoader import ConfiguratorLoader
 from IoTuring.Entity.EntityManager import EntityManager
+from IoTuring.Settings.SettingsManager import SettingsManager
 from IoTuring.Logger.Logger import Logger
 from IoTuring.Logger.Colors import Colors
 
@@ -72,9 +73,17 @@ def loop():
     # This have to start after configurator.Menu(), otherwise won't work starting from the menu
     signal.signal(signal.SIGINT, Exit_SIGINT_handler)
 
+    # Load Settings:
+    settings = ConfiguratorLoader(configurator).LoadSettings()
+    sM = SettingsManager()
+    sM.AddSettings(settings)
+
     logger.Log(Logger.LOG_INFO, "App", App())  # Print App info
-    logger.Log(Logger.LOG_INFO, "Configurator",
-               "Run the script with -c to enter configuration mode")
+
+    # Add help if not started from Configurator
+    if not args.configurator:
+        logger.Log(Logger.LOG_INFO, "Configurator",
+                   "Run the script with -c to enter configuration mode")
 
     eM = EntityManager()
 
