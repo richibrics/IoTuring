@@ -1,5 +1,7 @@
 from importlib.metadata import metadata
 from pathlib import Path
+import requests
+from bs4 import BeautifulSoup
 
 class App():
     METADATA = metadata('IoTuring')
@@ -49,6 +51,24 @@ class App():
             Path: The path to th project root as a pathlib.Path
         """
         return Path(__file__).parents[1]
+
+    @staticmethod
+    def crawlReleaseNotes() -> str:
+        """Crawl the release notes from the Release page """
+        try:
+            res = requests.get(App.getUrlReleases())
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                # take the last release release notes
+                release_notes = soup.find('div', class_='markdown-body')
+                if release_notes:
+                    release_notes = release_notes.text.split("Changelog")[1]
+                    release_notes = release_notes.split("Commits")[0]
+                    return release_notes.strip()
+        except Exception as e:
+            return "Error fetching release notes"
+        return "No release notes found"
+
 
     def __str__(self) -> str:
         msg = ""

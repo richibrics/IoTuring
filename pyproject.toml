@@ -27,6 +27,7 @@ dependencies = [
   "PyYAML",
     "requests",
   "InquirerPy",
+  "beautifulsoup4",
   "PyObjC; sys_platform == 'darwin'",
   "IoTuring-applesmc; sys_platform == 'darwin'",
   "tinyWinToast; sys_platform == 'win32'"

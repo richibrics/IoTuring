@@ -16,6 +16,8 @@ EXTRA_ATTRIBUTE_UPDATE_ERROR = 'Check error'
 
 NO_REMOTE_INSTALL_AVAILABLE_MSG = "<b>⚠️ Currently the Install process cannot be started from HomeAssistant. Please update it manually. ⚠️</b>"
 
+UPDATE_RELEASE_SUMMARY_MAX_CHARS = 255
+
 class AppInfo(Entity):
     NAME = "AppInfo"
 
@@ -76,8 +78,47 @@ class AppInfo(Entity):
             "title": App.getName(),
             "name": App.getName(),
             "release_url": App.getUrlReleases(), 
-            "release_summary": NO_REMOTE_INSTALL_AVAILABLE_MSG,
+            "release_summary":  + self.getReleaseNotes()
         }
+
+    def getReleaseNotes(self):
+        release_notes = NO_REMOTE_INSTALL_AVAILABLE_MSG + "<br><ul>"
+        notes = App.crawlReleaseNotes().split("\n")
+        notes = ["<li>" + note + "</li>" for note in notes if len(note) > 0]
+        # Sort by length
+        notes.sort(key=len)
+        list_end = "</ul>"
+        cannot_complete_msg = "<li>...</li>"
+
+        # Append the list to the release notes until we have space
+        # If no space, append "...": take into account that we can't place a note if then the next note is too long and 
+        # also there wouldn't be space for the "..."
+        noteI = 0   
+        end = False
+        while noteI < len(notes) and not end:
+            # Last note: don't need to take into account the possibility of adding "..."
+            if noteI == len(notes) - 1:
+                if len(release_notes) + len(notes[noteI]) + len(list_end) <= UPDATE_RELEASE_SUMMARY_MAX_CHARS:
+                    release_notes += notes[noteI]
+                else:
+                    release_notes += cannot_complete_msg
+            else: # not last note: can I add it ? If I add it, will I be able to add "..." if I won't be able to add the next note ?
+                if len(release_notes) + len(notes[noteI]) + len(notes[noteI + 1]) + len(list_end) <= UPDATE_RELEASE_SUMMARY_MAX_CHARS:
+                    # Both this and next note can be added -> free to add this
+                    release_notes += notes[noteI]
+                else: 
+                    # The next note can't be added but the three dots can (and so also this note) -> Free to add this
+                    if len(release_notes) + len(notes[noteI]) + len(cannot_complete_msg) + len(list_end) <= UPDATE_RELEASE_SUMMARY_MAX_CHARS:
+                        release_notes += notes[noteI]
+                    else:
+                        # The three dots can't be added -> end
+                        release_notes += cannot_complete_msg
+                        end = True
+            noteI += 1
+
+
+        release_notes += list_end
+        return release_notes
 
 def versionToInt(version: str):
     return int(''.join([i for i in version if i.isdigit()]))
