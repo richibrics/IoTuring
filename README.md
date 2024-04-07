@@ -8,7 +8,7 @@ If you really like this project and you would like to support it:
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/richibrics)
 
-# The project
+## The project
 
 Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like **HomeAssistant**.
 
@@ -20,69 +20,106 @@ But the most important thing: **works on all OSs and all architectures ! Windows
 
 **CHANGELOG**: available in [Releases](https://github.com/richibrics/IoTuring/releases) page
 
+### HomeAssistant preview
+
+When the HomeAssistant warehouse is active, your computer will automatically show up in HomeAssistant as a single device, so all your entities will be grouped together. 
+The device will also have some properties like connectivity and battery status.
+
+![device](https://github.com/richibrics/IoTuring/blob/main/docs/images/device_info.png?raw=true)
+
+All sensors and switches will be ready to be added to your dashboard in your favourite cards !
+
+For detailed instructions about how to add your computer to HomeAssistant, look at the [HomeAssistant setup](#homeassistant-setup) section below.
+
 ## Install
 
-### Who knows how it works
+### With pipx (recommended)
 
-Using pip (on Python >= 3.8) install the IoTuring package
+1. Install [pipx](https://pipx.pypa.io/), follow documentation according to your OS
+2. Install IoTuring with pipx:
+```shell
+pipx install IoTuring
+```
+3. Done! You can configure IoTuring now.
+
+### Detailed instructions
+
+<details>
+<summary>Debian/Ubuntu with pipx</summary>
 
 ```shell
-pip install IoTuring
+sudo apt update
+sudo apt install pipx
+pipx ensurepath
+pipx install IoTuring
 ```
 
-Run with `IoTuring` or `python -m IoTuring`
+</details>
 
-Configure with `IoTuring -c` or `python -m IoTuring -c`
+<details>
+<summary>ArchLinux with pipx</summary>
 
-### Who doesn't know how it works
+```
+pacman -Syu python-pipx
+pipx ensurepath
+pipx install IoTuring
+```
+</details>
 
-#### Requirements
+<details>
+<summary>Windows with pipx</summary>
 
-- [Python 3.8+](https://www.python.org/downloads/)
-- [Pip](https://www.makeuseof.com/tag/install-pip-for-python/)
-
-Some platforms may need other software for some entities.
-
-##### Install all requirements on ArchLinux
-
+1. Download latest python https://www.python.org/downloads/
+2. Install with default options
+3. In a CommandPrompt or in Powershell window:
 ```shell
-pacman -Syu python python-pip
+py -m pip install --user pipx
+py -m pipx ensurepath
+py -m pipx install IoTuring
 ```
 
-##### Install and update all requirements on Debian or Ubuntu
+4. Close and reopen the window, and you can run `IoTuring` without any prefixes.
+</details>
+
+<details>
+<summary>Manual install from git to a virtual environment</summary>
+
+Requirements:
+- Python 3.8+
+- Pip
+- Git
 
 ```shell
-apt install python3 python3-pip -y
+git clone https://github.com/richibrics/IoTuring
+cd IoTuring
+mkdir .venv
+python -m venv .venv
+. ./.venv/bin/activate
 pip install --upgrade pip
+pip install .
 ```
+</details>
 
-##### Windows
+<details>
+<summary>With system pip (not recommended)</summary>
 
-- [Python](https://www.python.org/downloads/), pip included
-
-#### Download and install with pip
-
-On Linux and macOS:
+Requirements:
+- Python 3.8+
+- Pip
 
 ```shell
 pip install IoTuring
 ```
 
-On Windows:
+</details>
 
-```shell
-py -m pip install IoTuring
-```
-
-Note: on Windows you have to prefix every command with `py -m` as here.
-
-#### Configure
+## Configure
 
 The first time you run IoTuring you need to specify which entities and warehouses you want to enable.
-To run in configuration mode, you only need to specify the '-c' argument along the script execution command:
+To run in configuration mode, you only need to specify the `-c` argument along the script execution command:
 
 ```
-python -m IoTuring -c
+IoTuring -c
 ```
 
 A simple menu will show and you will be able to configure your entities and warehouses !
@@ -90,18 +127,31 @@ Once you have selected your preferred settings, you're ready to run IoTuring.
 
 You will be able to enter the configuration menu whenever you want (with the same command as above) to edit your choises.
 
-#### Run 
+## Run 
 
-You can simply run IoTuring using this command
+You can simply run IoTuring using this command:
 
 ```
 IoTuring
 ```
 
-or this one
+### Other arguments
+
+To see all command options run `IoTuring --help`:
 
 ```
-python -m IoTuring
+> IoTuring --help
+usage: IoTuring [-h] [-v] [-c] [-o]
+
+Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant.
+
+options:
+  -h, --help          show this help message and exit
+  -v, --version       show program's version number and exit
+  -c, --configurator  enter configuration mode
+  -o, --open-config   open config file
+
+Start without argument for normal use
 ```
 
 ## Docker
@@ -122,17 +172,18 @@ docker run -d -v ./.config/IoTuring/:/config richibrics/ioturing:latest
 
 For a docker compose example see [docker-compose.yaml](./docker-compose.yaml). Create configuration manually or with the command above!
 
-## HomeAssistant demo
 
-Your computer will show up in HomeAssistant as a single Device, so all your entities will be grouped together. 
-The device will also have some properties like connectivity and battery status.
+### HomeAssistant setup
 
-You can see how your device will appear under the Devices section in Home Assistant in the following GIF (wait until it's loaded):
+Steps to connect IoTuring to your HomeAssistant install:
 
+1. Install an MQTT broker. You can find the full list of brokers here: https://mqtt.org/software/
+    - If you have a HAOS or supervised installation you can use the [Mosquitto broker addon](https://mqtt.org/software/)
+    - For Docker users the official [eclipse-mosquitto container](https://hub.docker.com/_/eclipse-mosquitto/) is recommended
+2.  Enable the [MQTT integration](https://www.home-assistant.io/integrations/mqtt) in HA, and connect to your broker
+3.  Install and configure IoTuring, in the configurator menu add the HomeAssistant Warehouse, connect to the same broker
+4.  When you start IoTuring, your computer will show up as a new MQTT device in HA automagically
 
-![device](https://github.com/richibrics/IoTuring/blob/main/docs/images/homeassistant-demo.gif?raw=true)
-
-All sensors and switches will be available to be added to your dashboard in your favourite cards !
 
 ## Features
 
@@ -179,55 +230,26 @@ sudo sh -c "echo '$USER ALL=(ALL) NOPASSWD: /sbin/poweroff, /sbin/reboot, /sbin/
 - Console: prints data to the console
 
 
-## Development
+## Environment variables
 
-### Editable install
+- `IOTURING_CONFIG_DIR`: Change the path to the directory of the config file
+- `IOTURING_LOG_LEVEL`: Set the log level
 
-[Pip documentation](https://pip.pypa.io/en/stable/topics/local-project-installs/)
-
-```shell
-git clone https://github.com/richibrics/IoTuring
-cd IoTuring
-pip install -e .
-```
-
-Then run it like in the non-editable mode.
-
-Warning: sometimes to run the module in editable mode you need to cd into the upper IoTuring folder.
-
-### Debug log
-
-Overwrite log level with the `IOTURING_LOG_LEVEL` environment variable. For example to run IoTuring with debug log:
+To run IoTuring with debug log on Linux or  on Mac run:
 
 ```shell
 env IOTURING_LOG_LEVEL=LOG_DEBUG IoTuring
 ```
 
-### Versioning
+On Windows:
 
-The project uses [calendar versioning](https://calver.org/):
-
-`YYYY.M.n`:
-
-- `YYYY`: Full year: 2022, 2023 ...
-- `M`: Month: 1, 2 ... 11, 12
-- `n`: Build number in the month: 1, 2 ...
-
-### Tests
-
-To run tests in docker:
-
-```shell
-docker run --rm -it -v .:/srv/IoTuring:ro python:3.8.17-slim-bullseye /srv/IoTuring/tests/run_tests.sh
+```cmd
+set "IOTURING_LOG_LEVEL=LOG_DEBUG" && IoTuring
 ```
 
-### Docker
+## Development
 
-To build docker image:
-
-```
-docker build -t ioturing:latest .
-```
+See [DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
 ## Contributors
 
