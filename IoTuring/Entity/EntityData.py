@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from IoTuring.Entity.Entity import Entity
 
@@ -117,24 +117,35 @@ class EntitySensor(EntityData):
 
 class EntityCommand(EntityData):
 
-    def __init__(self, entity, key, callbackFunction,
-                 connectedEntitySensorKey=None, customPayload={}):
+    def __init__(self, entity: Entity, key: str, callbackFunction: Callable,
+                 connectedEntitySensorKeys: str | list = [],
+                 customPayload={}):
+        """Create a new EntityCommand.
+
+        If key or keys for the entity sensor is passed, warehouses that support it can use this command as a switch with state.
+        Order of sensors matter, first sensors state topic will be used.
+        Better to register the sensors before this command to avoid unexpected behaviours.
+
+        Args:
+            entity (Entity): The entity this command belongs to.
+            key (str): The KEY of this command
+            callbackFunction (Callable): Function to be called
+            connectedEntitySensorKeys (str | list, optional): A key to a sensor or a list of keys. Defaults to [].
+            customPayload (dict, optional): Overrides HomeAssistant discovery configuration. Defaults to {}.
         """
-        If a key for the entity sensor is passed, warehouses that support it use this command as a switch with state.
-        Better to register the sensor before this command to avoud unexpected behaviours.
-        CustomPayload overrides HomeAssistant discovery configuration
-        """
+
         EntityData.__init__(self, entity, key, customPayload)
         self.callbackFunction = callbackFunction
-        self.connectedEntitySensorKey = connectedEntitySensorKey
+        self.connectedEntitySensorKeys = connectedEntitySensorKeys if isinstance(
+            connectedEntitySensorKeys, list) else [connectedEntitySensorKeys]
 
-    def SupportsState(self):
-        return self.connectedEntitySensorKey is not None
+    def SupportsState(self) -> bool:
+        """ True if this command supports state (has a connected sensors) """
+        return bool(self.connectedEntitySensorKeys)
 
-    def GetConnectedEntitySensor(self) -> EntitySensor:
-        """ Returns the entity sensor connected to this command, if this command supports state.
-            Otherwise returns None. """
-        return self.GetEntity().GetEntitySensorByKey(self.connectedEntitySensorKey)
+    def GetConnectedEntitySensors(self) -> list[EntitySensor]:
+        """ Returns the entity sensors connected to this command. Returns empty list if none found. """
+        return [self.GetEntity().GetEntitySensorByKey(key) for key in self.connectedEntitySensorKeys]
 
     def CallCallback(self, message):
         """ Safely run callback for this command, passing the message (a paho.mqtt.client.MQTTMessage).

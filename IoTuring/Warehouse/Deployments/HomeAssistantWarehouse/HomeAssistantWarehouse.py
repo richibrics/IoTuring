@@ -46,6 +46,8 @@ LWT_PAYLOAD_OFFLINE = "OFFLINE"
 PAYLOAD_ON = consts.STATE_ON
 PAYLOAD_OFF = consts.STATE_OFF
 
+SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY = "state_topic_key"
+
 
 class HomeAssistantEntityBase(LogObject):
     """ Base class for all entities in HomeAssistantWarehouse """
@@ -240,6 +242,13 @@ class HomeAssistantSensor(HomeAssistantEntity):
         if self.supports_extra_attributes:
             self.AddTopic("json_attributes_topic")
 
+        # Custom state topic:
+        if SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY in self.discovery_payload:
+            self.key_for_state_topic = self.discovery_payload.pop(
+                SECONDARY_SENSOR_STATE_TOPIC_DISCOVERY_CONFIGURATION_KEY)
+
+            self.discovery_payload[self.key_for_state_topic] = self.state_topic
+
         # Extra payload for sensors:
         self.discovery_payload['expire_after'] = 600  # TODO Improve
 
@@ -271,41 +280,49 @@ class HomeAssistantCommand(HomeAssistantEntity):
         self.AddTopic("availability_topic")
         self.AddTopic("command_topic")
 
-        self.connected_sensor = self.GetConnectedSensor()
+        self.connected_sensors = self.GetConnectedSensors()
 
-        if self.connected_sensor:
+        if self.connected_sensors:
             self.SetDefaultDataType("switch")
-            # Get discovery payload from connected sensor?
-            for payload_key in self.connected_sensor.discovery_payload:
-                if payload_key not in self.discovery_payload:
-                    self.discovery_payload[payload_key] = self.connected_sensor.discovery_payload[payload_key]
+            # Get discovery payload from sensors
+            for connected_sensor in self.connected_sensors:
+                for payload_key, payload_value in connected_sensor.discovery_payload.items():
+                    if payload_key not in self.discovery_payload:
+                        self.discovery_payload[payload_key] = payload_value
+
         else:
             # Button as default data type:
             self.SetDefaultDataType("button")
 
         self.command_callback = self.GenerateCommandCallback()
 
-    def GetConnectedSensor(self) -> HomeAssistantSensor | None:
+    def GetConnectedSensors(self) -> list[HomeAssistantSensor]:
         """ Get the connected sensor of this command """
-        if self.entityCommand.SupportsState():
-            return HomeAssistantSensor(
-                entityData=self.entityCommand.GetConnectedEntitySensor(),
-                wh=self.wh)
-        else:
-            return None
+        return [HomeAssistantSensor(entityData=sensor, wh=self.wh)
+                for sensor in self.entityCommand.GetConnectedEntitySensors()]
 
     def GenerateCommandCallback(self) -> Callable:
         """ Generate the callback function """
         def CommandCallback(message):
             status = self.entityCommand.CallCallback(message)
             if status and self.wh.client.IsConnected():
-                if self.connected_sensor:
+
+                if self.connected_sensors:
+                    # First sensor, update state from callback:
+
                     # Only set value if it was already set, to exclude optimistic switches
-                    if self.connected_sensor.entitySensor.HasValue():
+                    if self.connected_sensors[0].entitySensor.HasValue():
                         self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
-                                 self.connected_sensor.state_topic)
+                                 self.connected_sensors[0].state_topic)
                         self.SendTopicData(
-                            self.connected_sensor.state_topic, message.payload.decode('utf-8'))
+                            self.connected_sensors[0].state_topic, message.payload.decode('utf-8'))
+
+                if len(self.connected_sensors) > 1:
+                    # Other sensors, full update:
+                    self.entity.CallUpdate()
+                    for connected_sensor in self.connected_sensors[1:]:
+                        connected_sensor.SendValues()
+
         return CommandCallback
 
 
@@ -368,7 +385,7 @@ class HomeAssistantWarehouse(Warehouse):
         super().Start()  # Then run other inits (start the Loop method for example)
 
     def CollectEntityData(self) -> None:
-        """ Collect entities and save them ass hass entities """
+        """ Collect entities and save them as hass entities """
 
         # Add the Lwt sensor:
         self.homeAssistantEntities["sensors"].append(LwtSensor(self))
@@ -376,13 +393,14 @@ class HomeAssistantWarehouse(Warehouse):
         # Add real entities:
         for entity in self.GetEntities():
             for entityData in entity.GetAllUnconnectedEntityData():
-
                 # It's a command:
                 if isinstance(entityData, EntityCommand):
+
                     hasscommand = HomeAssistantCommand(entityData, self)
-                    if hasscommand.connected_sensor:
-                        self.homeAssistantEntities["connected_sensors"].append(
-                            hasscommand.connected_sensor)
+                    if hasscommand.connected_sensors:
+                        for connected_sensor in hasscommand.connected_sensors:
+                            self.homeAssistantEntities["connected_sensors"].append(
+                                connected_sensor)
                     self.homeAssistantEntities["commands"].append(hasscommand)
 
                 # It's a sensor:
@@ -434,7 +452,7 @@ class HomeAssistantWarehouse(Warehouse):
     def NormalizeTopic(topicstring: str) -> str:
         """ Home assistant requires stricter topic names """
         # Remove non ascii characters:
-        topicstring=topicstring.encode("ascii", "ignore").decode()
+        topicstring = topicstring.encode("ascii", "ignore").decode()
         return MQTTClient.NormalizeTopic(topicstring).replace(" ", "_")
 
     @classmethod
@@ -442,10 +460,12 @@ class HomeAssistantWarehouse(Warehouse):
         preset = MenuPreset()
         preset.AddEntry("Home assistant MQTT broker address",
                         CONFIG_KEY_ADDRESS, mandatory=True)
-        preset.AddEntry("Port", CONFIG_KEY_PORT, default=1883, question_type="integer")
+        preset.AddEntry("Port", CONFIG_KEY_PORT,
+                        default=1883, question_type="integer")
         preset.AddEntry("Client name", CONFIG_KEY_NAME, mandatory=True)
         preset.AddEntry("Username", CONFIG_KEY_USERNAME)
-        preset.AddEntry("Password", CONFIG_KEY_PASSWORD, question_type="secret")
+        preset.AddEntry("Password", CONFIG_KEY_PASSWORD,
+                        question_type="secret")
         preset.AddEntry("Add computer name to entity name",
                         CONFIG_KEY_ADD_NAME_TO_ENTITY, default="Y", question_type="yesno")
         preset.AddEntry("Use tag as entity name for multi instance entities",

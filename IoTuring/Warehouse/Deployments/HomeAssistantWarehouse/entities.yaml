@@ -66,14 +66,17 @@ Time:
 Monitor:
   icon: mdi:monitor-shimmer
   custom_type: switch
-AppInfo - update:
-  custom_type: binary_sensor
-  icon: mdi:package-up
-  device_class: update
-  payload_on: "True"
-  payload_off: "False"
-AppInfo:
+AppInfo - name:
   icon: mdi:information-outline
+AppInfo - update:
+  custom_type: update
+  device_class: firmware
+  payload_install: ""
+AppInfo - latest_version:
+  # This sensor is set as secondary sensor of the update command
+  # A secondary sensor will not provide its value as state_topic in discovery of the command
+  # but in another key, so we specify that key here
+  state_topic_key: latest_version_topic
 Temperature:
   icon: mdi:thermometer-lines
   unit_of_measurement: °C
