@@ -8,7 +8,7 @@ CONFIG_KEY_RETRY_INTERVAL = "retry_interval"
 
 
 class AppSettings(Settings):
-    """Singleton for storing AppSettings, not related to a specifuc Entity or Warehouse """
+    """Class that stores AppSettings, not related to a specifuc Entity or Warehouse """
     NAME = "App"
 
     @classmethod
