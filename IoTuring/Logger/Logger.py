@@ -55,10 +55,8 @@ class Logger(LogLevelObject, metaclass=Singleton):
     console_formatter = logging.Formatter(
         fmt="{color_prefix}[ {asctime:s} | {levelname:^10s} | {source:^30s} | {console_message:s}{color_suffix}",
         datefmt="%Y-%m-%d %H:%M:%S",
-        style="{",
-        defaults={"color_prefix": "",
-                  "color_suffix": ""
-                  })
+        style="{"
+    )
 
     file_formatter = logging.Formatter(
         fmt="[ {asctime:s} | {levelname:^10s} | {source:^30s} | {file_message:s}",
@@ -190,7 +188,9 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
         extra = {"source": source,
                  "file_message": self.GetFileMessage(message),
-                 "console_message": self.GetConsoleMessage(message, available_length)
+                 "console_message": self.GetConsoleMessage(message, available_length),
+                 "color_prefix": "",
+                 "color_suffix": ""
                  }
 
         if TerminalDetection.CheckTerminalSupportsColors():
