@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 from IoTuring.Logger.Colors import Colors
 from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
