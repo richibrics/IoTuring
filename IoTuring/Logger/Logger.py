@@ -1,15 +1,14 @@
-import sys
-import os
-import inspect
-from datetime import datetime
-import json
-import threading
-from io import TextIOWrapper
 import logging
+import logging.handlers
+from pathlib import Path
 
+from IoTuring.Logger.Colors import Colors
 from IoTuring.Logger import consts
 from IoTuring.Logger.LogLevel import LogLevelObject, LogLevel
 from IoTuring.Exceptions.Exceptions import UnknownLoglevelException
+from IoTuring.MyApp.SystemConsts import TerminalDetection
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.App import App
 
 
 class Singleton(type):
@@ -25,184 +24,179 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+class LogTargetFilter(logging.Filter):
+    def __init__(self, target: str) -> None:
+        self.target = target
+
+    def filter(self, record):
+        if self.target in record.getMessage():
+            return True
+        else:
+            return False
+
+
+class LogLevelFilter(logging.Filter):
+    def __init__(self, loglevel: LogLevel) -> None:
+        self.loglevel = loglevel
+
+    def filter(self, record):
+        if int(self.loglevel) > int(record.levelno):
+            return False
+        else:
+            return True
+
+
 class Logger(LogLevelObject, metaclass=Singleton):
 
-    # lock = threading.Lock()
+    prefix_length = 70
 
-    # log_filename = ""
-    # log_file_descriptor = None
+    console_formatter = logging.Formatter(
+        fmt="{color_prefix}[ {asctime:s} | {levelname:^10s} | {source:^30s} | {console_message:s}{color_suffix}",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        style="{",
+        defaults={"color_prefix": "",
+                  "color_suffix": ""
+                  })
 
-    # # Default log levels:
-    # console_log_level = LogLevel(consts.CONSOLE_LOG_LEVEL)
-    # file_log_level = LogLevel(consts.FILE_LOG_LEVEL)
+    file_formatter = logging.Formatter(
+        fmt="[ {asctime:s} | {levelname:^10s} | {source:^30s} | {file_message:s}",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        style="{"
+    )
+
+    final_settings = False
+    log_dir_path = ""
+    file_handler = None
 
     def __init__(self) -> None:
 
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logging.NOTSET)
+        # Start root logger:
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(10)
 
-        # formatter = logging.Formatter('[ %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        formatter = logging.Formatter(
-            fmt='[ {asctime:s} | {levelname:^10s} | {name:^30s} | {message:s}{multilines:s}',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            style='{'
-        )
+        # Init console logger handler:
+        self.console_handler = logging.StreamHandler()
+        self.SetConsoleLogLevel()
+        self.console_handler.setFormatter(self.console_formatter)
+        self.console_handler.addFilter(LogTargetFilter(self.LOG_CONSOLE_ONLY))
+        self.logger.addHandler(self.console_handler)
 
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
-        self.logger.addHandler(ch)
+        # Init file logger buffer handler:
+        self.memory_handler = logging.handlers.MemoryHandler(capacity=100)
+        self.logger.addHandler(self.memory_handler)
 
-        # self.terminalSupportsColors = Logger.checkTerminalSupportsColors()
+    def SetConsoleLogLevel(self, loglevel: LogLevel = LogLevel(consts.DEFAULT_LOG_LEVEL)) -> None:
+        if OsD.GetEnv("IOTURING_LOG_LEVEL"):
+            try:
+                env_level = LogLevel(OsD.GetEnv("IOTURING_LOG_LEVEL"))
+                self.console_handler.setLevel(int(env_level))
+                return
+            except UnknownLoglevelException:
+                pass
+        self.console_handler.setLevel(int(loglevel))
 
-        # # Prepare the log
-        # self.SetLogFilename()
-        # # Open the file descriptor
-        # self.GetLogFileDescriptor()
+    def SetupFileLogging(self, enabled: bool, loglevel: LogLevel, log_dir_path: Path) -> None:
 
-        # # Override log level from envvar:
-        # try:
-        #     if os.getenv("IOTURING_LOG_LEVEL"):
-        #         level_override = LogLevel(str(os.getenv("IOTURING_LOG_LEVEL")))
-        #         self.console_log_level = level_override
-        # except UnknownLoglevelException as e:
-        #     self.Log(self.LOG_ERROR, "Logger",
-        #              f"Unknown Loglevel: {e.loglevel}")
+        if enabled:
+            self.StartFileLogging(loglevel, log_dir_path)
 
-    # def SetLogFilename(self) -> str:
-    #     """ Set filename with timestamp and also call setup folder """
-    #     dateTimeObj = datetime.now()
-    #     self.log_filename = os.path.join(
-    #         self.SetupFolder(), dateTimeObj.strftime(consts.LOG_FILENAME_FORMAT).replace(":", "_"))
-    #     return self.log_filename
+        elif self.final_settings:
+            self.DisableFileLogging()
 
-    # def SetupFolder(self) -> str:
-    #     """ Check if exists (or create) the folder of logs inside this file's folder """
-    #     thisFolder = os.path.dirname(inspect.getfile(Logger))
-    #     newFolder = os.path.join(thisFolder, consts.LOGS_FOLDER)
-    #     if not os.path.exists(newFolder):
-    #         os.mkdir(newFolder)
+        self.final_settings = True
 
-    #     return newFolder
+    def StartFileLogging(self, loglevel: LogLevel, log_dir_path: Path) -> None:
 
-    # def GetMessageDatetimeString(self) -> str:
-    #     now = datetime.now()
-    #     return now.strftime(consts.MESSAGE_DATETIME_FORMAT)
+        self.Log(self.LOG_DEBUG, "FileLogger", f"Started file logging: {log_dir_path.absolute()}",
+                 logtarget=self.LOG_CONSOLE_ONLY)
 
-    # LOG
+        if self.file_handler:
+            if log_dir_path.samefile(self.log_dir_path):
+                self.file_handler.setLevel(int(loglevel))
+                return
+            else:
+                self.logger.removeHandler(self.file_handler)
 
-    def Log(self, loglevel: LogLevel, source: str, message, printToConsole=True, writeToFile=True) -> None:
+        filepath = log_dir_path.joinpath(App.getName() + ".log")
+        self.log_dir_path = log_dir_path
 
-        if isinstance(message, str) and len(message) > 10:
-            lines = [message[i:i+10] for i in range(0, len(message), 10)]
-            ml_string = "\n       ".join(lines)
-            extra = {"multilines": ml_string}
-            message = ""
+        self.file_handler = logging.handlers.RotatingFileHandler(
+            filepath, backupCount=5)
+
+        if filepath.exists():
+            self.file_handler.doRollover()
+
+        self.file_handler.setFormatter(self.file_formatter)
+        self.file_handler.addFilter(LogLevelFilter(loglevel))
+        self.file_handler.addFilter(LogTargetFilter(self.LOG_FILE_ONLY))
+        self.file_handler.setLevel(int(loglevel))
+
+        self.logger.addHandler(self.file_handler)
+
+        self.memory_handler.setTarget(self.file_handler)
+        self.memory_handler.close()
+        self.logger.removeHandler(self.memory_handler)
+
+    def DisableFileLogging(self) -> None:
+
+        if self.file_handler:
+            self.logger.removeHandler(self.file_handler)
+            self.file_handler.close()
+
+        if self.memory_handler:
+            self.logger.removeHandler(self.memory_handler)
+            self.memory_handler.close()
+
+    def GetConsoleMessage(self, message, line_length) -> str:
+
+        if isinstance(message, str) and len(message.splitlines()) == 1 and len(message) < line_length:
+            return message.strip()
+
+        final_lines = []
+
+        for l in self.GetMessageAsList(message):
+            short_lines = [l[i:i+line_length]
+                           for i in range(0, len(l), line_length)]
+
+            final_lines.extend(short_lines)
+
+        line_prefix = "\n" + " " * self.prefix_length
+        return line_prefix.join(final_lines)
+
+    def GetFileMessage(self, message) -> str:
+        return " ".join(self.GetMessageAsList(message))
+
+    def GetMessageAsList(self, message) -> list[str]:
+        if isinstance(message, list):
+            messagelines = [str(i) for i in message]
+        elif isinstance(message, dict):
+            messagelines = [f"{k}: {v}" for k, v in message.items()]
         else:
-            extra = {"multilines": ""}
+            messagelines = [str(message)]
 
+        lines = []
 
-        
-        l = logging.getLogger(source)
-        l.log(int(loglevel), message, extra=extra)
+        # replace and split by newlines
+        for m in messagelines:
+            lines.extend(m.splitlines())
 
-        # if type(message) == dict:
-        #     self.LogDict(loglevel, source, message,
-        #                  printToConsole, writeToFile)
-        #     return  # Log dict will call this function so I don't need to go down at the moment
-        # elif type(message) == list:
-        #     self.LogList(loglevel, source, message,
-        #                  printToConsole, writeToFile)
-        #     return  # Log list will call this function so I don't need to go down at the moment
+        return lines
 
-        # message = str(message)
-        # # Call this function for each line of the message if there are more than one line.
-        # messageLines = message.split("\n")
-        # if len(messageLines) > 1:
-        #     for line in messageLines:
-        #         self.Log(loglevel, source, line,
-        #                  printToConsole, writeToFile)
-        #     return  # Stop the function then because I've already called this function from each line so I don't have to go down here
+    def Log(self, loglevel: LogLevel, source: str, message, color: str = "", logtarget: str = LogLevelObject.LOG_BOTH) -> None:
 
-        # prestring = f"[ {self.GetMessageDatetimeString()} | {str(loglevel).center(consts.STRINGS_LENGTH[0])} | " \
-        #     + f"{source.center(consts.STRINGS_LENGTH[1])}]{consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '}"  # justify
+        available_length = TerminalDetection.GetTerminalColumns() - self.prefix_length
 
-        # # Manage string to print in more lines if it's too long
-        # while len(message) > 0:
-        #     string = prestring+message[:consts.MESSAGE_WIDTH]
-        #     # Cut for next iteration if message is longer than a line
-        #     message = message[consts.MESSAGE_WIDTH:]
-        #     # then I add the dash to the row
-        #     if (len(message) > 0 and string[-1] != " " and string[-1] != "." and string[-1] != ","):
-        #         string = string + '-'  # Print new line indicator if I will go down in the next iteration
-        #     self.PrintAndSave(string, loglevel, printToConsole, writeToFile)
-        #     # -1 + space cause if the char in the prestring isn't a space, it will be directly attached to my message without a space
+        extra = {"source": source,
+                 "file_message": self.GetFileMessage(message),
+                 "console_message": self.GetConsoleMessage(message, available_length)
+                 }
 
-        #     prestring = (len(prestring)-consts.PRESTRING_MESSAGE_SEPARATOR_LEN) * \
-        #         consts.LONG_MESSAGE_PRESTRING_CHAR+consts.PRESTRING_MESSAGE_SEPARATOR_LEN*' '
+        if TerminalDetection.CheckTerminalSupportsColors():
 
-    # def LogDict(self, loglevel, source, message_dict: dict, *args):
-    #     try:
-    #         string = json.dumps(message_dict, indent=4, sort_keys=False,
-    #                             default=lambda o: '<not serializable>')
-    #         lines = string.splitlines()
-    #         for line in lines:
-    #             self.Log(loglevel, source, "> "+line, *args)
-    #     except Exception as e:
-    #         self.Log(self.LOG_ERROR, source, "Can't print dictionary content")
+            if color or loglevel.color:
+                extra["color_prefix"] = color or loglevel.color
+                extra["color_suffix"] = Colors.reset
 
-    # def LogList(self, loglevel, source, message_list: list, *args):
-    #     try:
-    #         for index, item in enumerate(message_list):
-    #             if type(item) == dict or type(item) == list:
-    #                 self.Log(loglevel, source, "Item #"+str(index), *args)
-    #                 self.Log(loglevel, source, item, *args)
-    #             else:
-    #                 self.Log(loglevel, source,
-    #                          f"{str(index)}: {str(item)}", *args)
+        l = logging.getLogger(__name__).getChild(source)
 
-    #     except:
-    #         self.Log(self.LOG_ERROR, source, "Can't print dictionary content")
-
-    # # Both print and save to file
-    # def PrintAndSave(self, string, loglevel: LogLevel, printToConsole=True, writeToFile=True) -> None:
-
-    #     if printToConsole and int(loglevel) <= int(self.console_log_level):
-    #         self.ColoredPrint(string, loglevel)
-
-    #     if writeToFile and int(loglevel) <= int(self.file_log_level):
-    #         # acquire the lock
-    #         with self.lock:
-    #             self.GetLogFileDescriptor().write(string+' \n')
-    #         # so I can see the log in real time from a reader
-    #         self.GetLogFileDescriptor().flush()
-
-    # def ColoredPrint(self, string, loglevel: LogLevel) -> None:
-    #     if not self.terminalSupportsColors:
-    #         print(string)
-    #     else:
-    #         print(loglevel.get_colored_string(string))
-
-    # def GetLogFileDescriptor(self) -> TextIOWrapper:
-    #     if self.log_file_descriptor is None:
-    #         self.log_file_descriptor = open(self.log_filename, "a", encoding="utf-8")
-
-    #     return self.log_file_descriptor
-
-    # def CloseFile(self) -> None:
-    #     if self.log_file_descriptor is not None:
-    #         self.log_file_descriptor.close()
-    #         self.log_file_descriptor = None
-
-    @staticmethod
-    def checkTerminalSupportsColors():
-        """
-        Returns True if the running system's terminal supports color, and False
-        otherwise.
-        """
-        plat = sys.platform
-        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                      'ANSICON' in os.environ)
-        # isatty is not always implemented, #6223.
-        is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-        return supported_platform and is_a_tty
+        l.log(int(loglevel), msg=logtarget, extra=extra)

@@ -47,11 +47,14 @@ def loop():
         sys.exit("Error: Invalid arguments!")
 
     # Clear the terminal
-    # Configurator.ClearTerminal()
+    Configurator.ClearTerminal()
 
     # Start logger:
     logger = Logger()
     configurator = Configurator()
+
+    # Early log settings:
+    ConfiguratorLoader(configurator).LoadSettings()
 
     logger.Log(Logger.LOG_DEBUG, "App", f"Selected options: {vars(args)}")
 
@@ -115,20 +118,13 @@ def loop():
 def Exit_SIGINT_handler(sig=None, frame=None):
     logger = Logger()
     logger.Log(Logger.LOG_INFO, "Main", "Application closed by SigInt",
-               printToConsole=False)  # to file
+               logtarget=Logger.LOG_FILE_ONLY)  # to file
 
     messages = ["Exiting...",
                 "Thanks for using IoTuring !"]
-    print()  # New line
-    for message in messages:
-        text = ""
-        if (Logger.checkTerminalSupportsColors()):
-            text += Colors.cyan
-        text += message
-        if (Logger.checkTerminalSupportsColors()):
-            text += Colors.reset
-        logger.Log(Logger.LOG_INFO, "Main", text,
-                   writeToFile=False)  # to terminal
 
-    # logger.CloseFile()
+    print()  # New line
+    logger.Log(Logger.LOG_INFO, "Main", messages,
+               color=Colors.cyan, logtarget=Logger.LOG_CONSOLE_ONLY)
+
     sys.exit(0)
