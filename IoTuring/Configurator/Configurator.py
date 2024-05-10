@@ -171,7 +171,11 @@ class Configurator(LogObject):
 
         scm = ClassManager(KEY_SETTINGS)
 
-        choices = []
+        choices = [
+            CHOICE_GO_BACK,
+            {"name": "x Reset all settings to default", "value": "ResetSettings"},
+            Separator()
+        ]
 
         availableSettings = scm.ListAvailableClasses()
         for sClass in availableSettings:
@@ -182,11 +186,24 @@ class Configurator(LogObject):
 
         choice = self.DisplayMenu(
             choices=choices,
-            message=f"Select settings to edit"
+            message=f"Select settings to edit",
+            add_back_choice=False
         )
 
         if choice == CHOICE_GO_BACK:
             self.Menu()
+        elif choice == "ResetSettings":
+
+            confirm = inquirer.confirm(message="Are you sure?").execute()
+            if confirm:
+                settings_configs = self.config.GetConfigsOfClass(KEY_SETTINGS)
+                if settings_configs:
+                    for s in settings_configs:
+                        self.config.RemoveActiveConfiguration(s)
+
+                self.DisplayMessage("All settings were reset to default")
+
+            self.ManageSettings()
 
         else:
             if not self.IsClassActive(choice):
