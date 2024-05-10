@@ -18,8 +18,10 @@ class LogLevel:
         except AttributeError:
             raise UnknownLoglevelException(level_const)
 
+        # WARNING is yellow:
         if self.number == 30:
             self.color = Colors.yellow
+        # ERROR and CRITICAL red:
         elif self.number > 30:
             self.color = Colors.red
         else:
@@ -46,4 +48,9 @@ class LogLevelObject:
 
     @classmethod
     def GetLoglevels(cls) -> list[LogLevel]:
+        """Get all available log levels
+
+        Returns:
+            list[LogLevel]: List of LogLevel objects
+        """
         return [getattr(cls, l) for l in dir(cls) if isinstance(getattr(cls, l), LogLevel)]

@@ -40,7 +40,7 @@ class LogTargetFilter(logging.Filter):
 
 
 class LogLevelFilter(logging.Filter):
-    """ Log filter for loglevel, for later file logging"""
+    """ Log filter for loglevel, for file logging from buffer"""
 
     def __init__(self, loglevel: LogLevel) -> None:
         self.loglevel = loglevel
@@ -53,11 +53,13 @@ class LogLevelFilter(logging.Filter):
 
 
 class LogMessage(LogLevelObject):
+    """Class for formatting log messages"""
 
     def __init__(self, source: str, message, color: str = "", logtarget: str = "") -> None:
 
         self.source = source
         self.color = color
+        self.logtarget = logtarget
 
         self.msg = " ".join(self.MessageToList(message))
 
@@ -66,16 +68,18 @@ class LogMessage(LogLevelObject):
                       "console_message": self.GetConsoleMessage(self.MessageToList(message)),
                       "color_prefix": self.GetColors()["prefix"],
                       "color_suffix": self.GetColors()["suffix"],
-                      "logtarget": logtarget
+                      "logtarget": self.logtarget
                       }
 
     def GetColors(self) -> dict:
+        """Get color prefix and suffix"""
         if TerminalDetection.CheckTerminalSupportsColors():
             return {"prefix": self.color, "suffix": Colors.reset}
         else:
             return {"prefix": "", "suffix": ""}
 
     def SetPrefixLength(self) -> None:
+        """Calculate the length of the log prefix"""
         default_source_len = next(
             (l for s, l in consts.LOG_PREFIX_LENGTHS.items() if s.startswith("source")))
         extra_len = max(len(self.source) - default_source_len, 0)
@@ -83,32 +87,48 @@ class LogMessage(LogLevelObject):
         self.prefix_length = self.console_prefix_length + extra_len
 
     def GetConsoleMessage(self, messagelines: list[str]) -> str:
+        """Get the formatted message for console logging
 
-        if not TerminalDetection.CheckTerminalSupportsSize() or TerminalDetection.GetTerminalColumns() < consts.MIN_CONSOLE_WIDTH:
+        Args:
+            messagelines (list[str]): Message as separate lines
+
+        Returns:
+            str: the formatted message
+        """
+
+        # Return single line if unsupported or too small terminal, or console logging disabled:
+        if not TerminalDetection.CheckTerminalSupportsSize() \
+                or TerminalDetection.GetTerminalColumns() < consts.MIN_CONSOLE_WIDTH \
+                or self.logtarget == self.LOGTARGET_FILE:
             return self.msg
 
+        # Calculate the length of the prefix:
         self.SetPrefixLength()
 
+        # Single line log, and it can be displayed without linebreaks, next to the prefix:
         if len(messagelines) == 1 \
                 and TerminalDetection.CalculateNumberOfLines(len(messagelines[0]) + self.prefix_length) == 1:
             return messagelines[0]
 
+        # Available space for the message
         line_length = TerminalDetection.GetTerminalColumns() - \
             self.console_prefix_length
 
         final_lines = []
 
+        # If the prefix longer in this line than de default, make the first line shorter:
         if self.prefix_length > self.console_prefix_length:
-
             first_line_len = TerminalDetection.GetTerminalColumns() - \
                 self.prefix_length
             final_lines.append(messagelines[0][:first_line_len])
             messagelines[0] = messagelines[0][first_line_len:]
 
+        # Cut the to the correct length:
         for l in messagelines:
             final_lines.extend([l[i:i+line_length]
                                 for i in range(0, len(l), line_length)])
 
+        # Linebrakes and spaces:
         line_prefix = "\n" + " " * self.console_prefix_length
         return line_prefix.join(final_lines)
 
@@ -162,6 +182,12 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.logger.addHandler(self.memory_handler)
 
     def SetupConsoleLogging(self, loglevel: LogLevel = LogLevel(consts.DEFAULT_LOG_LEVEL), include_time: bool = True) -> None:
+        """Change settings of console logging. This is called from LogSettings init.
+
+        Args:
+            loglevel (LogLevel, optional): Loglevel to use. ENVVAR owerwrites thi. Defaults to LogLevel(consts.DEFAULT_LOG_LEVEL).
+            include_time (bool, optional): If the time should be included in the log. Defaults to True.
+        """
         self.console_handler.setFormatter(
             self.GetFormatter(self.LOGTARGET_CONSOLE, include_time))
 
@@ -175,6 +201,14 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.console_handler.setLevel(int(loglevel))
 
     def SetupFileLogging(self, enabled: bool, loglevel: LogLevel, log_dir_path: Path, early_init: bool) -> None:
+        """Manage file logging. This is called from LogSettings init
+
+        Args:
+            enabled (bool): If File logging enabled or disabled
+            loglevel (LogLevel): Loglevel to use
+            log_dir_path (Path): Path to directory containing log files
+            early_init (bool): If this is the early or late init.
+        """
 
         if enabled:
             if self.file_handler:
@@ -182,6 +216,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
             else:
                 self.StartFileLogging(loglevel, log_dir_path)
         else:
+            # Disable file logging:
             if self.file_handler:
                 self.logger.removeHandler(self.file_handler)
                 self.file_handler.close()
@@ -191,6 +226,12 @@ class Logger(LogLevelObject, metaclass=Singleton):
             self.DisableFileLogBuffer()
 
     def StartFileLogging(self, loglevel: LogLevel, log_dir_path: Path) -> None:
+        """Start and setup file logging
+
+        Args:
+            loglevel (LogLevel): Loglevel to use
+            log_dir_path (Path): Path to directory containing log files
+        """
 
         filepath = log_dir_path.joinpath(App.getName() + ".log")
         self.log_dir_path = log_dir_path
@@ -215,6 +256,12 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.memory_handler.flush()
 
     def UpdateFileLogging(self, loglevel: LogLevel, log_dir_path: Path) -> None:
+        """Change settings of enabled file logging
+
+        Args:
+            loglevel (LogLevel): Loglevel to use
+            log_dir_path (Path): Path to directory containing log files
+        """
         if not self.file_handler:
             raise Exception("File logger not initialized!")
 
@@ -235,6 +282,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
             self.StartFileLogging(loglevel, log_dir_path)
 
     def DisableFileLogBuffer(self) -> None:
+        """Disable the buffer after file logger was finally disabled or enabled"""
 
         self.Log(self.LOG_DEBUG, "FileLogger", "File log buffer disabled",
                  logtarget=self.LOGTARGET_CONSOLE)
@@ -244,6 +292,18 @@ class Logger(LogLevelObject, metaclass=Singleton):
             self.memory_handler.close()
 
     def GetFormatter(self, logtarget: str, include_time: bool = True) -> logging.Formatter:
+        """Get the  formatter for this logging handle
+
+        Args:
+            logtarget (str): self.LOGTARGET_CONSOLE or self.LOGTARGET_FILE
+            include_time (bool, optional): If the time should be included in the log, only affects console logging. Defaults to True.
+
+        Raises:
+            Exception: invalid logtarget
+
+        Returns:
+            logging.Formatter: Forrmatter for logging handler
+        """
 
         prefix_lengths = consts.LOG_PREFIX_LENGTHS.copy()
 
@@ -263,8 +323,10 @@ class Logger(LogLevelObject, metaclass=Singleton):
             fmt = "{color_prefix}" + prefix_string + \
                 "{console_message}{color_suffix}"
             self.console_prefix_length = prefix_length
+
         elif logtarget == self.LOGTARGET_FILE:
             fmt = prefix_string + "{file_message}"
+
         else:
             raise Exception(f"Unknown logtarget: {logtarget}")
 
@@ -275,6 +337,15 @@ class Logger(LogLevelObject, metaclass=Singleton):
         )
 
     def Log(self, loglevel: LogLevel, source: str, message, color: str = "", logtarget: str = "") -> None:
+        """Log a message
+
+        Args:
+            loglevel (LogLevel): The loglevel
+            source (str): Source module name
+            message (any): The message to log
+            color (str, optional): Override log color. Defaults to "".
+            logtarget (str, optional): self.LOGTARGET_CONSOLE or self.LOGTARGET_FILE. Defaults to "".
+        """
 
         log_message = LogMessage(
             source=source, message=message, color=color or loglevel.color, logtarget=logtarget)

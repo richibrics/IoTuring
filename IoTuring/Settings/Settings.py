@@ -9,6 +9,12 @@ class Settings(ConfiguratorObject):
     NAME = "Settings"
 
     def __init__(self, single_configuration: SingleConfiguration, early_init: bool) -> None:
+        """Initialize a settings class
+
+        Args:
+            single_configuration (SingleConfiguration): The configuration
+            early_init (bool): True when loaded before configurator menu, False when added to SettingsManager
+        """
         super().__init__(single_configuration)
 
     @classmethod

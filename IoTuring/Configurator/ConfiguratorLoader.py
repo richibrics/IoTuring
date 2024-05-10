@@ -69,6 +69,15 @@ class ConfiguratorLoader(LogObject):
     #   - append the Warehouse to the list
 
     def LoadSettings(self, early_init:bool = False) -> list[Settings]:
+        """ Load all Settings classes
+
+        Args:
+            early_init (bool, optional): True when loaded before configurator menu, False when added to SettingsManager. Defaults to False.
+
+        Returns:
+            list[Settings]: Loaded classes
+        """
+
         settings = []
         scm = ClassManager(KEY_SETTINGS)
         settingsClasses = scm.ListAvailableClasses()
