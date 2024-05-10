@@ -72,7 +72,8 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.logger.addHandler(self.console_handler)
 
         # Init file logger buffer handler:
-        self.memory_handler = logging.handlers.MemoryHandler(capacity=100)
+        self.memory_handler = logging.handlers.MemoryHandler(
+            capacity=100, flushOnClose=False)
         self.logger.addHandler(self.memory_handler)
 
     def SetupConsoleLogging(self, loglevel: LogLevel = LogLevel(consts.DEFAULT_LOG_LEVEL), include_time: bool = True) -> None:
@@ -93,22 +94,31 @@ class Logger(LogLevelObject, metaclass=Singleton):
         if enabled:
             self.StartFileLogging(loglevel, log_dir_path)
 
-        elif self.final_settings:
-            self.DisableFileLogging()
+        if self.final_settings:
+            self.FinalizeFileLogging(enabled)
 
         self.final_settings = True
 
     def StartFileLogging(self, loglevel: LogLevel, log_dir_path: Path) -> None:
 
-        self.Log(self.LOG_DEBUG, "FileLogger", f"Started file logging: {log_dir_path.absolute()}",
-                 logtarget=self.LOGTARGET_CONSOLE)
-
         if self.file_handler:
             if log_dir_path.samefile(self.log_dir_path):
-                self.file_handler.setLevel(int(loglevel))
+                if not self.file_handler.level == int(loglevel):
+
+                    old_filter = next(
+                        (f for f in self.file_handler.filters if isinstance(f, LogLevelFilter)))
+                    self.file_handler.removeFilter(old_filter)
+
+                    self.file_handler.addFilter(LogLevelFilter(loglevel))
+                    self.file_handler.setLevel(int(loglevel))
+
                 return
             else:
                 self.logger.removeHandler(self.file_handler)
+
+        else:
+            self.Log(self.LOG_DEBUG, "FileLogger", f"Started file logging: {log_dir_path.absolute()}",
+                     logtarget=self.LOGTARGET_CONSOLE)
 
         filepath = log_dir_path.joinpath(App.getName() + ".log")
         self.log_dir_path = log_dir_path
@@ -127,12 +137,11 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.logger.addHandler(self.file_handler)
 
         self.memory_handler.setTarget(self.file_handler)
-        self.memory_handler.close()
-        self.logger.removeHandler(self.memory_handler)
+        self.memory_handler.flush()
 
-    def DisableFileLogging(self) -> None:
+    def FinalizeFileLogging(self, enabled: bool) -> None:
 
-        if self.file_handler:
+        if not enabled and self.file_handler:
             self.logger.removeHandler(self.file_handler)
             self.file_handler.close()
 

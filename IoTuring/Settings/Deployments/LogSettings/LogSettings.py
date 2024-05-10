@@ -74,11 +74,12 @@ class LogSettings(Settings):
 
         preset.AddEntry(name="File log level", key=CONFIG_KEY_FILE_LOG_LEVEL,
                         question_type="select", mandatory=True, default=str(LogLevel(consts.DEFAULT_LOG_LEVEL)),
-                        choices=loglevel_choices)
+                        choices=loglevel_choices, display_if_key_value={CONFIG_KEY_FILE_LOG_ENABLED: "Y"})
 
         preset.AddEntry(name="File log path", key=CONFIG_KEY_FILE_LOG_PATH,
                         question_type="filepath", mandatory=True, default=cls.GetDefaultLogPath(),
-                        instruction="Directory where log files will be saved")
+                        instruction="Directory where log files will be saved",
+                        display_if_key_value={CONFIG_KEY_FILE_LOG_ENABLED: "Y"})
 
         return preset
 
