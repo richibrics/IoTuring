@@ -41,9 +41,8 @@ class LogLevelObject:
     LOG_ERROR = LogLevel("ERROR")
     LOG_CRITICAL = LogLevel("CRITICAL")
 
-    LOG_FILE_ONLY = "file"
-    LOG_CONSOLE_ONLY = "console"
-    LOG_BOTH = LOG_FILE_ONLY + " " + LOG_CONSOLE_ONLY
+    LOGTARGET_FILE = "file"
+    LOGTARGET_CONSOLE = "console"
 
     @classmethod
     def GetLoglevels(cls) -> list[LogLevel]:

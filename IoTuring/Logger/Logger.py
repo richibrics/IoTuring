@@ -27,21 +27,25 @@ class Singleton(type):
 
 
 class LogTargetFilter(logging.Filter):
+    """ Log filter for log target (console or file) """
+
     def __init__(self, target: str) -> None:
         self.target = target
 
-    def filter(self, record):
-        if self.target in record.getMessage():
+    def filter(self, record) -> bool:
+        if not getattr(record, "logtarget") or self.target in getattr(record, "logtarget"):
             return True
         else:
             return False
 
 
 class LogLevelFilter(logging.Filter):
+    """ Log filter for loglevel, for later file logging"""
+
     def __init__(self, loglevel: LogLevel) -> None:
         self.loglevel = loglevel
 
-    def filter(self, record):
+    def filter(self, record) -> bool:
         if int(self.loglevel) > int(record.levelno):
             return False
         else:
@@ -50,16 +54,15 @@ class LogLevelFilter(logging.Filter):
 
 class Logger(LogLevelObject, metaclass=Singleton):
 
-    prefix_length = 70
-
     console_formatter = logging.Formatter(
-        fmt="{color_prefix}[ {asctime:s} | {levelname:^10s} | {source:^30s} | {console_message:s}{color_suffix}",
+        fmt="{color_prefix}" + consts.LOG_PREFIX_STRING +
+            "{console_message}{color_suffix}",
         datefmt="%Y-%m-%d %H:%M:%S",
         style="{"
     )
 
     file_formatter = logging.Formatter(
-        fmt="[ {asctime:s} | {levelname:^10s} | {source:^30s} | {file_message:s}",
+        fmt=consts.LOG_PREFIX_STRING + "{file_message}",
         datefmt="%Y-%m-%d %H:%M:%S",
         style="{"
     )
@@ -78,7 +81,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.console_handler = logging.StreamHandler()
         self.SetConsoleLogLevel()
         self.console_handler.setFormatter(self.console_formatter)
-        self.console_handler.addFilter(LogTargetFilter(self.LOG_CONSOLE_ONLY))
+        self.console_handler.addFilter(LogTargetFilter(self.LOGTARGET_CONSOLE))
         self.logger.addHandler(self.console_handler)
 
         # Init file logger buffer handler:
@@ -108,7 +111,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
     def StartFileLogging(self, loglevel: LogLevel, log_dir_path: Path) -> None:
 
         self.Log(self.LOG_DEBUG, "FileLogger", f"Started file logging: {log_dir_path.absolute()}",
-                 logtarget=self.LOG_CONSOLE_ONLY)
+                 logtarget=self.LOGTARGET_CONSOLE)
 
         if self.file_handler:
             if log_dir_path.samefile(self.log_dir_path):
@@ -128,7 +131,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
         self.file_handler.setFormatter(self.file_formatter)
         self.file_handler.addFilter(LogLevelFilter(loglevel))
-        self.file_handler.addFilter(LogTargetFilter(self.LOG_FILE_ONLY))
+        self.file_handler.addFilter(LogTargetFilter(self.LOGTARGET_FILE))
         self.file_handler.setLevel(int(loglevel))
 
         self.logger.addHandler(self.file_handler)
@@ -147,20 +150,30 @@ class Logger(LogLevelObject, metaclass=Singleton):
             self.logger.removeHandler(self.memory_handler)
             self.memory_handler.close()
 
-    def GetConsoleMessage(self, message, line_length) -> str:
+    def GetConsoleMessage(self, source: str, message) -> str:
 
-        if isinstance(message, str) and len(message.splitlines()) == 1 and len(message) < line_length:
+        if isinstance(message, str) \
+            and len(message.splitlines()) == 1 \
+                and len(message) + self.GetPrefixLength(source) < TerminalDetection.GetTerminalColumns():
             return message.strip()
 
+        line_length = TerminalDetection.GetTerminalColumns() - \
+            self.GetPrefixLength()
+
         final_lines = []
+        messagelines = self.GetMessageAsList(message)
 
-        for l in self.GetMessageAsList(message):
-            short_lines = [l[i:i+line_length]
-                           for i in range(0, len(l), line_length)]
+        if self.GetPrefixLength(source) > self.GetPrefixLength():
+            first_line_len = TerminalDetection.GetTerminalColumns() - \
+                self.GetPrefixLength(source)
+            final_lines.append(messagelines[0][:first_line_len])
+            messagelines[0] = messagelines[0][first_line_len:]
 
-            final_lines.extend(short_lines)
+        for l in messagelines:
+            final_lines.extend([l[i:i+line_length]
+                                for i in range(0, len(l), line_length)])
 
-        line_prefix = "\n" + " " * self.prefix_length
+        line_prefix = "\n" + " " * self.GetPrefixLength()
         return line_prefix.join(final_lines)
 
     def GetFileMessage(self, message) -> str:
@@ -182,16 +195,25 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
         return lines
 
-    def Log(self, loglevel: LogLevel, source: str, message, color: str = "", logtarget: str = LogLevelObject.LOG_BOTH) -> None:
+    def GetPrefixLength(self, source: str = "") -> int:
+        default_source_len = next(
+            (f["len"] for f in consts.LOG_PREFIX_PARTS if f["attr"].startswith("source")))
+        extra_len = max(len(source) - default_source_len, 0)
+        return len(consts.LOG_PREFIX_FORMAT) + sum([f["len"] - 2 for f in consts.LOG_PREFIX_PARTS]) + extra_len
 
-        available_length = TerminalDetection.GetTerminalColumns() - self.prefix_length
+    def Log(self, loglevel: LogLevel, source: str, message, color: str = "", logtarget: str = "") -> None:
 
         extra = {"source": source,
                  "file_message": self.GetFileMessage(message),
-                 "console_message": self.GetConsoleMessage(message, available_length),
                  "color_prefix": "",
-                 "color_suffix": ""
+                 "color_suffix": "",
+                 "logtarget": logtarget
                  }
+
+        if TerminalDetection.CheckTerminalSupportsSize() and TerminalDetection.GetTerminalColumns() > consts.MIN_CONSOLE_WIDTH:
+            extra["console_message"] = self.GetConsoleMessage(source, message)
+        else:
+            extra["console_message"] = extra["file_message"]
 
         if TerminalDetection.CheckTerminalSupportsColors():
 
@@ -201,4 +223,4 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
         l = logging.getLogger(__name__).getChild(source)
 
-        l.log(int(loglevel), msg=logtarget, extra=extra)
+        l.log(int(loglevel), msg=message, extra=extra)

@@ -118,13 +118,13 @@ def loop():
 def Exit_SIGINT_handler(sig=None, frame=None):
     logger = Logger()
     logger.Log(Logger.LOG_INFO, "Main", "Application closed by SigInt",
-               logtarget=Logger.LOG_FILE_ONLY)  # to file
+               logtarget=Logger.LOGTARGET_FILE)  # to file
 
     messages = ["Exiting...",
                 "Thanks for using IoTuring !"]
 
     print()  # New line
     logger.Log(Logger.LOG_INFO, "Main", messages,
-               color=Colors.cyan, logtarget=Logger.LOG_CONSOLE_ONLY)
+               color=Colors.cyan, logtarget=Logger.LOGTARGET_CONSOLE)
 
     sys.exit(0)
