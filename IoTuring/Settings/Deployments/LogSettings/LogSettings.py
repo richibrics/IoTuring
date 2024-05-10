@@ -20,6 +20,7 @@ except:
 
 
 CONFIG_KEY_CONSOLE_LOG_LEVEL = "console_log_level"
+CONFIG_KEY_CONSOLE_LOG_TIME = "console_log_time"
 CONFIG_KEY_FILE_LOG_LEVEL = "file_log_level"
 CONFIG_KEY_FILE_LOG_ENABLED = "file_log_enabled"
 CONFIG_KEY_FILE_LOG_PATH = "file_log_path"
@@ -40,9 +41,12 @@ class LogSettings(Settings):
         # Load settings to logger:
         logger = Logger()
 
-        console_level = LogLevel(
-            self.GetFromConfigurations(CONFIG_KEY_CONSOLE_LOG_LEVEL))
-        logger.SetConsoleLogLevel(console_level)
+        logger.SetupConsoleLogging(
+            loglevel=LogLevel(
+                self.GetFromConfigurations(CONFIG_KEY_CONSOLE_LOG_LEVEL)),
+            include_time=self.GetTrueOrFalseFromConfigurations(
+                CONFIG_KEY_CONSOLE_LOG_TIME)
+        )
 
         logger.SetupFileLogging(
             enabled=self.GetTrueOrFalseFromConfigurations(
@@ -61,6 +65,9 @@ class LogSettings(Settings):
                         question_type="select", mandatory=True, default=str(LogLevel(consts.DEFAULT_LOG_LEVEL)),
                         instruction="IOTURING_LOG_LEVEL envvar overwrites this setting!",
                         choices=loglevel_choices)
+
+        preset.AddEntry(name="Display time in console log", key=CONFIG_KEY_CONSOLE_LOG_TIME,
+                        question_type="yesno", default="Y")
 
         preset.AddEntry(name="Enable file logging", key=CONFIG_KEY_FILE_LOG_ENABLED,
                         question_type="yesno", default="N")

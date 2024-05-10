@@ -54,22 +54,10 @@ class LogLevelFilter(logging.Filter):
 
 class Logger(LogLevelObject, metaclass=Singleton):
 
-    console_formatter = logging.Formatter(
-        fmt="{color_prefix}" + consts.LOG_PREFIX_STRING +
-            "{console_message}{color_suffix}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        style="{"
-    )
-
-    file_formatter = logging.Formatter(
-        fmt=consts.LOG_PREFIX_STRING + "{file_message}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        style="{"
-    )
-
     final_settings = False
     log_dir_path = ""
     file_handler = None
+    console_prefix_length = 0
 
     def __init__(self) -> None:
 
@@ -79,8 +67,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
         # Init console logger handler:
         self.console_handler = logging.StreamHandler()
-        self.SetConsoleLogLevel()
-        self.console_handler.setFormatter(self.console_formatter)
+        self.SetupConsoleLogging()
         self.console_handler.addFilter(LogTargetFilter(self.LOGTARGET_CONSOLE))
         self.logger.addHandler(self.console_handler)
 
@@ -88,7 +75,10 @@ class Logger(LogLevelObject, metaclass=Singleton):
         self.memory_handler = logging.handlers.MemoryHandler(capacity=100)
         self.logger.addHandler(self.memory_handler)
 
-    def SetConsoleLogLevel(self, loglevel: LogLevel = LogLevel(consts.DEFAULT_LOG_LEVEL)) -> None:
+    def SetupConsoleLogging(self, loglevel: LogLevel = LogLevel(consts.DEFAULT_LOG_LEVEL), include_time: bool = True) -> None:
+        self.console_handler.setFormatter(
+            self.GetFormatter(self.LOGTARGET_CONSOLE, include_time))
+
         if OsD.GetEnv("IOTURING_LOG_LEVEL"):
             try:
                 env_level = LogLevel(OsD.GetEnv("IOTURING_LOG_LEVEL"))
@@ -129,7 +119,7 @@ class Logger(LogLevelObject, metaclass=Singleton):
         if filepath.exists():
             self.file_handler.doRollover()
 
-        self.file_handler.setFormatter(self.file_formatter)
+        self.file_handler.setFormatter(self.GetFormatter(self.LOGTARGET_FILE))
         self.file_handler.addFilter(LogLevelFilter(loglevel))
         self.file_handler.addFilter(LogTargetFilter(self.LOGTARGET_FILE))
         self.file_handler.setLevel(int(loglevel))
@@ -149,6 +139,37 @@ class Logger(LogLevelObject, metaclass=Singleton):
         if self.memory_handler:
             self.logger.removeHandler(self.memory_handler)
             self.memory_handler.close()
+
+    def GetFormatter(self, logtarget: str, include_time: bool = True) -> logging.Formatter:
+
+        prefix_lengths = consts.LOG_PREFIX_LENGTHS.copy()
+
+        if not include_time:
+            prefix_lengths.pop("asctime")
+
+        prefix_strings = [f"{{{s}}}" for s in prefix_lengths]
+        prefix_string = consts.LOG_PREFIX_ENDS[0] +\
+            consts.LOG_PREFIX_SEPARATOR.join(prefix_strings) +\
+            consts.LOG_PREFIX_ENDS[1]
+
+        prefix_length = sum([len(s) for s in consts.LOG_PREFIX_ENDS]) + \
+            len(consts.LOG_PREFIX_SEPARATOR) * (len(prefix_lengths) - 1) + \
+            sum([l for l in prefix_lengths.values()])
+
+        if logtarget == self.LOGTARGET_CONSOLE:
+            fmt = "{color_prefix}" + prefix_string + \
+                "{console_message}{color_suffix}"
+            self.console_prefix_length = prefix_length
+        elif logtarget == self.LOGTARGET_FILE:
+            fmt = prefix_string + "{file_message}"
+        else:
+            raise Exception(f"Unknown logtarget: {logtarget}")
+
+        return logging.Formatter(
+            fmt=fmt,
+            datefmt="%Y-%m-%d %H:%M:%S",
+            style="{"
+        )
 
     def GetConsoleMessage(self, source: str, message) -> str:
 
@@ -197,9 +218,9 @@ class Logger(LogLevelObject, metaclass=Singleton):
 
     def GetPrefixLength(self, source: str = "") -> int:
         default_source_len = next(
-            (f["len"] for f in consts.LOG_PREFIX_PARTS if f["attr"].startswith("source")))
+            (l for s, l in consts.LOG_PREFIX_LENGTHS.items() if s.startswith("source")))
         extra_len = max(len(source) - default_source_len, 0)
-        return len(consts.LOG_PREFIX_FORMAT) + sum([f["len"] - 2 for f in consts.LOG_PREFIX_PARTS]) + extra_len
+        return self.console_prefix_length + extra_len
 
     def Log(self, loglevel: LogLevel, source: str, message, color: str = "", logtarget: str = "") -> None:
 
