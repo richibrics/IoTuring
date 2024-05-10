@@ -35,8 +35,8 @@ loglevel_choices = [{"name": str(l).capitalize(), "value": str(l)}
 class LogSettings(Settings):
     NAME = "Log"
 
-    def __init__(self, single_configuration: SingleConfiguration) -> None:
-        super().__init__(single_configuration)
+    def __init__(self, single_configuration: SingleConfiguration, early_init: bool) -> None:
+        super().__init__(single_configuration, early_init)
 
         # Load settings to logger:
         logger = Logger()
@@ -54,7 +54,8 @@ class LogSettings(Settings):
             loglevel=LogLevel(self.GetFromConfigurations(
                 CONFIG_KEY_FILE_LOG_LEVEL)),
             log_dir_path=Path(self.GetFromConfigurations(
-                CONFIG_KEY_FILE_LOG_PATH))
+                CONFIG_KEY_FILE_LOG_PATH)),
+            early_init=early_init
         )
 
     @classmethod

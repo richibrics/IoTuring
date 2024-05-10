@@ -41,4 +41,4 @@ class TerminalDetection:
         Returns:
             int: Number of lines required
         """
-        return int((string_length / shutil.get_terminal_size().columns) // 1)
+        return (string_length // shutil.get_terminal_size().columns) + 1

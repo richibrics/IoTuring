@@ -54,7 +54,7 @@ def loop():
     configurator = Configurator()
 
     # Early log settings:
-    ConfiguratorLoader(configurator).LoadSettings()
+    ConfiguratorLoader(configurator).LoadSettings(early_init=True)
 
     logger.Log(Logger.LOG_DEBUG, "App", f"Selected options: {vars(args)}")
 
