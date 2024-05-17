@@ -142,7 +142,7 @@ class Entity(ConfiguratorObject, LogObject):
             sensor = next((s for s in self.entitySensors if s.GetKey() == key))
             return sensor
         except StopIteration:
-            raise UnknownEntityKeyException
+            raise UnknownEntityKeyException(key)
 
     def GetEntityName(self) -> str:
         """ Return entity name """

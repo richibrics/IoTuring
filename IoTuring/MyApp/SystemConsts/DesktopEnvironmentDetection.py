@@ -31,4 +31,12 @@ class DesktopEnvironmentDetection():
             elif not OsD.GetEnv('DISPLAY'):
                 raise Exception('No $DISPLAY environment variable!')
 
-        
+    @staticmethod
+    def IsXsetSupported() -> bool:
+        if DesktopEnvironmentDetection.IsWayland():
+            return False
+        try:
+            DesktopEnvironmentDetection.CheckXsetSupport()
+            return True
+        except:
+            return False

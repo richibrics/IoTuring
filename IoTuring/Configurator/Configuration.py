@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from IoTuring.ClassManager.consts import KEY_ENTITY, KEY_WAREHOUSE, KEY_SETTINGS
+from IoTuring.Exceptions.Exceptions import UnknownConfigKeyException
 
 CONFIG_CLASS = {
     KEY_ENTITY: "active_entities",
@@ -69,7 +70,7 @@ class SingleConfiguration:
             config_key (str): The key of the configuration
 
         Raises:
-            ValueError: If the key is not found
+            UnknownConfigKeyException: If the key is not found
 
         Returns:
             The value of the key.
@@ -77,7 +78,7 @@ class SingleConfiguration:
         if config_key in self.configurations:
             return self.configurations[config_key]
         else:
-            raise ValueError("Config key not set")
+            raise UnknownConfigKeyException(config_key)
 
     def UpdateConfigValue(self, config_key: str, config_value: str) -> None:
         """Update the value of the configuration. Overwrites existing value
