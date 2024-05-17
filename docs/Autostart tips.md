@@ -45,9 +45,6 @@ sudo cp docs/IoTuring.service /usr/lib/systemd/user/
 mkdir -p ~/.local/share/systemd/user/
 cp docs/IoTuring.service ~/.local/share/systemd/user/
 
-# Enable the automatic login of the user, so it can start after boot
-loginctl enable-linger $(whoami)
-
 systemctl --user daemon-reload
 systemctl --user edit IoTuring.service
 ```
@@ -69,6 +66,22 @@ Enable and start the service:
 ```shell
 systemctl --user enable IoTuring.service
 systemctl --user start IoTuring.service
+```
+
+#### Start user service before login
+
+This is optional. Without this, IoTuring starts after login.
+
+```shell
+# Enable the automatic login of the user, so IoTuring can start right after boot:
+loginctl enable-linger $(whoami)
+
+# Copy the service which restarts IoTuring:
+cp docs/IoTuring-restart.service ~/.local/share/systemd/user/
+
+systemctl --user daemon-reload
+systemctl --user enable IoTuring-restart.service
+systemctl --user start IoTuring-restart.service
 ```
 
 ### As a system service with Systemd
