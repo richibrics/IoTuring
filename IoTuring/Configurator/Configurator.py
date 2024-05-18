@@ -1,6 +1,5 @@
 import os
 import subprocess
-import shutil
 import sys
 
 from IoTuring.Configurator.MenuPreset import QuestionPreset
@@ -13,6 +12,7 @@ from IoTuring.ClassManager.ClassManager import ClassManager, KEY_ENTITY, KEY_WAR
 from IoTuring.Logger.LogObject import LogObject
 from IoTuring.Exceptions.Exceptions import UserCancelledException
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.MyApp.SystemConsts import TerminalDetection
 
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
@@ -457,16 +457,13 @@ class Configurator(LogObject):
             # Default max_height:
             kwargs["max_height"] = "100%"
 
-            # Actual lines in the terminal. fallback to 0 on error:
-            terminal_lines = shutil.get_terminal_size(fallback=(0, 0)).lines
-
             # Check for pinned messages:
-            if terminal_lines > 0 and self.pinned_lines > 0:
+            if TerminalDetection.CheckTerminalSupportsSize() and self.pinned_lines > 0:
 
                 # Lines of message and instruction if too long:
                 if "instruction" in kwargs:
-                    message_lines = ((len(kwargs["instruction"]) + len(message) + 3)
-                                     / shutil.get_terminal_size().columns) // 1
+                    message_lines = TerminalDetection.CalculateNumberOfLines(
+                        len(kwargs["instruction"]) + len(message) + 3)
                 # Add only the line of the message:
                 else:
                     message_lines = 1
@@ -474,6 +471,8 @@ class Configurator(LogObject):
                 # Calculate nr of lines required to display:
                 required_lines = len(choices) + \
                     self.pinned_lines + message_lines
+
+                terminal_lines = TerminalDetection.GetTerminalLines()
 
                 # Set the calculated height:
                 if required_lines > terminal_lines:

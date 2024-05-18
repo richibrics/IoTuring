@@ -68,7 +68,16 @@ class ConfiguratorLoader(LogObject):
     #   - pass the configuration to the warehouse function that uses the configuration to init the Warehouse
     #   - append the Warehouse to the list
 
-    def LoadSettings(self) -> list[Settings]:
+    def LoadSettings(self, early_init:bool = False) -> list[Settings]:
+        """ Load all Settings classes
+
+        Args:
+            early_init (bool, optional): True when loaded before configurator menu, False when added to SettingsManager. Defaults to False.
+
+        Returns:
+            list[Settings]: Loaded classes
+        """
+
         settings = []
         scm = ClassManager(KEY_SETTINGS)
         settingsClasses = scm.ListAvailableClasses()
@@ -80,11 +89,11 @@ class ConfiguratorLoader(LogObject):
                 .GetConfigsOfType(sClass.NAME)
 
             if savedConfigs:
-                sc = sClass(savedConfigs[0])
+                sc = sClass(savedConfigs[0], early_init)
 
             # Fallback to default:
             else:
-                sc = sClass(sClass.GetDefaultConfigurations())
+                sc = sClass(sClass.GetDefaultConfigurations(), early_init)
 
             settings.append(sc)
         return settings

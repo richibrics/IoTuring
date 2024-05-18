@@ -10,7 +10,7 @@ class ConsoleWarehouse(Warehouse):
         for entity in self.GetEntities():
             for entitySensor in entity.GetEntitySensors():
                 if(entitySensor.HasValue()):
-                    self.Log(Logger.LOG_MESSAGE, entitySensor.GetId() +
+                    self.Log(self.LOG_INFO, entitySensor.GetId() +
                              ": " + self.FormatValue(entitySensor))
 
     def FormatValue(self, entitySensor: EntitySensor):

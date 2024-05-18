@@ -51,7 +51,7 @@ class ClassManager(LogObject):
         if not classesRootPath.exists:
             raise Exception(f"Path does not exist: {classesRootPath}")
 
-        self.Log(self.LOG_DEVELOPMENT,
+        self.Log(self.LOG_DEBUG,
                  f'Looking for python files in "{classesRootPath}"...')
 
         python_files = classesRootPath.rglob("*.py")
@@ -63,7 +63,7 @@ class ClassManager(LogObject):
             raise FileNotFoundError(
                 f"No module files found in {classesRootPath}")
 
-        self.Log(self.LOG_DEVELOPMENT,
+        self.Log(self.LOG_DEBUG,
                  f"Found {str(len(filepaths))} modules files")
 
         return filepaths
