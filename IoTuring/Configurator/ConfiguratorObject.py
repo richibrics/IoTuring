@@ -1,5 +1,7 @@
 from IoTuring.Configurator.MenuPreset import BooleanAnswers, MenuPreset
 from IoTuring.Configurator.Configuration import SingleConfiguration, CONFIG_CLASS, CONFIG_KEY_TYPE
+from IoTuring.Exceptions.Exceptions import UnknownConfigKeyException
+
 
 
 class ConfiguratorObject:
@@ -30,7 +32,7 @@ class ConfiguratorObject:
         if self.GetConfigurations().HasConfigKey(key):
             return self.GetConfigurations().GetConfigValue(key)
         else:
-            raise Exception("Can't find key " + key + " in configurations")
+            raise UnknownConfigKeyException(key)
 
     def GetTrueOrFalseFromConfigurations(self, key) -> bool:
         """ Get boolean value from confiugurations with key (if not present raise Exception) """
