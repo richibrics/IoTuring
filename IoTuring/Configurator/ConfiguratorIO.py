@@ -33,7 +33,7 @@ class ConfiguratorIO(LogObject):
         try:
             with open(self.getFilePath(), "r", encoding="utf-8") as f:
                 config = json.loads(f.read())
-            self.Log(self.LOG_MESSAGE, f"Loaded \"{self.getFilePath()}\"")
+            self.Log(self.LOG_INFO, f"Loaded \"{self.getFilePath()}\"")
         except FileNotFoundError:
             self.Log(self.LOG_WARNING, f"It seems you don't have a configuration yet. Use configuration mode (-c) to enable your favourite entities and warehouses.\
                      \nConfigurations will be saved in \"{str(self.getFolderPath())}\"")
@@ -48,7 +48,7 @@ class ConfiguratorIO(LogObject):
             self.createFolderPathIfDoesNotExist()
             with open(self.getFilePath(), "w", encoding="utf-8") as f:
                 f.write(json.dumps(data, indent=4, ensure_ascii=False))
-            self.Log(self.LOG_MESSAGE, f"Saved \"{str(self.getFilePath())}\"")
+            self.Log(self.LOG_INFO, f"Saved \"{str(self.getFilePath())}\"")
         except Exception as e:
             self.Log(self.LOG_ERROR, f"Error saving configuration file: {str(e)}")
             sys.exit(str(e))
@@ -152,7 +152,7 @@ class ConfiguratorIO(LogObject):
                 self.createFolderPathIfDoesNotExist()
                 # copy file from old to new location
                 self.oldFolderPath().joinpath(CONFIGURATION_FILE_NAME).rename(self.getFilePath())
-                self.Log(self.LOG_MESSAGE,
+                self.Log(self.LOG_INFO,
                         f"Copied to \"{str(self.getFilePath())}\"")
             else:
                 # create dont move file
@@ -161,7 +161,7 @@ class ConfiguratorIO(LogObject):
                         "This file is here to remember you that you don't want to move the configuration file into the new location.",
                         "If you want to move it, delete this file and run the script in -c mode."
                     ]))
-                self.Log(self.LOG_MESSAGE, " ".join([
+                self.Log(self.LOG_INFO, " ".join([
                     "You won't be asked again. A new blank configuration will be used;",
                     f"if you want to move the existing configuration file, delete \"{self.oldFolderPath().joinpath(DONT_MOVE_FILE_FILENAME)}",
                     "and run the script in -c mode."

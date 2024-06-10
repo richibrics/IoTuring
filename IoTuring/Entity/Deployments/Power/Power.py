@@ -1,18 +1,25 @@
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
+from IoTuring.Exceptions.Exceptions import UnknownConfigKeyException
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
+from IoTuring.Configurator.MenuPreset import MenuPreset
 
+
+CONFIG_KEY_ENABLE_HIBERNATE = 'enable_hibernate'
 
 KEY_SHUTDOWN = 'shutdown'
 KEY_REBOOT = 'reboot'
 KEY_SLEEP = 'sleep'
+KEY_HIBERNATE = 'hibernate'
 
 commands = {
     OsD.WINDOWS: {
         KEY_SHUTDOWN: 'shutdown /s /t 0',
         KEY_REBOOT: 'shutdown /r',
-        KEY_SLEEP: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0'
+        KEY_SLEEP: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
+        KEY_HIBERNATE: 'rundll32.exe powrprof.dll,SetSuspendState Hibernate'
+
     },
     OsD.MACOS: {
         KEY_SHUTDOWN: 'sudo shutdown -h now',
@@ -21,12 +28,19 @@ commands = {
     OsD.LINUX: {
         KEY_SHUTDOWN: 'poweroff',
         KEY_REBOOT: 'reboot',
-        KEY_SLEEP: 'systemctl suspend'
+        KEY_SLEEP: 'systemctl suspend',
+        KEY_HIBERNATE: 'systemctl hibernate'
     }
 }
 
-linux_optional_sleep_commands = {
-    'X11': 'xset dpms force standby'
+linux_commands = {
+    "gnome": {
+        KEY_SHUTDOWN: 'gnome-session-quit --power-off',
+        KEY_REBOOT: 'gnome-session-quit --reboot'
+    },
+    "X11": {
+        KEY_SLEEP: 'xset dpms force standby'
+    }
 }
 
 
@@ -36,7 +50,15 @@ class Power(Entity):
     def Initialize(self):
         self.commands = {}
 
-        for command_key in [KEY_SHUTDOWN, KEY_REBOOT, KEY_SLEEP]:
+        command_keys = [KEY_SHUTDOWN, KEY_REBOOT, KEY_SLEEP]
+
+        try:
+            if self.GetTrueOrFalseFromConfigurations(CONFIG_KEY_ENABLE_HIBERNATE):
+                command_keys.append(KEY_HIBERNATE)
+        except UnknownConfigKeyException:
+            pass
+
+        for command_key in command_keys:
             if command_key in commands[OsD.GetOs()]:
                 self.commands[command_key] = self.GetCommand(command_key)
                 self.RegisterEntityCommand(EntityCommand(
@@ -64,17 +86,14 @@ class Power(Entity):
 
         if OsD.IsLinux():
 
-            if command_key == KEY_SLEEP:
-                # Fallback to xset, if supported:
-                if not De.IsWayland():
-                    try:
-                        De.CheckXsetSupport()
-                        command = linux_optional_sleep_commands['X11']
-                    except Exception as e:
-                        self.Log(self.LOG_DEBUG,
-                                 f'Xset not supported: {str(e)}')
+            if De.IsXsetSupported() and command_key in linux_commands['X11']:
+                command = linux_commands['X11'][command_key]
+            elif De.GetDesktopEnvironment() in linux_commands \
+                    and command_key in linux_commands[De.GetDesktopEnvironment()]:
+                command = linux_commands[De.GetDesktopEnvironment(
+                )][command_key]
 
-            else:
+            elif not command.startswith("systemctl"):
                 # Try if command works without sudo, add if it's not working:
                 testcommand = command + " --wtmp-only"
 
@@ -85,6 +104,16 @@ class Power(Entity):
                  f'Found {command_key} command: {command}')
 
         return command
+
+    @classmethod
+    def ConfigurationPreset(cls) -> MenuPreset:
+        preset = MenuPreset()
+
+        if KEY_HIBERNATE in commands[OsD.GetOs()]:
+            preset.AddEntry("Enable hibernation",
+                            CONFIG_KEY_ENABLE_HIBERNATE, default="N",
+                            question_type="yesno")
+        return preset
 
     @classmethod
     def CheckSystemSupport(cls):
