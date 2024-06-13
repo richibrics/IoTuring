@@ -11,9 +11,6 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 VALUEFORMATTEROPTIONS_DBM = ValueFormatterOptions(ValueFormatterOptions.TYPE_RADIOPOWER)
-VALUEFORMATTEROPTIONS_PERCENTAGE = ValueFormatterOptions(
-    ValueFormatterOptions.TYPE_PERCENTAGE
-)
 
 WIFI_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
@@ -22,7 +19,6 @@ CONFIG_KEY_WIFI = "wifi"
 SIGNAL_UNIT = "dBm"  # windows also supports "%"
 SHOW_NA = False  # don't show not available extraAttributes
 
-KEY_SIGNAL_STRENGTH_PERCENT = "signal_strength_percent"
 KEY_SIGNAL_STRENGTH_DBM = "signal_strength_dbm"
 
 # LINUX
@@ -34,12 +30,25 @@ EXTRA_KEY_BSSID = "BSSID"
 EXTRA_KEY_SSID = "ssid"
 EXTRA_KEY_FREQUENCY = "Frequency"
 EXTRA_KEY_SIGNAL = "Signal"
+EXTRA_KEY_RX_BYTES = "RX_Bytes"
+EXTRA_KEY_TX_BYTES = "TX_Bytes"
+EXTRA_KEY_RX_BITRATE = "RX_Bitrate"
+EXTRA_KEY_TX_BITRATE = "TX_Bitrate"
+EXTRA_KEY_BSS_FLAGS = "BSS_Flags"
+EXTRA_KEY_DTIM_PERIOD = "DTIM_Period"
+EXTRA_KEY_BEACON_INTERVAL = "Beacon_Interval"
+
 # MACOS
 EXTRA_KEY_AGRCTLRSSI = "agrCtlRSSI"
 EXTRA_KEY_AGREXTRSSI = "agrExtRSSI"
-EXTRA_KEY_OP_MODE = "op mode"
-EXTRA_KEY_LASTTXRATE = "lastTxRate"
-EXTRA_KEY_MAXRATE = "maxRate"
+# state already in linux config
+EXTRA_KEY_OP_MODE = "OP_mode"
+EXTRA_KEY_LASTTXRATE = "Last_TX_Rate"
+EXTRA_KEY_MAXRATE = "Max_Rate"
+# BSSID already in linux config
+# SSID already in linux config
+EXTRA_KEY_CHANNEL = "Channel"
+
 
 
 class Wifi(Entity):
@@ -52,18 +61,9 @@ class Wifi(Entity):
         self.language: str = self.locale_str.split("_")[0]
         self.showNA = SHOW_NA
 
-        # In macos trick the language to be english since the output of airport is always in english
-        if OsD.IsMacos():
-            self.language = "en"
-
-        if OsD.IsWindows():
-            # Windows support is WIP https://github.com/richibrics/IoTuring/pull/89
-            raise NotImplementedError
-
         self.wifiInterface = self.GetFromConfigurations(CONFIG_KEY_WIFI)
 
         self.commands = {
-            OsD.WINDOWS: ["netsh", "wlan", "show", "interfaces"],
             OsD.LINUX: ["iw", "dev", self.wifiInterface, "link"],
             OsD.MACOS: [
                 "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
@@ -75,14 +75,14 @@ class Wifi(Entity):
                 "BSSID": r'Connected to (\S+) \(on \S+\)',
                 "SSID": r'SSID: (.+)',
                 "Frequency": r'freq: ([\d.]+)',
-                #"RX_bytes": r'RX: (\d+) bytes \(\d+ packets\)',
-                #"TX_bytes": r'TX: (\d+) bytes \(\d+ packets\)',
+                "RX_bytes": r'RX: (\d+) bytes \(\d+ packets\)',
+                "TX_bytes": r'TX: (\d+) bytes \(\d+ packets\)',
                 "Signal": r'signal: (-?\d+) dBm',
-                #"RX_bitrate": r'rx bitrate: ([\d.]+) MBit/s',
-                #"TX_bitrate": r'tx bitrate: ([\d.]+) MBit/s',
-                #"BSS_flags": r'bss flags: (.+)',
-                #"DTIM_period": r'dtim period: (\d+)',
-                #"Beacon_interval": r'beacon int: (\d+)'
+                "RX_bitrate": r'rx bitrate: ([\d.]+) MBit/s',
+                "TX_bitrate": r'tx bitrate: ([\d.]+) MBit/s',
+                "BSS_flags": r'bss flags: (.+)',
+                "DTIM_period": r'dtim period: (\d+)',
+                "Beacon_interval": r'beacon int: (\d+)'
             },
             OsD.MACOS: {  # no language differentiation in macos: always english
                 "agrCtlRSSI": r"[^\n][\s]*agrCtlRSSI:\s+(-?\d+)\n",
@@ -97,12 +97,8 @@ class Wifi(Entity):
             },
         }
 
-        if OsD.IsWindows():
-            self.keySignalStrength = KEY_SIGNAL_STRENGTH_PERCENT
-            self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_PERCENTAGE
-        else:
-            self.keySignalStrength = KEY_SIGNAL_STRENGTH_DBM
-            self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_DBM
+        self.keySignalStrength = KEY_SIGNAL_STRENGTH_DBM
+        self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_DBM
 
         self.RegisterEntitySensor(
             EntitySensor(
@@ -168,6 +164,7 @@ class Wifi(Entity):
             question_type="select",
             choices=NIC_CHOICES,
         )
+        return preset
 
     @staticmethod
     def GetWifiNics(getInfo=True):
@@ -215,42 +212,6 @@ class Wifi(Entity):
                 appendNicChoice(interface, ip4, ip6, mac)
             return NIC_CHOICES
 
-        elif OsD.IsWindows():
-            p = OsD.RunCommand(["netsh", "wlan", "show", "interfaces"])
-            if (
-                p.returncode > 0
-            ):  # if the returncode is 0 iwconfig succeeded, else continue with next interface
-                raise Exception("RunCommand netsh returncode > 0")
-            output = p.stdout
-            numInterfacesMatch = re.search(
-                r"There is (\d+) interface(?:s)? on the system", output
-            )
-            numOfInterfaces = int(numInterfacesMatch.group(1))
-            if numOfInterfaces == 0:
-                raise Exception("no wireless interface found")
-            elif numOfInterfaces > 1:
-                raise Exception(
-                    "more than one wireless interface not supported, create a github issue with the output of 'netsh wlan show interfaces' atached"
-                )
-            interfaceMatch = re.search(r"Name\s+:\s+(\w+)", output)
-            interfaceName = interfaceMatch.group(1)
-            if not getInfo:
-                appendNicChoice(interfaceName)
-            else:
-                nicinfo = interfaces[interfaceName]  # TODO Typehint
-                for nicaddr in nicinfo:
-                    if nicaddr.family == AddressFamily.AF_INET:
-                        ip4 = nicaddr.address
-                        continue
-                    elif nicaddr.family == AddressFamily.AF_INET6:
-                        ip6 = nicaddr.address
-                        continue
-                    elif nicaddr.family == psutil.AF_LINK:
-                        mac = nicaddr.address
-                        continue
-                appendNicChoice(interfaceName, ip4, ip6, mac)
-            return NIC_CHOICES
-
         elif OsD.IsMacos():
             for interface in interfaces:
                 p = OsD.RunCommand(["airport", interface])
@@ -287,6 +248,7 @@ class Wifi(Entity):
                 raise Exception("no wireless interface found")
 
         elif OsD.IsWindows():
+            # Windows support is WIP https://github.com/richibrics/IoTuring/pull/89
             raise Exception("Windows is not supported at the moment")
 
         elif OsD.IsMacos():
