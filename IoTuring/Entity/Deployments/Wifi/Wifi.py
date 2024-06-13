@@ -11,6 +11,8 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 VALUEFORMATTEROPTIONS_DBM = ValueFormatterOptions(ValueFormatterOptions.TYPE_RADIOPOWER)
+VALUEFORMATTEROPTIONS_BYTES = ValueFormatterOptions(ValueFormatterOptions.TYPE_BYTE)
+VALUEFORMATTEROPTIONS_BIT_PER_SECOND = ValueFormatterOptions(ValueFormatterOptions.TYPE_BIT_PER_SECOND)
 
 WIFI_CHOICE_STRING = "Name: {:<15}, IP: {:<16}, MAC: {:<11}"
 
@@ -98,14 +100,19 @@ class Wifi(Entity):
         }
 
         self.keySignalStrength = KEY_SIGNAL_STRENGTH_DBM
-        self.valueFormatterOptionsSignalStrength = VALUEFORMATTEROPTIONS_DBM
+
+        self.valueFormatterOptions: dict = {
+            KEY_SIGNAL_STRENGTH_DBM : VALUEFORMATTEROPTIONS_DBM,
+            EXTRA_KEY_RX_BITRATE : VALUEFORMATTEROPTIONS_BIT_PER_SECOND,
+            EXTRA_KEY_RX_BYTES : VALUEFORMATTEROPTIONS_BYTES
+        }
 
         self.RegisterEntitySensor(
             EntitySensor(
                 self,
                 key=self.keySignalStrength,
                 supportsExtraAttributes=True,
-                valueFormatterOptions=self.valueFormatterOptionsSignalStrength,
+                valueFormatterOptions=self.valueFormatterOptions[KEY_SIGNAL_STRENGTH_DBM],
             ),
         )
 
@@ -142,6 +149,7 @@ class Wifi(Entity):
                 sensorDataKey=self.keySignalStrength,
                 attributeKey=globals()[extraKey],
                 attributeValue=attributevalue,
+                valueFormatterOptions = self.valueFormatterOptions[extraKey] if extraKey in self.valueFormatterOptions else None
             )
 
     def GetWirelessInfo(self, stdout):
