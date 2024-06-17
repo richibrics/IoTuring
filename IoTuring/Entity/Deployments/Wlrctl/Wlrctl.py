@@ -13,7 +13,7 @@ CONFIG_KEY_DOMAIN = "domain"
 DOMAIN_CHOICES = [
     {"name": "Keyboard", "value": "keyboard"},
     {"name": "Pointer", "value": "pointer"},
-    {"name": "Window", "value": "window"},
+    {"name": "Toplevel", "value": "toplevel"},
 ]
 
 CONFIG_KEY_KEYBOARD_ACTION = "keyboard_action"
@@ -44,6 +44,9 @@ POINTER_ACTIONS = [
     {"name": "Move", "value": "move"},
     {"name": "Scroll", "value": "scroll"},
 ]
+POINTER_CLICK_INSTRUCTIONS = (
+    'buttons are "left", "right", "middle", "back", "forward", "exra", "side"'
+)
 # actions are
 #   click [button]: Click a mouse button. If unspecified, clicks the default (left) button.
 #   move <dx> <dy>: Move the Curosor dx, dy pixels. dx is the displacement in positive-right direction, dy is the displacement in positive-downward direction, negatives allowed
@@ -54,8 +57,8 @@ CONFIG_KEY_POINTER_DX = "dx"
 CONFIG_KEY_POINTER_DY = "dy"
 
 
-CONFIG_KEY_WINDOW_ACTION = "window_action"
-WINDOW_ACTIONS = [
+CONFIG_KEY_TOPLEVEL_ACTION = "toplevel_action"
+TOPLEVEL_ACTIONS = [
     {"name": "Minimize", "value": "minimize"},
     {"name": "Maximize", "value": "maximize"},
     {"name": "Fullscreen", "value": "fullscreen"},
@@ -73,8 +76,21 @@ WINDOW_ACTIONS = [
 #   wait: Wait with a successfull return code until all mathcing windows have closed. If there are no matches, exit with a failing return code immediatlely
 #   waitfor: Wwait to return a successfull return code until there is at least one window that matches the requested criteria
 
-CONFIG_KEY_WINDOW_WINDOWS = "windows"
+CONFIG_KEY_TOPLEVEL_APP_ID = "app_id"
+CONFIG_KEY_TOPLEVEL_STATE = "state"
+CONFIG_KEY_TOPLEVEL_TITLE = "title"
 
+
+TOPLEVEL_STATE_CHOICES = [
+    {"name": "Fullscreen", "value": "fullscreen"},
+    {"name": "Maximized", "value": "maximized"},
+    {"name": "Minimized", "value": "minimized"},
+    {"name": "Active", "value": "active"},
+    {"name": "Inactive", "value": "inactive"},
+    {"name": "Unmaximized", "value": "unmaximized"},
+    {"name": "Unminimized", "value": "unminimized"},
+    {"name": "Unfullscreen", "value": "unfullscreen"},
+]
 
 CONFIG_KEY_OUTPUT_ACTION = "output_action"
 OUTPUT_ACTIONS = [
@@ -99,8 +115,8 @@ class Wlrctl(Entity):
         self.button = ""
         self.dx = ""
         self.dy = ""
-        self.windows = ""
         self.command = ""
+        self.matchspec = ""
         self.hasValue = False
         self.hasCommand = False
         self.state = ""
@@ -119,9 +135,9 @@ class Wlrctl(Entity):
                     CONFIG_KEY_KEYBOARD_MODIFIERS
                 )
                 if self.modifiers_yes == "N":
-                    self.command = f"wlrctl {self.domain} {self.action} {self.keys}"
+                    self.command = f"wlrctl {self.domain} {self.action} '{self.keys}'"
                 else:
-                    self.command = f"wlrctl {self.domain} {self.action} {self.keys} modifiers {self.modifiers}"
+                    self.command = f"wlrctl {self.domain} {self.action} '{self.keys}' modifiers {self.modifiers}"
             else:
                 self.Log(
                     self.LOG_DEBUG, f"Keyboard Action {self.action} not implemented"
@@ -147,10 +163,18 @@ class Wlrctl(Entity):
                 )
                 raise Exception("Action not implemented")
 
-        elif self.domain == "window":
-            self.action = self.GetFromConfigurations(CONFIG_KEY_WINDOW_ACTION)
-            self.windows = self.GetFromConfigurations(CONFIG_KEY_WINDOW_WINDOWS)
-            self.command = f"wlrctl {self.domain} {self.action} {self.windows}"
+        elif self.domain == "toplevel":
+            self.action = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_ACTION)
+            app_id = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_APP_ID)
+            title = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_TITLE)
+            state = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_STATE)
+            if app_id:
+                self.matchspec += f"app_id:{app_id}"
+            if title:
+                self.matchspec += f" title:{title}"
+            if state:
+                self.matchspec += f" state:{state}"
+            self.command = f"wlrctl {self.domain} {self.action} {self.matchspec}"
             if self.action in ["find", "wait", "waitfor"]:
                 self.hasValue = True
                 self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
@@ -168,7 +192,8 @@ class Wlrctl(Entity):
 
     def Update(self):
         if self.hasValue:
-            command = self.RunCommand(f"wlrctl {self.domain} {self.action}")
+            self.Log(self.LOG_DEBUG, f"Running {self.command}")
+            command = self.RunCommand(self.command)
             self.state = STATE_ON if command.returncode == 0 else STATE_OFF
 
             self.SetEntitySensorValue(KEY_STATE, self.state)
@@ -182,7 +207,7 @@ class Wlrctl(Entity):
 
         if command.returncode != 0:
             self.Log(self.LOG_ERROR, f"Error running {self.command}")
-            return False 
+            return False
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -215,24 +240,25 @@ class Wlrctl(Entity):
             question_type="text",
             display_if_key_value={CONFIG_KEY_KEYBOARD_ACTION: "type"},
         )
+        # TODO modifiers work janky in my testing
         # ask yes or no for modifiers
-        preset.AddEntry(
-            name="Should a modifier be used?",
-            key=CONFIG_KEY_KEYBOARD_MODIFIERS_YES,
-            mandatory=True,
-            question_type="yesno",
-            choices=POINTER_ACTIONS,
-            display_if_key_value={CONFIG_KEY_KEYBOARD_ACTION: "type"},
-        )
+        # preset.AddEntry(
+        #     name="Should a modifier be used?",
+        #     key=CONFIG_KEY_KEYBOARD_MODIFIERS_YES,
+        #     mandatory=True,
+        #     question_type="yesno",
+        #     choices=POINTER_ACTIONS,
+        #     display_if_key_value={CONFIG_KEY_KEYBOARD_ACTION: "type"},
+        # )
         # asking for multiple modifiers requires ability to select multiple choices TODO
-        preset.AddEntry(
-            name="Select keyboard modifiers",
-            key=CONFIG_KEY_KEYBOARD_MODIFIERS,
-            mandatory=True,
-            question_type="select",
-            choices=KEYBOARD_MODIFIERS,
-            display_if_key_value={CONFIG_KEY_KEYBOARD_MODIFIERS_YES: "Y"},
-        )
+        # preset.AddEntry(
+        #     name="Select keyboard modifiers",
+        #     key=CONFIG_KEY_KEYBOARD_MODIFIERS,
+        #     mandatory=True,
+        #     question_type="select",
+        #     choices=KEYBOARD_MODIFIERS,
+        #     display_if_key_value={CONFIG_KEY_KEYBOARD_MODIFIERS_YES: "Y"},
+        # )
 
         #
         # pointer domain
@@ -245,62 +271,74 @@ class Wlrctl(Entity):
             choices=POINTER_ACTIONS,
             display_if_key_value={CONFIG_KEY_DOMAIN: "pointer"},
         )
+        #
         # click
+        #
         preset.AddEntry(
             name="Select button",
             key=CONFIG_KEY_POINTER_BUTTON,
+            instruction=POINTER_CLICK_INSTRUCTIONS,
             mandatory=True,
             question_type="text",
             display_if_key_value={CONFIG_KEY_POINTER_ACTION: "click"},
         )
+
+        #
         # move
-        preset.AddEntry(
-            name="Select dx",
-            key=CONFIG_KEY_POINTER_DX,
-            mandatory=True,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_POINTER_ACTION: "move"},
-        )
-        preset.AddEntry(
-            name="Select dy",
-            key=CONFIG_KEY_POINTER_DY,
-            mandatory=True,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_POINTER_ACTION: "move"},
-        )
+        #
+        for direction in ["x", "y"]:
+            preset.AddEntry(
+                name=f"How much moving in {direction}-direction",
+                key=CONFIG_KEY_POINTER_DX
+                if direction == "x"
+                else CONFIG_KEY_POINTER_DY,
+                mandatory=True,
+                question_type="integer",
+                display_if_key_value={CONFIG_KEY_POINTER_ACTION: "move"},
+            )
+        #
         # scroll
-        preset.AddEntry(
-            name="Select dy",
-            key=CONFIG_KEY_POINTER_DY,
-            mandatory=True,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_POINTER_ACTION: "scroll"},
-        )
-        preset.AddEntry(
-            name="Select dx",
-            key=CONFIG_KEY_POINTER_DX,
-            mandatory=True,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_POINTER_ACTION: "scroll"},
-        )
+        #
+        for direction in ["x", "y"]:
+            preset.AddEntry(
+                name=f"How much scrolling in {direction}-direction",
+                key=CONFIG_KEY_POINTER_DY
+                if direction == "y"
+                else CONFIG_KEY_POINTER_DX,
+                mandatory=True,
+                question_type="integer",
+                display_if_key_value={CONFIG_KEY_POINTER_ACTION: "scroll"},
+            )
 
         #
         # window domain
         #
         preset.AddEntry(
-            name="Select window action",
-            key=CONFIG_KEY_WINDOW_ACTION,
+            name="Select topleve action",
+            key=CONFIG_KEY_TOPLEVEL_ACTION,
             mandatory=True,
             question_type="select",
-            choices=WINDOW_ACTIONS,
-            display_if_key_value={CONFIG_KEY_DOMAIN: "window"},
+            choices=TOPLEVEL_ACTIONS,
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
         )
         preset.AddEntry(
-            name="which windows should be targeted?",
-            key=CONFIG_KEY_WINDOW_WINDOWS,
-            mandatory=True,
+            name="Matchspec app_id?",
+            key=CONFIG_KEY_TOPLEVEL_APP_ID,
             question_type="text",
-            display_if_key_value={CONFIG_KEY_DOMAIN: "window"},
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
+        )
+        preset.AddEntry(
+            name="Matchspec title?",
+            key=CONFIG_KEY_TOPLEVEL_TITLE,
+            question_type="text",
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
+        )
+        preset.AddEntry(
+            name="Matchspec state",
+            key=CONFIG_KEY_TOPLEVEL_STATE,
+            question_type="select",
+            choices=TOPLEVEL_STATE_CHOICES,
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
         )
 
         #
@@ -308,7 +346,7 @@ class Wlrctl(Entity):
         #
         preset.AddEntry(
             name="Select output action",
-            key=CONFIG_KEY_WINDOW_ACTION,
+            key=CONFIG_KEY_TOPLEVEL_ACTION,
             mandatory=True,
             question_type="select",
             choices=OUTPUT_ACTIONS,
