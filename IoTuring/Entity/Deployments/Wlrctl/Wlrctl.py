@@ -1,9 +1,8 @@
-from IoTuring.Entity.Entity import Entity
 from IoTuring.Configurator.MenuPreset import MenuPreset
-from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
-
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 KEY = "wlrctl"
 KEY_STATE = "wlrctl_state"
@@ -20,16 +19,15 @@ CONFIG_KEY_KEYBOARD_ACTION = "keyboard_action"
 KEYBOARD_ACTIONS = [
     {"name": "Type", "value": "type"},
 ]
-# actions are:
-#   type <string> [modifiers]: Send a string to be typed into the focused client
-#        modifiers <SHIFT,CTRL,ALT,SUPER>: Comma separated list of modifiers to be held while typing
-TYPE_INSTRUCTION = """type <string> [modifiers]: Send a string to be typed into the focused client
-                                    modifiers <SHIFT,CTRL,ALT,SUPER>: Comma separated list of modifiers to be held while typing"""
+
+TYPE_INSTRUCTION = """type <string> [modifiers]: Send a string to be typed \
+    into the focused client\n\
+    modifiers <SHIFT,CTRL,ALT,SUPER>: Comma separated list of modifiers to \
+    be held while typing"""
 
 CONFIG_KEY_KEYBOARD_KEYS = "keys"
 
 CONFIG_KEY_KEYBOARD_MODIFIERS = "modifiers"
-CONFIG_KEY_KEYBOARD_MODIFIERS_YES = "keyboard_modifiers_yes"
 KEYBOARD_MODIFIERS = [
     {"name": "Shift", "value": "SHIFT"},
     {"name": "Ctrl", "value": "CTRL"},
@@ -47,10 +45,7 @@ POINTER_ACTIONS = [
 POINTER_CLICK_INSTRUCTIONS = (
     'buttons are "left", "right", "middle", "back", "forward", "exra", "side"'
 )
-# actions are
-#   click [button]: Click a mouse button. If unspecified, clicks the default (left) button.
-#   move <dx> <dy>: Move the Curosor dx, dy pixels. dx is the displacement in positive-right direction, dy is the displacement in positive-downward direction, negatives allowed
-#   scroll <dy> <dx>: Scroll the wheel dy units vertically and dx units horizontally, negatives allowed
+
 
 CONFIG_KEY_POINTER_BUTTON = "button"
 CONFIG_KEY_POINTER_DX = "dx"
@@ -67,14 +62,6 @@ TOPLEVEL_ACTIONS = [
     {"name": "Wait", "value": "wait"},
     {"name": "Waitfor", "value": "waitfor"},
 ]
-# actions are
-#   minimize: Instruct the compositor to minimize matching windows
-#   maximize: Instruct the compositor to maximize matching windows
-#   fullscreen: Instruct the compositor to fullscreen matching windows
-#   focus: Instruct the compositor to focus matching windows
-#   find: Exit with a successful return code if there is at least one window matching the provided criteria
-#   wait: Wait with a successfull return code until all mathcing windows have closed. If there are no matches, exit with a failing return code immediatlely
-#   waitfor: Wwait to return a successfull return code until there is at least one window that matches the requested criteria
 
 CONFIG_KEY_TOPLEVEL_APP_ID = "app_id"
 CONFIG_KEY_TOPLEVEL_STATE = "state"
@@ -110,7 +97,6 @@ class Wlrctl(Entity):
         self.domain = ""
         self.action = ""
         self.keys = ""
-        self.modifiers_yes = ""
         self.modifiers = ""
         self.button = ""
         self.dx = ""
@@ -119,7 +105,8 @@ class Wlrctl(Entity):
         self.matchspec = ""
         self.hasValue = False
         self.hasCommand = False
-        self.state = ""
+        self.detection = False
+        self.state = STATE_ON
 
         self.domain = self.GetFromConfigurations(CONFIG_KEY_DOMAIN)
         self.Log(self.LOG_DEBUG, f"initializing wlrctl {self.domain}")
@@ -128,16 +115,13 @@ class Wlrctl(Entity):
             self.action = self.GetFromConfigurations(CONFIG_KEY_KEYBOARD_ACTION)
             if self.action == "type":
                 self.keys = self.GetFromConfigurations(CONFIG_KEY_KEYBOARD_KEYS)
-                self.modifiers_yes = self.GetFromConfigurations(
-                    CONFIG_KEY_KEYBOARD_MODIFIERS_YES
-                )
                 self.modifiers = self.GetFromConfigurations(
                     CONFIG_KEY_KEYBOARD_MODIFIERS
                 )
-                if self.modifiers_yes == "N":
-                    self.command = f"wlrctl {self.domain} {self.action} '{self.keys}'"
-                else:
-                    self.command = f"wlrctl {self.domain} {self.action} '{self.keys}' modifiers {self.modifiers}"
+                # build the command, add modifiers if needed
+                self.command = f"wlrctl {self.domain} {self.action} '{self.keys}'"
+                if self.modifiers:
+                    self.command +=  f"modifiers {self.modifiers}"
             else:
                 self.Log(
                     self.LOG_DEBUG, f"Keyboard Action {self.action} not implemented"
@@ -191,22 +175,31 @@ class Wlrctl(Entity):
         self.hasCommand = True
 
     def Update(self):
-        if self.hasValue:
-            self.Log(self.LOG_DEBUG, f"Running {self.command}")
-            command = self.RunCommand(self.command)
-            self.state = STATE_ON if command.returncode == 0 else STATE_OFF
-
-            self.SetEntitySensorValue(KEY_STATE, self.state)
+        if self.state == STATE_ON:
+            if self.hasValue:
+                self.Log(self.LOG_DEBUG, f"Running {self.command}")
+                command = self.RunCommand(self.command)
+                self.detection = STATE_ON if command.returncode == 0 else STATE_OFF
+                self.SetEntitySensorValue(KEY_STATE, self.detection)
 
         else:
             pass
 
     def Callback(self, message):
-        self.Log(self.LOG_DEBUG, f"Running {self.command}")
-        command = self.RunCommand(self.command)
+        if message.payload == b"OFF":
+            self.state = STATE_OFF
+        elif message.payload == b"ON":
+            self.state = STATE_ON
+            self.Log(self.LOG_DEBUG, f"Running {self.command}")
+            command = self.RunCommand(self.command)
 
-        if command.returncode != 0:
-            self.Log(self.LOG_ERROR, f"Error running {self.command}")
+            if command.returncode != 0:
+                self.Log(self.LOG_ERROR, f"Error running {self.command}")
+                return False
+            else:
+                return True
+        else:
+            self.Log(self.LOG_ERROR, "Entity is off")
             return False
 
     @classmethod
