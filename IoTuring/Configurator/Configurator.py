@@ -74,9 +74,9 @@ class Configurator(LogObject):
                 editor_command = next(
                     (e for e in editors if OsD.CommandExists(e)), "")
                 if editor_command:
-                    subprocess.run(f'{editor_command} "{config_path}"',
-                                   shell=True, close_fds=True)
-                    return
+                    OsD.RunCommand(f'{editor_command} "{config_path}"',
+                                   shell=True, close_fds=True, capture_output=False)
+                    return                    
 
             self.Log(self.LOG_WARNING, "No editor found")
 
