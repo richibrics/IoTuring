@@ -93,7 +93,7 @@ class Ydotool(Entity):
                     -D {self.GetFromConfigurations(CONFIG_KEY_DELAY)}"
         elif self.domain == "mousemove":
             self.command = f"ydotool {self.domain}\
-                    {"-a" if self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_ABSOLUTE) == 'Y' else ''}\
+                    {'-a' if self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_ABSOLUTE) == 'Y' else ''}\
                     -x {self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_X)}\
                     -y {self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_Y)}"
         elif self.domain == "mousewheel":
