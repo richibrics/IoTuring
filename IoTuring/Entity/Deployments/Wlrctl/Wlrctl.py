@@ -12,7 +12,8 @@ CONFIG_KEY_DOMAIN = "domain"
 DOMAIN_CHOICES = [
     {"name": "Keyboard", "value": "keyboard"},
     {"name": "Pointer", "value": "pointer"},
-    {"name": "Toplevel", "value": "toplevel"},
+    {"name": "ToplevelCommand", "value": "toplevelcommand"},
+    {"name": "ToplevelSensor", "value": "toplevelsensor"},
 ]
 
 CONFIG_KEY_KEYBOARD_ACTION = "keyboard_action"
@@ -53,11 +54,13 @@ CONFIG_KEY_POINTER_DY = "dy"
 
 
 CONFIG_KEY_TOPLEVEL_ACTION = "toplevel_action"
-TOPLEVEL_ACTIONS = [
+TOPLEVEL_COMMAND_ACTIONS = [
     {"name": "Minimize", "value": "minimize"},
     {"name": "Maximize", "value": "maximize"},
     {"name": "Fullscreen", "value": "fullscreen"},
     {"name": "Focus", "value": "focus"},
+]
+TOPLEVEL_SENSOR_ACTIONS = [
     {"name": "Find", "value": "find"},
     {"name": "Wait", "value": "wait"},
     {"name": "Waitfor", "value": "waitfor"},
@@ -77,6 +80,7 @@ TOPLEVEL_STATE_CHOICES = [
     {"name": "Unmaximized", "value": "unmaximized"},
     {"name": "Unminimized", "value": "unminimized"},
     {"name": "Unfullscreen", "value": "unfullscreen"},
+    {"name": "None", "value": "none"},
 ]
 
 CONFIG_KEY_OUTPUT_ACTION = "output_action"
@@ -94,34 +98,47 @@ class Wlrctl(Entity):
     ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self):
-        self.domain = ""
-        self.action = ""
-        self.keys = ""
-        self.modifiers = ""
-        self.button = ""
-        self.dx = ""
-        self.dy = ""
-        self.command = ""
-        self.matchspec = ""
-        self.hasValue = False
-        self.hasCommand = False
-        self.detection = False
-        self.state = STATE_ON
+        self.domain: str = ""
+        self.action: str = ""
+        self.keys: str = ""
+        self.modifiers: str = ""
+        self.button: str = ""
+        self.dx: int = ""
+        self.dy: int = ""
+        self.command: str = ""
+        self.matchspec: str = ""
+        self.hasValue: bool = ""
+        self.isCommand = ""
+        self.detection = ""
+        self.state = ""
+        self.isBinarySensor = ""
+        self.valueFormatterOptions = None
+        self.customPaylod = {}
 
         self.domain = self.GetFromConfigurations(CONFIG_KEY_DOMAIN)
         self.Log(self.LOG_DEBUG, f"initializing wlrctl {self.domain}")
+        # Update the NAME
+        name_extension = f"{self.domain.capitalize()}"
+        self.NAME += name_extension
+
         # get the configuration depending on the domain
         if self.domain == "keyboard":
             self.action = self.GetFromConfigurations(CONFIG_KEY_KEYBOARD_ACTION)
+            self.isCommand = True
             if self.action == "type":
                 self.keys = self.GetFromConfigurations(CONFIG_KEY_KEYBOARD_KEYS)
-                self.modifiers = self.GetFromConfigurations(
-                    CONFIG_KEY_KEYBOARD_MODIFIERS
-                )
+                # self.modifiers = self.GetFromConfigurations(
+                #     CONFIG_KEY_KEYBOARD_MODIFIERS
+                # )
                 # build the command, add modifiers if needed
-                self.command = f"wlrctl {self.domain} {self.action} '{self.keys}'"
+                if (
+                    " " in self.keys
+                ):  # if there is a space in the string, wrap it in quotes
+                    self.command = f"wlrctl {self.domain} {self.action} '{self.keys}'"
+                else:
+                    self.command = f"wlrctl {self.domain} {self.action} {self.keys}"
                 if self.modifiers:
-                    self.command +=  f"modifiers {self.modifiers}"
+                    self.command += f"modifiers {self.modifiers}"
             else:
                 self.Log(
                     self.LOG_DEBUG, f"Keyboard Action {self.action} not implemented"
@@ -130,6 +147,7 @@ class Wlrctl(Entity):
 
         elif self.domain == "pointer":
             self.action = self.GetFromConfigurations(CONFIG_KEY_POINTER_ACTION)
+            self.isCommand = True
             if self.action == "click":
                 self.button = self.GetFromConfigurations(CONFIG_KEY_POINTER_BUTTON)
                 self.command = f"wlrctl {self.domain} {self.action} {self.button}"
@@ -147,8 +165,21 @@ class Wlrctl(Entity):
                 )
                 raise Exception("Action not implemented")
 
-        elif self.domain == "toplevel":
+        elif self.domain == "toplevelcommand" or self.domain == "toplevelsensor":
+            if self.domain == "toplevelcommand":
+                self.isCommand = True
+            elif self.domain == "toplevelsensor":
+                self.isBinarySensor = True
+            self.domain = "toplevel"
             self.action = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_ACTION)
+            # check if the action is implemented generate it from a list comprehension of TOPLEVEL_COMMAND_ACTIONS
+
+            if self.action not in [action["value"] for action in TOPLEVEL_COMMAND_ACTIONS + TOPLEVEL_SENSOR_ACTIONS]:
+                self.Log(
+                    self.LOG_DEBUG, f"Toplevel Action {self.action} not implemented"
+                )
+                raise Exception("Action not implemented")
+
             app_id = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_APP_ID)
             title = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_TITLE)
             state = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_STATE)
@@ -159,48 +190,46 @@ class Wlrctl(Entity):
             if state:
                 self.matchspec += f" state:{state}"
             self.command = f"wlrctl {self.domain} {self.action} {self.matchspec}"
-            if self.action in ["find", "wait", "waitfor"]:
-                self.hasValue = True
-                self.RegisterEntitySensor(EntitySensor(self, KEY_STATE))
 
         elif self.domain == "output":
             self.action = self.GetFromConfigurations(CONFIG_KEY_OUTPUT_ACTION)
             self.command = f"wlrctl {self.domain} {self.action}"
 
+        if self.isCommand:
+            self.RegisterEntityCommand(
+                EntityCommand(self, KEY, self.Callback, KEY_STATE)
+            )
+
         self.RegisterEntitySensor(
-            EntitySensor(self, KEY_STATE, supportsExtraAttributes=True)
+            EntitySensor(
+                self,
+                KEY_STATE,
+                supportsExtraAttributes=True,
+                valueFormatterOptions=self.valueFormatterOptions,
+                customPayload=self.customPaylod,
+            )
         )
 
-        self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback, KEY_STATE))
-        self.hasCommand = True
-
     def Update(self):
-        if self.state == STATE_ON:
-            if self.hasValue:
-                self.Log(self.LOG_DEBUG, f"Running {self.command}")
-                command = self.RunCommand(self.command)
-                self.detection = STATE_ON if command.returncode == 0 else STATE_OFF
-                self.SetEntitySensorValue(KEY_STATE, self.detection)
-
-        else:
-            pass
-
-    def Callback(self, message):
-        if message.payload == b"OFF":
-            self.state = STATE_OFF
-        elif message.payload == b"ON":
-            self.state = STATE_ON
+        if self.isBinarySensor:
             self.Log(self.LOG_DEBUG, f"Running {self.command}")
             command = self.RunCommand(self.command)
+            self.detection = STATE_ON if command.returncode == 0 else STATE_OFF
+            self.SetEntitySensorValue(KEY_STATE, self.detection)
+            #TODO toplevel wait and waitfor are not implemented correctly, maybe too much work 
 
-            if command.returncode != 0:
-                self.Log(self.LOG_ERROR, f"Error running {self.command}")
-                return False
-            else:
-                return True
-        else:
-            self.Log(self.LOG_ERROR, "Entity is off")
-            return False
+    def Callback(self, message):
+        self.Log(self.LOG_DEBUG, f"Running {self.command}")
+        callbackProcess = self.RunCommand(self.command)
+        if callbackProcess.returncode != 0:
+            self.Log(self.LOG_ERROR, f"Error running {self.command}")
+            self.SetEntitySensorExtraAttribute(
+                KEY_STATE,
+                "Last command outout",
+                f"Error: {callbackProcess.stderr}"
+                if callbackProcess.stderr
+                else callbackProcess.stdout,
+            )
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -218,7 +247,7 @@ class Wlrctl(Entity):
         #
         preset.AddEntry(
             name="Select keyboard action",
-            instruction=TYPE_INSTRUCTION,
+            # instruction=TYPE_INSTRUCTION, # TODO too convoluted
             key=CONFIG_KEY_KEYBOARD_ACTION,
             mandatory=True,
             question_type="select",
@@ -304,35 +333,47 @@ class Wlrctl(Entity):
             )
 
         #
-        # window domain
+        # toplevelcommand domain
         #
         preset.AddEntry(
-            name="Select topleve action",
+            name="Select toplevel action",
             key=CONFIG_KEY_TOPLEVEL_ACTION,
             mandatory=True,
             question_type="select",
-            choices=TOPLEVEL_ACTIONS,
-            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
+            choices=TOPLEVEL_COMMAND_ACTIONS,
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevelcommand"},
         )
+        #
+        # toplevelsensor domain
+        #
         preset.AddEntry(
-            name="Matchspec app_id?",
-            key=CONFIG_KEY_TOPLEVEL_APP_ID,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
-        )
-        preset.AddEntry(
-            name="Matchspec title?",
-            key=CONFIG_KEY_TOPLEVEL_TITLE,
-            question_type="text",
-            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
-        )
-        preset.AddEntry(
-            name="Matchspec state",
-            key=CONFIG_KEY_TOPLEVEL_STATE,
+            name="Select toplevel sensor",
+            key=CONFIG_KEY_TOPLEVEL_ACTION,
+            mandatory=True,
             question_type="select",
-            choices=TOPLEVEL_STATE_CHOICES,
-            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevel"},
+            choices=TOPLEVEL_SENSOR_ACTIONS,
+            display_if_key_value={CONFIG_KEY_DOMAIN: "toplevelsensor"},
         )
+        for domain in ["toplevelcommand", "toplevelsensor"]:
+            preset.AddEntry(
+                name="Matchspec app_id?",
+                key=CONFIG_KEY_TOPLEVEL_APP_ID,
+                question_type="text",
+                display_if_key_value={CONFIG_KEY_DOMAIN: domain},
+            )
+            preset.AddEntry(
+                name="Matchspec title?",
+                key=CONFIG_KEY_TOPLEVEL_TITLE,
+                question_type="text",
+                display_if_key_value={CONFIG_KEY_DOMAIN: domain},
+            )
+            preset.AddEntry(
+                name="Matchspec state",
+                key=CONFIG_KEY_TOPLEVEL_STATE,
+                question_type="select",
+                choices=TOPLEVEL_STATE_CHOICES,
+                display_if_key_value={CONFIG_KEY_DOMAIN: domain},
+            )
 
         #
         # output domain

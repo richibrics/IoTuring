@@ -124,3 +124,15 @@ TerminalButton:
   name: Terminal Button
   icon: mdi:console
   custom_type: button
+WlrctlPointer:
+  icon: mdi:console
+  custom_type: button
+WlrctlKeyboard:
+  icon: mdi:console
+  custom_type: button
+WlrctlToplevelcommand:
+  icon: mdi:console
+  custom_type: button
+WlrctlToplevelsensor:
+  icon: mdi:console
+  custom_type: sensor
