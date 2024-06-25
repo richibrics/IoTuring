@@ -14,7 +14,7 @@ except:
     supports_win = False
 
 commands = {
-    OsD.LINUX: 'notify-send "{}" "{}" --icon="{}"',  # title, message, icon path
+    OsD.LINUX: 'notify-send "{}" "{}" --icon="{}" --app-name="{}"',  # title, message, icon path, app name
     OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''  # message, title
 }
 
@@ -116,7 +116,7 @@ class Notify(Entity):
 
             else:  # Linux:
                 command = commands[OsD.GetOs()].format(
-                    self.notification_title, self.notification_message, self.config_icon_path)
+                    self.notification_title, self.notification_message, self.config_icon_path, App.getName())
 
             self.RunCommand(command=command, shell=True)
 
