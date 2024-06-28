@@ -104,7 +104,7 @@ class Ydotool(Entity):
                     -H {self.GetFromConfigurations(CONFIG_KEY_TYPE_HOLD)}\
                     -D {self.GetFromConfigurations(CONFIG_KEY_DELAY)}\
                     -e {self.GetFromConfigurations(CONFIG_KEY_TYPE_ESCAPE)}"
-            # {'-f' if self.GetFromConfigurations(CONFIG_KEY_TYPE_STRING) == 'f' else ''}" # file path not supported
+                    # -f {self.GetFromConfigurations(CONFIG_KEY_TYPE_FILESTRING)}" # file path not supported
         elif self.domain == "key":
             self.command = f"ydotool {self.domain}\
                     {self.GetFromConfigurations(CONFIG_KEY_KEY)}\
@@ -168,8 +168,10 @@ class Ydotool(Entity):
                     question_type="integer",
                     display_if_key_value={CONFIG_KEY_CMD: "click"},
                 )
+    
             else:
                 pass
+                
 
         #
         # mousemove command
@@ -289,16 +291,6 @@ class Ydotool(Entity):
                 pass
 
         return preset
-
-    @classmethod
-    def addRepeatEntry(cls, preset: MenuPreset, display_if_key_value=None):
-        preset.AddEntry(
-            name="How many times should the action be repeated?",
-            key=CONFIG_KEY_REPEAT,
-            mandatory=True,
-            question_type="integer",
-            display_if_key_value=display_if_key_value,
-        )
 
     @classmethod
     def CheckSystemSupport(cls):
