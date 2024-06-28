@@ -305,11 +305,6 @@ class Ydotool(Entity):
     def CheckSystemSupport(cls):
         if OsD.IsLinux():
             if OsD.CommandExists("ydotool"):
-                # debug = cls.RunCommand(cls, "ydotool debug") TODO
-                # somehow check if the daemon is running
-                # if debug.returncode != 0:
-                #    cls.Log(cls.LOG_ERROR, "ydotool has some issues")
-                #    raise Exception("ydotool has some issues")
                 return True
             else:
                 cls.Log(cls.LOG_ERROR, "ydotool is not installed")
