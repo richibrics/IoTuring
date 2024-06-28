@@ -25,21 +25,28 @@ CONFIG_KEY_TYPE_STRING = "type_string"
 TYPE_OPTION_SUPPORT = ["d", "H", "D", "f", "e"]
 CONFIG_KEY_TYPE_ESCAPE = "escape"
 CONFIG_KEY_TYPE_HOLD = "hold"
+TYPE_INSTRUCTIONS = """
+Separate strings with a space to send them after each other with configurable Delay.
+Encase your String with spaces in quotes to send as one
+"""
 
 #
 # key
 #
 CONFIG_KEY_KEY = "keys"
 KEY_OPTION_SUPPORT = ["d"]
+KEY_INSTRUCTIONS = """
+See `/usr/include/linux/input-event-codes.h' for available key codes (KEY_*).
+"""
 
 #
 # click
 #
 CONFIG_KEY_CLICK_BUTTON = "button"
 CLICK_INSTRUCTION = """
-0x00 - LEFT     0x03 - SIDE     0x06 - BACK         0x80 - Mouse up
-0x01 - RIGHT    0x04 - EXTR     0x07 - TASK
-0x02 - MIDDLE   0x05 - FORWARD  0x40 - Mouse down
+0x00 - LEFT     0x03 - SIDE     0x06 - BACK   Bitmasks:   0x8X - Mouse up
+0x01 - RIGHT    0x04 - EXTR     0x07 - TASK               0x4X - Mouse down
+0x02 - MIDDLE   0x05 - FORWARD                            0xCX - click (down and up)
 """
 CLICK_OPTION_SUPPORT = ["-r", "-D"]
 
@@ -53,6 +60,9 @@ MOUSEMOVE_OPTION_SUPPORT = ["a", "x", "y"]
 CONFIG_KEY_MOUSEWHEEL_Y = "wheel_y"
 CONFIG_KEY_MOUSEWHEEL_X = "wheel_x"
 MOUSEWHEEL_OPTION_SUPPORT = ["y", "x"]
+MOUSEWHEEL_INSTRUCTIONS = """
+positive values -> scroll up
+negative values -> scroll down"""
 
 #
 # key
@@ -69,19 +79,7 @@ class Ydotool(Entity):
     ALLOW_MULTI_INSTANCE = True
 
     def Initialize(self):
-        self.domain = ""
-        self.action = ""
-        self.keys = ""
-        self.modifiers_yes = ""
-        self.modifiers = ""
-        self.button = ""
-        self.dx = ""
-        self.dy = ""
-        self.windows = ""
-        self.command = ""
-        self.hasValue = False
-        self.hasCommand = False
-        self.state = ""
+        self.NAME = "TerminalButton"
 
         self.domain = self.GetFromConfigurations(CONFIG_KEY_CMD)
         self.Log(self.LOG_DEBUG, f"initializing wlrctl {self.domain}")
@@ -97,9 +95,9 @@ class Ydotool(Entity):
                     -x {self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_X)}\
                     -y {self.GetFromConfigurations(CONFIG_KEY_MOUSEMOVE_Y)}"
         elif self.domain == "mousewheel":
-            self.command = f"ydotool mousemove\
-                    {self.GetFromConfigurations(CONFIG_KEY_MOUSEWHEEL_X)}\
-                    {self.GetFromConfigurations(CONFIG_KEY_MOUSEWHEEL_Y)}"
+            self.command = f"ydotool mousemove -w\
+                    -x {self.GetFromConfigurations(CONFIG_KEY_MOUSEWHEEL_X)}\
+                    -y {self.GetFromConfigurations(CONFIG_KEY_MOUSEWHEEL_Y)}"
         elif self.domain == "type":
             self.command = f"ydotool {self.domain}\
                     {self.GetFromConfigurations(CONFIG_KEY_TYPE_STRING)}\
@@ -121,16 +119,13 @@ class Ydotool(Entity):
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback, KEY_STATE))
 
-    def Update(self):
-        pass
-
     def Callback(self, message):
         self.Log(self.LOG_DEBUG, f"Running {self.command}")
         command = self.RunCommand(self.command)
-
         if command.returncode != 0:
             self.Log(self.LOG_ERROR, f"Error running {self.command}")
             return False
+        return True
 
     @classmethod
     def ConfigurationPreset(cls) -> MenuPreset:
@@ -145,13 +140,13 @@ class Ydotool(Entity):
 
         #
         # click command
-        #
+        # TODO maybe add advanced configuration to enable dragging with bitmask 0x40 mouse left down -> mousemove -> 0x80 mouse left up
         preset.AddEntry(
             name="Which button should be clicked? default LeftClick",
             key=CONFIG_KEY_CLICK_BUTTON,
             instruction=CLICK_INSTRUCTION,
             mandatory=True,
-            default="0x00",
+            default="0xC0",
             question_type="text",
             display_if_key_value={CONFIG_KEY_CMD: "click"},
         )
@@ -190,7 +185,7 @@ class Ydotool(Entity):
                     question_type="yesno",
                     display_if_key_value={CONFIG_KEY_CMD: "mousemove"},
                 )
-            elif option == "x" or "y":
+            elif option == "x" or option == "y":
                 preset.AddEntry(
                     name=f"How much movement in the {option} direction",
                     key=globals()[f"CONFIG_KEY_MOUSEMOVE_{option.upper()}"],
@@ -205,10 +200,11 @@ class Ydotool(Entity):
         # mousewheel command
         #
         for option in MOUSEWHEEL_OPTION_SUPPORT:
-            if option == "x" or "y":
+            if option == "x" or option == "y":
                 preset.AddEntry(
                     name=f"How much scrolling in the {option} direction",
                     key=globals()[f"CONFIG_KEY_MOUSEWHEEL_{option.upper()}"],
+                    instruction=MOUSEWHEEL_INSTRUCTIONS,
                     mandatory=True,
                     question_type="integer",
                     display_if_key_value={CONFIG_KEY_CMD: "mousewheel"},
@@ -220,7 +216,8 @@ class Ydotool(Entity):
         # type command
         #
         preset.AddEntry(
-            name="Which strings should be sent?, you can send multiple and configure the delay between them by separating them with a space, if you want to have that space in there, encase your text in quotes",
+            name="Which strings should be sent?",
+            instruction=TYPE_INSTRUCTIONS,
             key=CONFIG_KEY_TYPE_STRING,
             mandatory=True,
             question_type="text",
@@ -274,6 +271,7 @@ class Ydotool(Entity):
         preset.AddEntry(
             name="Which key should be sent?",
             key=CONFIG_KEY_KEY,
+            instruction=KEY_INSTRUCTIONS,
             mandatory=True,
             question_type="text",
             display_if_key_value={CONFIG_KEY_CMD: "key"},
@@ -281,7 +279,7 @@ class Ydotool(Entity):
         for option in KEY_OPTION_SUPPORT:
             if option == "d":
                 preset.AddEntry(
-                    name="Delay between keys? in ms, default 20ms",
+                    name="Delay between keys in a string? in ms, default 20ms",
                     key=CONFIG_KEY_DELAY,
                     mandatory=True,
                     default=20,
