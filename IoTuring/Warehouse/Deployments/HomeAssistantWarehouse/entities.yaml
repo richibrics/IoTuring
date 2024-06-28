@@ -136,3 +136,6 @@ WlrctlToplevelcommand:
 WlrctlToplevelsensor:
   icon: mdi:console
   custom_type: sensor
+WlrctlOutput:
+  icon: mdi:monitor
+  custom_type: sensor

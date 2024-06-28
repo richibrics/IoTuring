@@ -4,6 +4,7 @@ from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
+from subprocess import check_output, STDOUT
 KEY = "wlrctl"
 KEY_STATE = "wlrctl_state"
 
@@ -14,20 +15,19 @@ DOMAIN_CHOICES = [
     {"name": "Pointer", "value": "pointer"},
     {"name": "ToplevelCommand", "value": "toplevelcommand"},
     {"name": "ToplevelSensor", "value": "toplevelsensor"},
+    {"name": "Output", "value": "output"},
 ]
 
+#Keyboard Domain
 CONFIG_KEY_KEYBOARD_ACTION = "keyboard_action"
 KEYBOARD_ACTIONS = [
     {"name": "Type", "value": "type"},
 ]
-
-TYPE_INSTRUCTION = """type <string> [modifiers]: Send a string to be typed \
-    into the focused client\n\
-    modifiers <SHIFT,CTRL,ALT,SUPER>: Comma separated list of modifiers to \
-    be held while typing"""
+KEYBOARD_ACTIONS_INSTRUCTIONS = """
+    Type: types a given string into the focused client"
+    """
 
 CONFIG_KEY_KEYBOARD_KEYS = "keys"
-
 CONFIG_KEY_KEYBOARD_MODIFIERS = "modifiers"
 KEYBOARD_MODIFIERS = [
     {"name": "Shift", "value": "SHIFT"},
@@ -36,23 +36,34 @@ KEYBOARD_MODIFIERS = [
     {"name": "Super", "value": "SUPER"},
 ]
 
-
+# Pointer Domain
 CONFIG_KEY_POINTER_ACTION = "pointer_action"
 POINTER_ACTIONS = [
     {"name": "Click", "value": "click"},
     {"name": "Move", "value": "move"},
     {"name": "Scroll", "value": "scroll"},
 ]
-POINTER_CLICK_INSTRUCTIONS = (
-    'buttons are "left", "right", "middle", "back", "forward", "exra", "side"'
-)
 
+POINTER_ACTIONS_INSTRUCTIONS = """
+    Click:  clicks the given mouse button
+    Move:   moves the mouse cursor by the given amount
+    Scroll: scrolls the mouse wheel by the given amount"""
+
+POINTER_CLICK_BUTTONS = [
+    {"name": "Left", "value": "left"},
+    {"name": "Right", "value": "right"},
+    {"name": "Middle", "value": "middle"},
+    {"name": "Back", "value": "back"},
+    {"name": "Forward", "value": "forward"},
+    {"name": "Extra", "value": "extra"},
+    {"name": "Side", "value": "side"},
+]
 
 CONFIG_KEY_POINTER_BUTTON = "button"
 CONFIG_KEY_POINTER_DX = "dx"
 CONFIG_KEY_POINTER_DY = "dy"
 
-
+# Toplevel Domain
 CONFIG_KEY_TOPLEVEL_ACTION = "toplevel_action"
 TOPLEVEL_COMMAND_ACTIONS = [
     {"name": "Minimize", "value": "minimize"},
@@ -60,16 +71,23 @@ TOPLEVEL_COMMAND_ACTIONS = [
     {"name": "Fullscreen", "value": "fullscreen"},
     {"name": "Focus", "value": "focus"},
 ]
+TOPLEVEL_COMMAND_ACTIONS_INSTRUCTIONS = """
+    Minimize: Minimizes the matching clients
+    Maximize: Maximizes the matching clients
+    Fullscreen: Makes the matching clients fullscreen
+    Focus: Focuses the matching clients"""
+
 TOPLEVEL_SENSOR_ACTIONS = [
     {"name": "Find", "value": "find"},
-    {"name": "Wait", "value": "wait"},
-    {"name": "Waitfor", "value": "waitfor"},
+    # {"name": "Wait", "value": "wait"},
+    # {"name": "Waitfor", "value": "waitfor"},
 ]
+TOPLEVEL_SENSOR_ACTIONS_INSTRUCTIONS = """
+    Find: returns True if atleast one matching client is present"""
 
 CONFIG_KEY_TOPLEVEL_APP_ID = "app_id"
 CONFIG_KEY_TOPLEVEL_STATE = "state"
 CONFIG_KEY_TOPLEVEL_TITLE = "title"
-
 
 TOPLEVEL_STATE_CHOICES = [
     {"name": "Fullscreen", "value": "fullscreen"},
@@ -83,12 +101,13 @@ TOPLEVEL_STATE_CHOICES = [
     {"name": "None", "value": "none"},
 ]
 
+# Output Domain
 CONFIG_KEY_OUTPUT_ACTION = "output_action"
 OUTPUT_ACTIONS = [
     {"name": "List", "value": "list"},
 ]
-# actions are:
-#   list - lists all known outputs
+OUTPUT_ACTIONS_INSTRUCTIONS = """
+    List: lists all connected monitor outputs"""
 
 
 class Wlrctl(Entity):
@@ -114,6 +133,7 @@ class Wlrctl(Entity):
         self.isBinarySensor = ""
         self.valueFormatterOptions = None
         self.customPaylod = {}
+        self.hasExtraAttributes = None
 
         self.domain = self.GetFromConfigurations(CONFIG_KEY_DOMAIN)
         self.Log(self.LOG_DEBUG, f"initializing wlrctl {self.domain}")
@@ -174,7 +194,10 @@ class Wlrctl(Entity):
             self.action = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_ACTION)
             # check if the action is implemented generate it from a list comprehension of TOPLEVEL_COMMAND_ACTIONS
 
-            if self.action not in [action["value"] for action in TOPLEVEL_COMMAND_ACTIONS + TOPLEVEL_SENSOR_ACTIONS]:
+            if self.action not in [
+                action["value"]
+                for action in TOPLEVEL_COMMAND_ACTIONS + TOPLEVEL_SENSOR_ACTIONS
+            ]:
                 self.Log(
                     self.LOG_DEBUG, f"Toplevel Action {self.action} not implemented"
                 )
@@ -183,15 +206,25 @@ class Wlrctl(Entity):
             app_id = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_APP_ID)
             title = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_TITLE)
             state = self.GetFromConfigurations(CONFIG_KEY_TOPLEVEL_STATE)
-            if app_id:
-                self.matchspec += f"app_id:{app_id}"
+            if app_id:  # TODO space handling is not pretty
+                if " " in app_id:
+                    self.matchspec += f"app_id:'{app_id}'"
+                else:
+                    self.matchspec += f"app_id:{app_id}"
             if title:
-                self.matchspec += f" title:{title}"
+                if " " in title:
+                    self.matchspec += f" title:'{title}'"
+                else:
+                    self.matchspec += f" title:{title}"
             if state:
-                self.matchspec += f" state:{state}"
+                if " " in state:
+                    self.matchspec += f" state:'{state}'"
+                else:
+                    self.matchspec += f" state:{state}"
             self.command = f"wlrctl {self.domain} {self.action} {self.matchspec}"
 
         elif self.domain == "output":
+            self.hasExtraAttributes = True
             self.action = self.GetFromConfigurations(CONFIG_KEY_OUTPUT_ACTION)
             self.command = f"wlrctl {self.domain} {self.action}"
 
@@ -216,19 +249,38 @@ class Wlrctl(Entity):
             command = self.RunCommand(self.command)
             self.detection = STATE_ON if command.returncode == 0 else STATE_OFF
             self.SetEntitySensorValue(KEY_STATE, self.detection)
-            #TODO toplevel wait and waitfor are not implemented correctly, maybe too much work 
+        elif self.hasExtraAttributes:
+            self.Log(self.LOG_DEBUG, f"Running {self.command}")
+            command = self.RunCommand(self.command, timeout=1)
+            # output = check_output(["wlrctl", "output", "list"],stderr=STDOUT, timeout=1)
+            # self.Log(self.LOG_DEBUG, output)
+            self.SetEntitySensorValue(KEY_STATE, STATE_ON)
+            self.SetEntitySensorExtraAttribute(
+                KEY_STATE,
+                "Output",
+                command.stdout
+                #output
+            )
+                
 
-    def Callback(self, message):
+
+    def Callback(self, message=None):
         self.Log(self.LOG_DEBUG, f"Running {self.command}")
         callbackProcess = self.RunCommand(self.command)
         if callbackProcess.returncode != 0:
             self.Log(self.LOG_ERROR, f"Error running {self.command}")
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE,
-                "Last command outout",
+                "Last command output",
                 f"Error: {callbackProcess.stderr}"
                 if callbackProcess.stderr
                 else callbackProcess.stdout,
+            )
+        else:
+            self.SetEntitySensorExtraAttribute(
+                KEY_STATE,
+                "Last command output",
+                callbackProcess.stdout,
             )
 
     @classmethod
@@ -247,8 +299,8 @@ class Wlrctl(Entity):
         #
         preset.AddEntry(
             name="Select keyboard action",
-            # instruction=TYPE_INSTRUCTION, # TODO too convoluted
             key=CONFIG_KEY_KEYBOARD_ACTION,
+            instruction=KEYBOARD_ACTIONS_INSTRUCTIONS,
             mandatory=True,
             question_type="select",
             choices=KEYBOARD_ACTIONS,
@@ -257,6 +309,7 @@ class Wlrctl(Entity):
 
         preset.AddEntry(
             name="Which string should be sent?",
+            instruction=KEYBOARD_ACTIONS_INSTRUCTIONS,
             key=CONFIG_KEY_KEYBOARD_KEYS,
             mandatory=True,
             question_type="text",
@@ -288,6 +341,7 @@ class Wlrctl(Entity):
         preset.AddEntry(
             name="Select pointer action",
             key=CONFIG_KEY_POINTER_ACTION,
+            instruction=POINTER_ACTIONS_INSTRUCTIONS,
             mandatory=True,
             question_type="select",
             choices=POINTER_ACTIONS,
@@ -299,9 +353,9 @@ class Wlrctl(Entity):
         preset.AddEntry(
             name="Select button",
             key=CONFIG_KEY_POINTER_BUTTON,
-            instruction=POINTER_CLICK_INSTRUCTIONS,
+            choices=POINTER_CLICK_BUTTONS,
             mandatory=True,
-            question_type="text",
+            question_type="select",
             display_if_key_value={CONFIG_KEY_POINTER_ACTION: "click"},
         )
 
@@ -338,6 +392,7 @@ class Wlrctl(Entity):
         preset.AddEntry(
             name="Select toplevel action",
             key=CONFIG_KEY_TOPLEVEL_ACTION,
+            instruction=TOPLEVEL_COMMAND_ACTIONS_INSTRUCTIONS,
             mandatory=True,
             question_type="select",
             choices=TOPLEVEL_COMMAND_ACTIONS,
@@ -349,6 +404,7 @@ class Wlrctl(Entity):
         preset.AddEntry(
             name="Select toplevel sensor",
             key=CONFIG_KEY_TOPLEVEL_ACTION,
+            instruction=TOPLEVEL_SENSOR_ACTIONS_INSTRUCTIONS,
             mandatory=True,
             question_type="select",
             choices=TOPLEVEL_SENSOR_ACTIONS,
@@ -380,7 +436,8 @@ class Wlrctl(Entity):
         #
         preset.AddEntry(
             name="Select output action",
-            key=CONFIG_KEY_TOPLEVEL_ACTION,
+            key=CONFIG_KEY_OUTPUT_ACTION,
+            instruction=OUTPUT_ACTIONS_INSTRUCTIONS,
             mandatory=True,
             question_type="select",
             choices=OUTPUT_ACTIONS,
