@@ -2,7 +2,6 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
-from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 
 
 KEY = "ydotool"
@@ -83,7 +82,7 @@ class Ydotool(Entity):
 
         self.domain = self.GetFromConfigurations(CONFIG_KEY_CMD)
         self.Log(self.LOG_DEBUG, f"initializing wlrctl {self.domain}")
-        # get the configuration depending on the domain TODO refactor into a function
+        # get the configuration depending on the domain
         if self.domain == "click":
             self.command = f"ydotool {self.domain}\
                     {self.GetFromConfigurations(CONFIG_KEY_CLICK_BUTTON)}\
@@ -105,7 +104,7 @@ class Ydotool(Entity):
                     -H {self.GetFromConfigurations(CONFIG_KEY_TYPE_HOLD)}\
                     -D {self.GetFromConfigurations(CONFIG_KEY_DELAY)}\
                     -e {self.GetFromConfigurations(CONFIG_KEY_TYPE_ESCAPE)}"
-                     # {'-f' if self.GetFromConfigurations(CONFIG_KEY_TYPE_STRING) == 'f' else ''}" # TODO Filepath not supported
+            # {'-f' if self.GetFromConfigurations(CONFIG_KEY_TYPE_STRING) == 'f' else ''}" # file path not supported
         elif self.domain == "key":
             self.command = f"ydotool {self.domain}\
                     {self.GetFromConfigurations(CONFIG_KEY_KEY)}\
@@ -140,7 +139,7 @@ class Ydotool(Entity):
 
         #
         # click command
-        # TODO maybe add advanced configuration to enable dragging with bitmask 0x40 mouse left down -> mousemove -> 0x80 mouse left up
+        #
         preset.AddEntry(
             name="Which button should be clicked? default LeftClick",
             key=CONFIG_KEY_CLICK_BUTTON,
