@@ -11,12 +11,13 @@ from IoTuring.Logger import consts
 
 
 # macOS dep (in PyObjC)
-try:
-    from AppKit import *  # type:ignore
-    from Foundation import *  # type:ignore
-    macos_support = True
-except:
-    macos_support = False
+if OsD.IsMacos():
+    try:
+        from AppKit import *  # type:ignore
+        from Foundation import *  # type:ignore
+        macos_support = True
+    except:
+        macos_support = False
 
 
 CONFIG_KEY_CONSOLE_LOG_LEVEL = "console_log_level"
