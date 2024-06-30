@@ -6,12 +6,11 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 import os
 import json
+import sys
 
-supports_win = True
-try:
-    import tinyWinToast.tinyWinToast as twt  # type: ignore
-except:
-    supports_win = False
+
+if OsD.IsWindows():
+    import tinyWinToast.tinyWinToast as twt
 
 commands = {
     OsD.LINUX: 'notify-send "{}" "{}" --icon="{}"',  # title, message, icon path
@@ -137,7 +136,7 @@ class Notify(Entity):
     @classmethod
     def CheckSystemSupport(cls):
         if OsD.IsWindows():
-            if not supports_win:
+            if 'tinyWinToast' not in sys.modules:
                 raise Exception(
                     'Notify not available, have you installed \'tinyWinToast\' on pip ?')
 

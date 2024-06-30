@@ -9,12 +9,8 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 # macOS dep (in PyObjC)
 if OsD.IsMacos():
-    try:
-        from AppKit import *
-        from Foundation import *
-        macos_support = True
-    except:
-        macos_support = False
+    from AppKit import *
+    from Foundation import *
 
 CONFIG_PATH_ENV_VAR = "IOTURING_CONFIG_DIR"
 
@@ -81,7 +77,7 @@ class ConfiguratorIO(LogObject):
             if envvarPath and len(envvarPath) > 0:
                 folderPath = Path(envvarPath)
             else:
-                if OsD.IsMacos() and macos_support:
+                if OsD.IsMacos() and 'AppKit' in sys.modules and 'Foundation' in sys.modules:
                     folderPath = self.macOSFolderPath().joinpath(self.directoryName)
                 elif OsD.IsWindows():
                     folderPath = self.windowsFolderPath().joinpath(self.directoryName)
