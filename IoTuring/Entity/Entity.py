@@ -1,33 +1,38 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from IoTuring.Configurator.Configuration import SingleConfiguration
+    from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+
+
 import time
 import subprocess
 
 from IoTuring.Configurator.ConfiguratorObject import ConfiguratorObject
-from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 from IoTuring.Logger.LogObject import LogObject
-from IoTuring.Entity.EntityData import EntityData, EntitySensor, EntityCommand, ExtraAttribute
+from IoTuring.Exceptions.Exceptions import UnknownEntityKeyException
 
-KEY_ENTITY_TAG = 'tag'  # from Configurator.Configurator
+from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
-DEFAULT_UPDATE_TIMEOUT = 10
+from IoTuring.Settings.Deployments.AppSettings.AppSettings import AppSettings, CONFIG_KEY_UPDATE_INTERVAL
 
 
-class Entity(LogObject, ConfiguratorObject):
-    NAME = "Unnamed"
-    ALLOW_MULTI_INSTANCE = False
+class Entity(ConfiguratorObject, LogObject):
 
-    def __init__(self, configurations) -> None:
+    def __init__(self, single_configuration: SingleConfiguration) -> None:
+        super().__init__(single_configuration)
+
         # Prepare the entity
         self.entitySensors = []
         self.entityCommands = []
 
-        self.configurations = configurations
-        self.SetTagFromConfiguration()
+        self.tag = self.GetConfigurations().GetTag()
 
-        self.initializeState = False
         # When I update the values this number changes (randomly) so each warehouse knows I have updated
         self.valuesID = 0
-        self.updateTimeout = DEFAULT_UPDATE_TIMEOUT
+
+        self.updateTimeout = int(
+            AppSettings.GetFromSettingsConfigurations(CONFIG_KEY_UPDATE_INTERVAL))
 
     def Initialize(self):
         """ Must be implemented in sub-classes, may be useful here to use the configuration """
@@ -36,8 +41,8 @@ class Entity(LogObject, ConfiguratorObject):
     def CallInitialize(self) -> bool:
         """ Safe method to run the Initialize function. Returns True if no error occcured. """
         try:
+            self.CheckSystemSupport()
             self.Initialize()
-            self.initializeState = True
             self.Log(self.LOG_INFO, "Initialization successfully completed")
         except Exception as e:
             self.Log(self.LOG_ERROR,
@@ -137,7 +142,7 @@ class Entity(LogObject, ConfiguratorObject):
             sensor = next((s for s in self.entitySensors if s.GetKey() == key))
             return sensor
         except StopIteration:
-            raise UnknownEntityKeyException
+            raise UnknownEntityKeyException(key)
 
     def GetEntityName(self) -> str:
         """ Return entity name """
@@ -145,7 +150,7 @@ class Entity(LogObject, ConfiguratorObject):
 
     def GetEntityTag(self) -> str:
         """ Return entity identifier tag """
-        return self.tag  # Set from SetTagFromConfiguration on entity init
+        return self.tag
 
     def GetEntityNameWithTag(self) -> str:
         """ Return entity name and tag combined (or name alone if no tag is present) """
@@ -162,13 +167,6 @@ class Entity(LogObject, ConfiguratorObject):
 
     def LogSource(self):
         return self.GetEntityId()
-
-    def SetTagFromConfiguration(self):
-        """ Set tag from configuration or set it blank if not present there """
-        if self.GetConfigurations() is not None and KEY_ENTITY_TAG in self.GetConfigurations():
-            self.tag = self.GetConfigurations()[KEY_ENTITY_TAG]
-        else:
-            self.tag = ""
 
     def RunCommand(self,
                    command: str | list,
@@ -189,29 +187,14 @@ class Entity(LogObject, ConfiguratorObject):
             subprocess.CompletedProcess: See subprocess docs
         """
 
-        # different defaults than in subprocess:
-        defaults = {
-            "capture_output": True,
-            "text": True
-        }
-
-        for param, value in defaults.items():
-            if param not in kwargs:
-                kwargs[param] = value
-
         try:
-            if shell == False and isinstance(command, str):
-                runcommand = command.split()
-            else:
-                runcommand = command
 
             if command_name:
                 command_name = self.NAME + "-" + command_name
             else:
                 command_name = self.NAME
 
-            p = subprocess.run(
-                runcommand, shell=shell, **kwargs)
+            p = OsD.RunCommand(command, shell=shell, **kwargs)
 
             self.Log(self.LOG_DEBUG, f"Called {command_name} command: {p}")
 
@@ -220,14 +203,31 @@ class Entity(LogObject, ConfiguratorObject):
             if p.stderr:
                 self.Log(error_loglevel,
                          f"Error during {command_name} command: {p.stderr}")
+            
+            return p
 
         except Exception as e:
             raise Exception(f"Error during {command_name} command: {str(e)}")
 
-        return p
 
     @classmethod
-    def AllowMultiInstance(cls):
-        """ Return True if this Entity can have multiple instances, useful for customizable entities 
-            These entities are the ones that must have a tag to be recognized """
-        return cls.ALLOW_MULTI_INSTANCE
+    def CheckSystemSupport(cls):
+        """Must be implemented in subclasses. Raise an exception if system not supported."""
+        return
+
+    @classmethod
+    def SystemSupported(cls) -> bool:
+        """Check if the sysytem supported by this entity.
+
+        Returns:
+            bool: True if supported
+        """
+        try:
+            cls.CheckSystemSupport()
+            return True
+        except:
+            return False
+
+    class UnsupportedOsException(Exception):
+        def __init__(self) -> None:
+            super().__init__(f"Unsupported operating system: {OsD.GetOs()}")

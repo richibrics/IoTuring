@@ -48,15 +48,16 @@ class Temperature(Entity):
         elif OsD.IsMacos():
             self.specificInitialize = self.InitmacOS
             self.specificUpdate = self.UpdatemacOS
-        else:
-            raise Exception("Unsupported operating system.")
-        self.specificInitialize()
+
+        if self.specificInitialize:
+            self.specificInitialize()
 
     def Update(self):
-        self.specificUpdate()
+        if self.specificUpdate:
+            self.specificUpdate()
         
     def InitmacOS(self):
-        import ioturing_applesmc
+        import ioturing_applesmc # type:ignore
         self.RegisterEntitySensor(EntitySensor(self, "cpu", supportsExtraAttributes=True, valueFormatterOptions=self.temperatureFormatOptions))
         self.valid_keys = []
         # get smc values for all the keys I have in the dictionary and remember
@@ -72,7 +73,7 @@ class Temperature(Entity):
     # get smc values for all valid keys previously found, then set the sensor value 
     # to the highest value found. Save also the other values in the extra attributes.
     def UpdatemacOS(self):
-        import ioturing_applesmc
+        import ioturing_applesmc # type:ignore
         values = {}
         # key = description, value = smc key
         for key, value in MACOS_SMC_TEMPERATURE_KEYS.items():
@@ -122,6 +123,11 @@ class Temperature(Entity):
     def packageNameToEntitySensorKey(self, packageName):
         return KEY_SENSOR_FORMAT.format(packageName)
 
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if not OsD.IsLinux() and not OsD.IsMacos():            
+            raise cls.UnsupportedOsException()
 
 class psutilTemperaturePackage():
     def __init__(self, packageName, packageData) -> None:

@@ -13,10 +13,14 @@ from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 
 # Lists of measure units
 BYTE_SIZES = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+BYTE_PER_SECOND_SIZES = ['Bps' ,'KBps', 'MBps', 'GBps', 'TBps', 'PBps']
+BIT_PER_SECOND_SIZES = ['bps' ,'Kbps', 'Mbps', 'Gbps', 'Tbps', 'Pbps']
 TIME_SIZES = ['s', 'm', 'h', 'd']
 FREQUENCY_SIZES = ['Hz', 'kHz', 'MHz', 'GHz']
 TIME_SIZES_DIVIDERS = [1, 60, 60, 24]
 CELSIUS_UNIT = '°C'
+ROTATION = ['rpm']
+RADIOPOWER =['dBm']
 
 SPACE_BEFORE_UNIT = ' '
 
@@ -50,11 +54,19 @@ class ValueFormatter():
             return ValueFormatter.FrequencyFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_TEMPERATURE:
             return ValueFormatter.TemperatureCelsiusFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_ROTATION:
+            return ValueFormatter.RoundsPerMinuteFormatter(value, options, includeUnit)
+        elif valueType ==ValueFormatterOptions.TYPE_RADIOPOWER:
+            return ValueFormatter.RadioPowerFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_PERCENTAGE:
             if includeUnit:
                 return str(value) + SPACE_BEFORE_UNIT + '%'
             else:
                 return str(value)
+        elif valueType == ValueFormatterOptions.TYPE_BIT_PER_SECOND:
+            return ValueFormatter.BitPerSecondFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_BYTE_PER_SECOND:
+            return ValueFormatter.BytePerSecondFormatter(value, options, includeUnit)
         else:
             return str(value)
 
@@ -153,7 +165,66 @@ class ValueFormatter():
         return result
 
     @staticmethod
+    def RoundsPerMinuteFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # asked_size not implemented
+        
+        # decimals
+        value = ValueFormatter.roundValue(value, options)
+
+        result = str(value)
+        
+        if includeUnit:
+            result = result + SPACE_BEFORE_UNIT + ROTATION[0]
+        return result
+
+    @staticmethod
+    def RadioPowerFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        
+        value = ValueFormatter.roundValue(value, options)
+        
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + 'dBm'
+        else:
+            return str(value)
+        
+    @staticmethod
+    def BytePerSecondFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # Get value in hertz, and adjustable
+        asked_size = options.get_adjust_size()
+
+        if asked_size and asked_size in BYTE_PER_SECOND_SIZES:
+            index = BYTE_PER_SECOND_SIZES.index(asked_size)
+            value = value/pow(1000,index)
+        else:
+            index = 0
+
+        value = ValueFormatter.roundValue(value, options)
+
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + BYTE_PER_SECOND_SIZES[index]
+        else:
+            return str(value)
+
+    def BitPerSecondFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
+        # Get value in hertz, and adjustable
+        asked_size = options.get_adjust_size()
+
+        if asked_size and asked_size in BYTE_PER_SECOND_SIZES:
+            index = BIT_PER_SECOND_SIZES.index(asked_size)
+            value = value/pow(1000,index)
+        else:
+            index = 0
+
+        value = ValueFormatter.roundValue(value, options)
+
+        if includeUnit:
+            return str(value) + SPACE_BEFORE_UNIT + BIT_PER_SECOND_SIZES[index]
+        else:
+            return str(value)
+
+    @staticmethod
     def roundValue(value, options: ValueFormatterOptions):
         if options.get_decimals() != ValueFormatterOptions.DO_NOT_TOUCH_DECIMALS:
             return round(value, options.get_decimals())
         return value
+    

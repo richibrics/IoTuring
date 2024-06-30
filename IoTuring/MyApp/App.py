@@ -1,4 +1,5 @@
-from importlib_metadata import metadata
+from importlib.metadata import metadata
+from pathlib import Path
 
 class App():
     METADATA = metadata('IoTuring')
@@ -12,8 +13,9 @@ class App():
     # "Project-URL": "documentation, https://github.com/richibrics/IoTuring",
     # "Project-URL": "repository, https://github.com/richibrics/IoTuring",
     # "Project-URL": "changelog, https://github.com/richibrics/IoTuring/releases",
-    URL_HOMEPAGE = METADATA.get_all("Project-URL")[0].split(', ')[1].strip()
-    URL_RELEASES = METADATA.get_all("Project-URL")[-1].split(', ')[1].strip()
+    URLS = METADATA.get_all("Project-URL") or ""
+    URL_HOMEPAGE = URLS[0].split(', ')[1].strip()
+    URL_RELEASES = URLS[-1].split(', ')[1].strip()
 
     @staticmethod
     def getName() -> str:
@@ -38,6 +40,15 @@ class App():
     @staticmethod
     def getUrlReleases() -> str:
         return App.URL_RELEASES
+
+    @staticmethod
+    def getRootPath() -> Path:
+        """Get the project root path
+
+        Returns:
+            Path: The path to th project root as a pathlib.Path
+        """
+        return Path(__file__).parents[1]
 
     def __str__(self) -> str:
         msg = ""

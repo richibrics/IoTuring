@@ -1,6 +1,8 @@
 services:
   ioturing:
-    image: ghcr.io/richibrics/ioturing:latest
+    image: richibrics/ioturing:latest
+    # Or from Github:
+    # image: ghcr.io/richibrics/ioturing:latest
     container_name: ioturing
     volumes:
       - ~/.config/IoTuring/:/config

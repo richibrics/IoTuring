@@ -1,0 +1,9 @@
+[Unit]
+Description=Restart IoTuring after login
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --user restart IoTuring.service
+
+[Install]
+WantedBy=graphical-session.target

@@ -14,8 +14,8 @@ except:
     supports_win = False
 
 commands = {
-    OsD.LINUX: 'notify-send "{}" "{}" --icon="ICON_PATH"',
-    OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''
+    OsD.LINUX: 'notify-send "{}" "{}" --icon="{}" --app-name="{}"',  # title, message, icon path, app name
+    OsD.MACOS: 'osascript -e \'display notification "{}" with title "{}"\''  # message, title
 }
 
 
@@ -46,13 +46,13 @@ class Notify(Entity):
     def Initialize(self):
 
         # Check if both config is defined or both is empty:
-        if not bool(self.GetConfigurations()[CONFIG_KEY_TITLE]) == bool(self.GetConfigurations()[CONFIG_KEY_MESSAGE]):
+        if not bool(self.GetFromConfigurations(CONFIG_KEY_TITLE)) == bool(self.GetFromConfigurations(CONFIG_KEY_MESSAGE)):
             raise Exception(
                 "Configuration error: Both title and message should be defined, or both should be empty!")
 
         try:
-            self.config_title = self.GetConfigurations()[CONFIG_KEY_TITLE]
-            self.config_message = self.GetConfigurations()[CONFIG_KEY_MESSAGE]
+            self.config_title = self.GetFromConfigurations(CONFIG_KEY_TITLE)
+            self.config_message = self.GetFromConfigurations(CONFIG_KEY_MESSAGE)
             self.data_mode = MODE_DATA_VIA_CONFIG
         except Exception as e:
             self.data_mode = MODE_DATA_VIA_PAYLOAD
@@ -67,7 +67,7 @@ class Notify(Entity):
             self.Log(self.LOG_INFO, "Using data from payload")
 
         # Set and check icon path:
-        self.config_icon_path = self.GetConfigurations()[CONFIG_KEY_ICON_PATH]
+        self.config_icon_path = self.GetFromConfigurations(CONFIG_KEY_ICON_PATH)
 
         if not os.path.exists(self.config_icon_path):
             self.Log(
@@ -79,29 +79,6 @@ class Notify(Entity):
         # e.g HomeAssistant warehouse can use the regex syntax with NotifyPaylaod to identify that the component needs the text message
         self.NAME = self.NAME + \
             ("Payload" if self.data_mode == MODE_DATA_VIA_PAYLOAD else "")
-
-        # Prepare the notification system
-        if OsD.IsWindows():
-            if not supports_win:
-                raise Exception(
-                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
-
-        elif OsD.GetOs() in commands:
-            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):
-                raise Exception(
-                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
-                )
-
-            # Add icon to command:
-            if "ICON_PATH" in commands[OsD.GetOs()]:
-                self.command = commands[OsD.GetOs()].replace(
-                    "ICON_PATH", self.config_icon_path)
-            else:
-                self.command = commands[OsD.GetOs()]
-
-        else:
-            raise Exception(
-                'Notify not available for this platorm!')
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
@@ -133,9 +110,13 @@ class Notify(Entity):
                 isMute=False).show()
 
         else:
+            if OsD.IsMacos():
+                command = commands[OsD.GetOs()].format(
+                    self.notification_message, self.notification_title)
 
-            command = self.command.format(
-                self.notification_title, self.notification_message)
+            else:  # Linux:
+                command = commands[OsD.GetOs()].format(
+                    self.notification_title, self.notification_message, self.config_icon_path, App.getName())
 
             self.RunCommand(command=command, shell=True)
 
@@ -152,3 +133,19 @@ class Notify(Entity):
                         mandatory=False, default=DEFAULT_ICON_PATH,
                         question_type="filepath")
         return preset
+
+    @classmethod
+    def CheckSystemSupport(cls):
+        if OsD.IsWindows():
+            if not supports_win:
+                raise Exception(
+                    'Notify not available, have you installed \'tinyWinToast\' on pip ?')
+
+        elif OsD.GetOs() in commands:
+            if not OsD.CommandExists(commands[OsD.GetOs()].split(" ")[0]):
+                raise Exception(
+                    f'Command not found {commands[OsD.GetOs()].split(" ")[0]}!'
+                )
+
+        else:
+            raise cls.UnsupportedOsException()

@@ -9,7 +9,6 @@ import os  # To get this folder path
 import time
 
 
-SLEEP_TIME_NOT_CONNECTED_WHILE = 1
 
 TOPIC_FORMAT = "{}/{}/{}"  # That stands for: App name, Client name, EntityData Id
 
@@ -53,7 +52,7 @@ class MQTTWarehouse(Warehouse):
 
     def Loop(self):
         while(not self.client.IsConnected()):
-            time.sleep(SLEEP_TIME_NOT_CONNECTED_WHILE)
+            time.sleep(self.retry_interval)
             
         # Here in Loop I send sensor's data (command callbacks are not managed here)
         for entity in self.GetEntities():

@@ -1,56 +1,107 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from os import path
 import importlib.util
 import importlib.machinery
 import sys
 import inspect
+from pathlib import Path
+
+from IoTuring.ClassManager.consts import *
 from IoTuring.Logger.LogObject import LogObject
-
-# from IoTuring.ClassManager import consts
-
-# This is a parent class
-
-# Implement subclasses in this way:
-
-# def __init__(self):
-#     ClassManager.__init__(self)
-#     self.baseClass = Entity  : Select the class to find
-#     self.GetModulesFilename(consts.ENTITIES_PATH)  : Select path where it should look for classes and add all classes to found list
-
-# This class is used to find and load classes without importing them
-# The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
+from IoTuring.MyApp.App import App
 
 
 class ClassManager(LogObject):
-    def __init__(self):
-        self.modulesFilename = []
-        module_path = sys.modules[self.__class__.__module__].__file__
-        if not module_path:
-            raise Exception("Error getting path: " + str(module_path))
+    """Base class for ClassManagers
+
+    This class is used to find and load classes without importing them
+    The important this is that the class is inside a folder that exactly the same name of the Class and of the file (obviously not talking about extensions)
+    """
+
+    def __init__(self, class_key:str) -> None:
+
+        if class_key not in CLASS_PATH:
+            raise Exception(f"Invalid class key {class_key}")
         else:
-            self.mainPath = path.dirname(path.abspath(module_path))
-        # THIS MUST BE IMPLEMENTED IN SUBCLASSES, IS THE CLASS I WANT TO SEARCH !!!!
-        self.baseClass = None
+            self.classesRelativePath = CLASS_PATH[class_key]
 
-    def GetClassFromName(self, wantedName) -> type | None:
-        # From name, load the correct module and extract the class
-        for module in self.modulesFilename:  # Search the module file
-            moduleName = self.ModuleNameFromPath(module)
-            # Check if the module name matches the given name
-            if wantedName == moduleName:
-                # Load the module
-                loadedModule = self.LoadModule(module)
-                # Now get the class
-                return self.GetClassFromModule(loadedModule)
-        return None
+        # Store loaded classes here:
+        self.loadedClasses = []
 
-    def LoadModule(self, path):  # Get module and load it from the path
+        # Collect paths
+        self.moduleFilePaths = self.GetModuleFilePaths()
+
+    def GetModuleFilePaths(self) -> list[Path]:
+        """Get the paths of of python files of this class
+
+        Raises:
+            Exception: If path not defined or exists
+            FileNotFoundError: No module in the dir
+
+        Returns:
+            list[Path]: List of paths of python files
+        """
+
+        if not self.classesRelativePath:
+            raise Exception("Path to deployments not defined")
+
+        # Get the absolute path of the dir of files:
+        classesRootPath = App.getRootPath().joinpath(self.classesRelativePath)
+
+        if not classesRootPath.exists:
+            raise Exception(f"Path does not exist: {classesRootPath}")
+
+        self.Log(self.LOG_DEBUG,
+                 f'Looking for python files in "{classesRootPath}"...')
+
+        python_files = classesRootPath.rglob("*.py")
+
+        # Check if a py files are in a folder with the same name !!! (same without extension)
+        filepaths = [f for f in python_files if f.stem == f.parent.stem]
+
+        if not filepaths:
+            raise FileNotFoundError(
+                f"No module files found in {classesRootPath}")
+
+        self.Log(self.LOG_DEBUG,
+                 f"Found {str(len(filepaths))} modules files")
+
+        return filepaths
+
+    def GetClassFromName(self, wantedName: str) -> type | None:
+        """Get the class of given name, and load it
+
+        Args:
+            wantedName (str): The name to look for
+
+        Returns:
+            type | None: The class if found, None if not found
+        """
+
+        # Check from already loaded classes:
+        module_class = next(
+            (m for m in self.loadedClasses if m.__name__ == wantedName), None)
+
+        if module_class:
+            return module_class
+
+        modulePath = next(
+            (m for m in self.moduleFilePaths if m.stem == wantedName), None)
+
+        if modulePath:
+
+            loadedModule = self.LoadModule(modulePath)
+            loadedClass = self.GetClassFromModule(loadedModule)
+            self.loadedClasses.append(loadedClass)
+            return loadedClass
+
+        else:
+            return None
+
+    def LoadModule(self, module_path: Path):  # Get module and load it from the path
         try:
             loader = importlib.machinery.SourceFileLoader(
-                self.ModuleNameFromPath(path), path)
+                module_path.stem, str(module_path))
             spec = importlib.util.spec_from_loader(loader.name, loader)
 
             if not spec:
@@ -58,47 +109,25 @@ class ClassManager(LogObject):
 
             module = importlib.util.module_from_spec(spec)
             loader.exec_module(module)
-            moduleName = os.path.split(path)[1][:-3]
-            sys.modules[moduleName] = module
+            sys.modules[module_path.stem] = module
             return module
         except Exception as e:
-            self.Log(self.LOG_ERROR, "Error while loading module " +
-                     path + ": " + str(e))
+            self.Log(self.LOG_ERROR,
+                     f"Error while loading module {module_path.stem}: {str(e)}")
 
     # From the module passed, I search for a Class that has className=moduleName
     def GetClassFromModule(self, module):
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
-                if(name == module.__name__):
+                if (name == module.__name__):
                     return obj
         raise Exception(f"No class found: {module.__name__}")
 
-    # List files in the _path directory and get only files in subfolders
-    def GetModulesFilename(self, _path):
-        classesRootPath = path.join(self.mainPath, _path)
-        if os.path.exists(classesRootPath):
-            self.Log(self.LOG_DEVELOPMENT,
-                     "Looking for python files in \"" + _path + os.sep + "\"...")
-            result = list(Path(classesRootPath).rglob("*.py"))
-            entities = []
-            for file in result:
-                filename = str(file)
-                # TO check if a py files is in a folder !!!! with the same name !!! (same without extension)
-                pathList = filename.split(os.sep)
-                if len(pathList) >= 2:
-                    if pathList[len(pathList)-1][:-3] == pathList[len(pathList)-2]:
-                        entities.append(filename)
+    def ListAvailableClasses(self) -> list:
+        """Get all classes of this ClassManager
 
-            self.modulesFilename = self.modulesFilename + entities
-            self.Log(self.LOG_DEVELOPMENT, "Found " +
-                     str(len(entities)) + " modules files")
+        Returns:
+            list: The list of classes
+        """
 
-    def ModuleNameFromPath(self, path):
-        classname = os.path.split(path)
-        return classname[1][:-3]
-
-    def ListAvailableClassesNames(self) -> list:
-        res = []
-        for py in self.modulesFilename:
-            res.append(path.basename(py).split(".py")[0])
-        return res
+        return [self.GetClassFromName(f.stem) for f in self.moduleFilePaths]

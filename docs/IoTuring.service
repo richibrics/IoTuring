@@ -1,0 +1,10 @@
+[Unit]
+Description=Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant.
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target
