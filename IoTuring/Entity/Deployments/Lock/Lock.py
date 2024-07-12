@@ -13,10 +13,16 @@ commands = {
         'base': 'pmset displaysleepnow'
     },
     OsD.LINUX: {
-        'gnome': 'gnome-screensaver-command -l',
+        # 'gnome': 'gnome-screensaver-command -l', as of my knowledge, gnome-screensaver is deprecated
         'cinnamon': 'cinnamon-screensaver-command -a',
         'i3': 'i3lock',
-        'base': 'loginctl lock-session'
+        'base': 'loginctl lock-session',
+        'xfce': 'xflock4',
+        'mate': 'mate-screensaver-command -l',
+        'plasmax11': 'qdbus org.freedesktop.ScreenSaver /ScreenSaver Lock', # loginctl lock-session does also work on plasma
+        'plasma': 'qdbus org.freedesktop.ScreenSaver /ScreenSaver Lock', # same as plasma x11
+        'hyprland': 'hyprlock',
+        'sway': 'swaylock', # sway does not have a lock command, but swaylock is a popular lockscreen for sway
     }
 }
 
