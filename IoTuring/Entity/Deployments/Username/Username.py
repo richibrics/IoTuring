@@ -13,7 +13,7 @@ class Username(Entity):
         self.SetEntitySensorValue(KEY_USERNAME, self.GetUsername())
 
 
-    def GetUsername(self):
+    def GetUsername(self) -> str:
         # Gives user's home directory
         userhome = os.path.expanduser('~')
 

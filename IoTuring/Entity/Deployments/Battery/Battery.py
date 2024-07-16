@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import TypedDict, Dict
 import psutil
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
@@ -6,6 +7,10 @@ from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
 
 KEY_PERCENTAGE = 'percentage'
 KEY_CHARGING_STATUS = 'charging'
+
+class BatteryInformation(TypedDict):
+        level: int
+        charging: bool
 
 class Battery(Entity):
     NAME = "Battery"
@@ -34,9 +39,9 @@ class Battery(Entity):
             self.SetEntitySensorValue(
                 KEY_CHARGING_STATUS, str(batteryInfo['charging']))
 
-    def GetBatteryInformation(self) -> dict:
+    def GetBatteryInformation(self) -> BatteryInformation:
         battery = psutil.sensors_battery()
         if not battery:
             raise Exception("No battery sensor for this host")
 
-        return {'level': battery.percent, 'charging': battery.power_plugged}
+        return BatteryInformation({'level': battery.percent, 'charging': battery.power_plugged})

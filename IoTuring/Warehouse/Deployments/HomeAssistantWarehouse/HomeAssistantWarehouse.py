@@ -4,6 +4,7 @@ import json
 import yaml
 import re
 import time
+from paho.mqtt.client import MQTTMessage
 from typing import Callable
 
 from IoTuring.Configurator.MenuPreset import MenuPreset
@@ -301,7 +302,7 @@ class HomeAssistantCommand(HomeAssistantEntity):
 
     def GenerateCommandCallback(self) -> Callable:
         """ Generate the callback function """
-        def CommandCallback(message):
+        def CommandCallback(message: MQTTMessage):
             status = self.entityCommand.CallCallback(message)
             if status and self.wh.client.IsConnected():
                 if self.connected_sensor:

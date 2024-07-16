@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from typing import TypedDict, List
 from InquirerPy import inquirer
 
 from IoTuring.Exceptions.Exceptions import UserCancelledException
@@ -161,6 +161,10 @@ class MenuPreset():
         """Check if this preset has any questions to ask"""
         return bool(self.presets)
 
+    class ChoiceDict(TypedDict):
+        name: str
+        value: str
+
     def AddEntry(self,
                  name,
                  key,
@@ -169,7 +173,7 @@ class MenuPreset():
                  display_if_key_value={},
                  instruction="",
                  question_type="text",
-                 choices=[]) -> None:
+                 choices: List[ChoiceDict]=[]) -> None:
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
@@ -187,6 +191,7 @@ class MenuPreset():
         - instruction: more text to show
         - question_type: text, secret, integer, filepath, select or yesno
         - choices: only for select question type
+          * List of dicts with following keys and values [{name: "name", value: "value"}]
         """
 
         if question_type not in ["text", "secret", "select", "yesno", "integer", "filepath"]:

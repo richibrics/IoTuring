@@ -1,3 +1,5 @@
+from paho.mqtt.client import MQTTMessage
+
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand
 from IoTuring.Exceptions.Exceptions import UnknownConfigKeyException
@@ -64,7 +66,7 @@ class Power(Entity):
                 self.RegisterEntityCommand(EntityCommand(
                     self, command_key, self.Callback))
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
         # From the topic we can find the command:
         key = message.topic.split("/")[-1]
         self.RunCommand(

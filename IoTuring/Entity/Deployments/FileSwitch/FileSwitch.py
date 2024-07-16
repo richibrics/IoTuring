@@ -1,4 +1,5 @@
 from pathlib import Path
+from paho.mqtt.client import MQTTMessage
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
@@ -25,7 +26,7 @@ class FileSwitch(Entity):
         self.RegisterEntityCommand(EntityCommand(
             self, KEY_CMD, self.Callback, KEY_STATE))
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
         payloadString = message.payload.decode('utf-8')
 
         if payloadString == "True":
