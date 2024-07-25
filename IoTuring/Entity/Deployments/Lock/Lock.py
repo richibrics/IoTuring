@@ -13,7 +13,7 @@ commands = {
         'base': 'pmset displaysleepnow'
     },
     OsD.LINUX: {
-        # 'gnome': 'gnome-screensaver-command -l', as of my knowledge, gnome-screensaver is deprecated
+        'gnome': 'gnome-screensaver-command -l', # gnome-screensaver is deprecated
         'cinnamon': 'cinnamon-screensaver-command -a',
         'i3': 'i3lock',
         'base': 'loginctl lock-session',
