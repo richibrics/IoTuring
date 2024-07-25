@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import requests
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
