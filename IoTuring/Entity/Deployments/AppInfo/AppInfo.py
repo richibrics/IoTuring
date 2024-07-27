@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import requests
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
@@ -46,7 +48,7 @@ class AppInfo(Entity):
             self.SetEntitySensorExtraAttribute(KEY_UPDATE, EXTRA_ATTRIBUTE_UPDATE_ERROR, GET_UPDATE_ERROR_MESSAGE)
             
 
-    def GetUpdateInformation(self):
+    def GetUpdateInformation(self) -> str | bool:
         """
         Get the update information of IoTuring
         Returns False if no update is available
@@ -70,7 +72,7 @@ class AppInfo(Entity):
         else:
             raise UpdateCheckException()
     
-def versionToInt(version: str):
+def versionToInt(version: str) -> int:
     return int(''.join([i for i in version if i.isdigit()]))
     
 class UpdateCheckException(Exception):

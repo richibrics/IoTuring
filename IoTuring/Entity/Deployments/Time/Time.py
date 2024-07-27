@@ -14,5 +14,5 @@ class Time(Entity):
     def Update(self):
         self.SetEntitySensorValue(KEY_NOW, self.GetCurrentTime())
 
-    def GetCurrentTime(self):
+    def GetCurrentTime(self) -> str:
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

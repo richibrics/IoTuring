@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from IoTuring.Entity.Deployments.Temperature.Temperature import psutilTemperaturePackage, psutilTemperatureSensor
 
 class TestPsutilTemperatureSensor:

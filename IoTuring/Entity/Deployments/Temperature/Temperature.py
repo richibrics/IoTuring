@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 import psutil
+
+from typing import List
+from psutil._common import shwtemp
+
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatter, ValueFormatterOptions
@@ -120,7 +126,7 @@ class Temperature(Entity):
                     
             index += 1
 
-    def packageNameToEntitySensorKey(self, packageName):
+    def packageNameToEntitySensorKey(self, packageName) -> str:
         return KEY_SENSOR_FORMAT.format(packageName)
 
 
@@ -130,7 +136,7 @@ class Temperature(Entity):
             raise cls.UnsupportedOsException()
 
 class psutilTemperaturePackage():
-    def __init__(self, packageName, packageData) -> None:
+    def __init__(self, packageName: str, packageData: List[shwtemp]) -> None:
         """ packageData is the value of the the dict returned by psutil.sensors_temperatures() """
         self.packageName = packageName
         self.sensors = []
@@ -144,15 +150,15 @@ class psutilTemperaturePackage():
         return self.sensors.copy()
 
     # Package stats strategies here: my choice is to return always the highest among the temperatures, critical: here will return the lowest
-    def getCurrent(self):
+    def getCurrent(self) -> float | None:
         """ Returns highest current temperature among this package sensors. None if any sensor has that data. """
         highest = None
         for sensor in self.getSensors():
             if sensor.hasCurrent() and (highest == None or highest < sensor.getCurrent()):
-                highest = sensor.getCurrent()
+                 highest = sensor.getCurrent()
         return highest
 
-    def getHighest(self):
+    def getHighest(self) -> float | None:
         """ Returns highest highest temperature among this package sensors. None if any sensor has that data. """
         highest = None
         for sensor in self.getSensors():
@@ -160,7 +166,7 @@ class psutilTemperaturePackage():
                 highest = sensor.getHighest()
         return highest
 
-    def getCritical(self):
+    def getCritical(self) -> float | None:
         """ Returns lower critical temperature among this package sensors. None if any sensor has that data. """
         lowest = None
         for sensor in self.getSensors():
@@ -168,28 +174,28 @@ class psutilTemperaturePackage():
                 lowest = sensor.getCritical()
         return lowest
 
-    def hasCurrent(self):
+    def hasCurrent(self) -> bool:
         """ True if at least a sensor of the package has the current property """
         for sensor in self.sensors:
             if sensor.hasCurrent():
                 return True
         return False
 
-    def hasHighest(self):
+    def hasHighest(self) -> bool:
         """ True if at least a sensor of the package has the highest property """
         for sensor in self.sensors:
             if sensor.hasHighest():
                 return True
         return False
 
-    def hasCritical(self):
+    def hasCritical(self) -> bool:
         """ True if at least a sensor of the package has the critical property """
         for sensor in self.sensors:
             if sensor.hasCritical():
                 return True
         return False
 
-    def getAttributesDict(self):
+    def getAttributesDict(self) -> dict:
         attributes = {}
         for index, sensor in enumerate(self.getSensors()):
             if sensor.hasLabel():
@@ -213,30 +219,30 @@ class psutilTemperatureSensor():
         self.highest = sensorData[2]
         self.critical = sensorData[3]
 
-    def getCurrent(self):
+    def getCurrent(self) -> float | None:
         return self.current
 
     def getLabel(self) -> str:
         return self.label
 
-    def getHighest(self):
+    def getHighest(self) -> float | None:
         return self.highest
 
-    def getCritical(self):
+    def getCritical(self) -> float | None:
         return self.critical
 
-    def hasLabel(self):
+    def hasLabel(self) -> bool:
         """ True if a label is set for this sensor """
         return not self.label == None and not self.label.strip() == ""
 
-    def hasCurrent(self):
+    def hasCurrent(self) -> bool:
         """ True if a current is set for this sensor """
         return not self.current == None
 
-    def hasHighest(self):
+    def hasHighest(self) -> bool:
         """ True if a highest is set for this sensor """
         return not self.highest == None
 
-    def hasCritical(self):
+    def hasCritical(self) -> bool:
         """ True if a critical is set for this sensor """
         return not self.critical == None

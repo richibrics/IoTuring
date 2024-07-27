@@ -41,7 +41,8 @@ class ActiveWindow(Entity):
         if self.UpdateSpecificFunction:
             self.SetEntitySensorValue(KEY, str(self.UpdateSpecificFunction()))
 
-    def GetActiveWindow_macOS(self):
+    def GetActiveWindow_macOS(self) -> str:
+        """Get the active window title on macOS"""
         try:
             curr_app = NSWorkspace.sharedWorkspace().activeApplication()
             curr_app_name = curr_app['NSApplicationName']
@@ -49,10 +50,12 @@ class ActiveWindow(Entity):
         except BaseException:
             return "Inactive"
 
-    def GetActiveWindow_Windows(self):
+    def GetActiveWindow_Windows(self) -> str:
+        """Get the active window title on Windows"""
         return GetWindowText(GetForegroundWindow())
 
     def GetActiveWindow_Linux(self) -> str:
+        """Get the active window title on Linux"""
         p = self.RunCommand("xprop -root _NET_ACTIVE_WINDOW")
 
         if p.stdout:

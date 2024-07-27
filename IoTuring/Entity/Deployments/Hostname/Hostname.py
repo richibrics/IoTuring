@@ -13,5 +13,5 @@ class Hostname(Entity):
         # The value for this sensor is static for the entire script run time
         self.SetEntitySensorValue(KEY_HOSTNAME, self.GetHostname())
 
-    def GetHostname(self):
+    def GetHostname(self) -> str:
         return socket.gethostname()

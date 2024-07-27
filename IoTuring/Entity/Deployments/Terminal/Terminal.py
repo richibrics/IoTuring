@@ -3,6 +3,7 @@ from IoTuring.Configurator.MenuPreset import MenuPreset
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Logger.consts import STATE_OFF, STATE_ON
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
+from paho.mqtt.client import MQTTMessage
 import re
 
 KEY = "terminal"
@@ -186,7 +187,7 @@ class Terminal(Entity):
         self.state = ""
         self.state_message = ""
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
 
         # Get data from payload:
         payloadString = message.payload.decode('utf-8')

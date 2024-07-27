@@ -6,6 +6,7 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 
 import os
 import json
+from paho.mqtt.client import MQTTMessage
 
 supports_win = True
 try:
@@ -82,7 +83,7 @@ class Notify(Entity):
 
         self.RegisterEntityCommand(EntityCommand(self, KEY, self.Callback))
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
         if self.data_mode == MODE_DATA_VIA_PAYLOAD:
             # Get data from payload:
             payloadString = message.payload.decode('utf-8')

@@ -1,5 +1,6 @@
 import ctypes
 import re
+from paho.mqtt.client import MQTTMessage
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
@@ -26,7 +27,7 @@ class Monitor(Entity):
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY_CMD, self.Callback))
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
         payloadString = message.payload.decode('utf-8')
 
         if payloadString == STATE_ON:

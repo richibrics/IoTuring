@@ -1,4 +1,6 @@
 import re
+from typing import List
+from paho.mqtt.client import MQTTMessage
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
@@ -64,7 +66,7 @@ class Volume(Entity):
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE, EXTRA_KEY_MUTED_OUTPUT, output_muted)
 
-    def Callback(self, message):
+    def Callback(self, message: MQTTMessage):
         payloadString = message.payload.decode('utf-8')
 
         # parse the payload and get the volume number which is between 0 and 100
@@ -85,7 +87,7 @@ class Volume(Entity):
         # result like: output volume:44, input volume:89, alert volume:100, output muted:false
         command = self.RunCommand(
             command=['osascript', '-e', 'get volume settings'])
-        result = command.stdout.strip().split(',')
+        result: List[str] | None = command.stdout.strip().split(',')
 
         output_volume = result[0].split(':')[1]
         input_volume = result[1].split(':')[1]
