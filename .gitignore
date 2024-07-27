@@ -7,6 +7,5 @@ commands_topic.txt
 IoTuring/Configurator/configurations.json*
 IoTuring/Configurator/dontmoveconf.itg*
 .venv
-.test_env
 build
 *.egg-info
