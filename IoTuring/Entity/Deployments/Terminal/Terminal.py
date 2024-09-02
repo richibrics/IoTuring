@@ -68,7 +68,7 @@ class Terminal(Entity):
         self.entity_type = str(
             self.config_entity_type).lower().strip().replace(" ", "_")
 
-        if not self.entity_type in ENTITY_TYPE_KEYS.values():
+        if self.entity_type not in ENTITY_TYPE_KEYS.values():
             raise Exception(
                 f"Configuration error: Unsupported entity type: {self.config_entity_type}")
 
@@ -82,6 +82,8 @@ class Terminal(Entity):
         self.has_command = False
         self.value_formatter_options = None
         self.custom_payload = {}
+
+        self.state = ""
 
         # payload_command
         if self.entity_type == ENTITY_TYPE_KEYS["PAYLOAD_COMMAND"]:
@@ -180,12 +182,6 @@ class Terminal(Entity):
             self.RegisterEntityCommand(EntityCommand(
                 self, KEY, self.Callback, KEY_STATE))
 
-        # Defaults for attributes:
-        self.last_command = ""
-        self.last_output = ""
-        self.state = ""
-        self.state_message = ""
-
     def Callback(self, message):
 
         # Get data from payload:
@@ -214,7 +210,7 @@ class Terminal(Entity):
 
         elif self.entity_type == ENTITY_TYPE_KEYS["COVER"]:
             cover_command = payloadString.upper()
-            if not cover_command in self.config_cover_commands.keys():
+            if cover_command not in self.config_cover_commands.keys():
                 raise Exception(f"Invalid payload: {payloadString}")
 
             self.command = self.config_cover_commands[cover_command]
@@ -222,11 +218,17 @@ class Terminal(Entity):
             if not self.command:
                 raise Exception(f"No command for payload: {payloadString}")
 
-        self.last_command = self.command
 
         # Run the command, collect output for update:
         command = self.RunCommand(self.command, shell=True)
-        self.last_output = f"Error: {command.stderr}" if command.stderr else command.stdout
+
+        # Set extra attributes for callback:
+        self.SetEntitySensorExtraAttribute(
+            KEY_STATE, "Last command", self.command)
+        self.SetEntitySensorExtraAttribute(
+            KEY_STATE, "Last output",
+                f"Error: {command.stderr}" if command.stderr else command.stdout)
+
 
     def Update(self):
 
@@ -267,12 +269,6 @@ class Terminal(Entity):
                 KEY_STATE, "Last state command output",
                 f"Error: {command.stderr}" if command.stderr else command.stdout)
 
-        if self.has_command:
-            # Set extra attributes:
-            self.SetEntitySensorExtraAttribute(
-                KEY_STATE, "Last command", self.last_command)
-            self.SetEntitySensorExtraAttribute(
-                KEY_STATE, "Last output", self.last_output)
 
     @classmethod
     def ConfigurationPreset(cls):
