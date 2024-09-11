@@ -248,23 +248,33 @@ class HomeAssistantSensor(HomeAssistantEntity):
             loop_timeout * 1.5)
         self.discovery_payload['expire_after'] = sensor_expire_seconds
 
-    def SendValues(self):
-        """ Send values of the sensor to the state topic """
+    def SendValues(self, callback_value:str|None= None):
+        """ Send values of the sensor to the state topic
+            callback_value: overrides value from sensor, for callback
+        """
+
         if self.entitySensor.HasValue():
-            sensor_value = ValueFormatter.FormatValue(
+            if callback_value is not None:
+                sensor_value = callback_value
+            else:
+                sensor_value = ValueFormatter.FormatValue(
                 self.entitySensor.GetValue(),
                 self.entitySensor.GetValueFormatterOptions(),
                 INCLUDE_UNITS_IN_SENSORS)
 
             self.SendTopicData(self.state_topic, sensor_value)
 
-            if self.supports_extra_attributes and \
-                    self.entitySensor.HasExtraAttributes():
-                formattedExtraAttributes = self.entitySensor.GetFormattedExtraAtributes(
-                    INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
-                self.SendTopicData(
-                    self.json_attributes_topic,
-                    json.dumps(formattedExtraAttributes))
+            if callback_value is None:
+                self.SendExtraAttributes()
+
+    def SendExtraAttributes(self):
+        if self.supports_extra_attributes and \
+                self.entitySensor.HasExtraAttributes():
+            formattedExtraAttributes = self.entitySensor.GetFormattedExtraAtributes(
+                INCLUDE_UNITS_IN_EXTRA_ATTRIBUTES)
+            self.SendTopicData(
+                self.json_attributes_topic,
+                json.dumps(formattedExtraAttributes))
 
 
 class HomeAssistantCommand(HomeAssistantEntity):
@@ -308,9 +318,13 @@ class HomeAssistantCommand(HomeAssistantEntity):
                     # Only set value if it was already set, to exclude optimistic switches
                     if self.connected_sensor.entitySensor.HasValue():
                         self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
-                                 self.connected_sensor.state_topic)
-                        self.SendTopicData(
-                            self.connected_sensor.state_topic, message.payload.decode('utf-8'))
+                            self.connected_sensor.state_topic)
+                        self.connected_sensor.SendValues(callback_value = message.payload.decode('utf-8'))
+
+                    # Optimistic switches with extra attributes:
+                    elif self.connected_sensor.supports_extra_attributes:
+                        self.connected_sensor.SendExtraAttributes()
+
         return CommandCallback
 
 
