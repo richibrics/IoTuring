@@ -45,7 +45,7 @@ The project uses [calendar versioning](https://calver.org/):
 ### Run tests in docker:
 
 ```shell
-docker run --rm -it -v .:/srv/IoTuring:ro python:3.8.17-slim-bullseye /srv/IoTuring/tests/run_tests.sh
+docker run --rm -it $(docker build -q -f tests.Dockerfile .)
 ```
 
 ### Run tests in a venv
