@@ -126,3 +126,8 @@ TerminalButton:
   name: Terminal Button
   icon: mdi:console
   custom_type: button
+Brightness:
+  name: Display Brightness
+  unit_of_measurement: "%"
+  icon: mdi:brightness-6
+  custom_type: number
