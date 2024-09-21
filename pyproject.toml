@@ -1,11 +1,11 @@
 [project]
 name = "IoTuring"
 version = "2024.6.1"
-description = "Simple and powerful cross-platform script to control your pc and share statistics using communication protocols like MQTT and home control hubs like HomeAssistant."
+description = "Your Windows, Linux, macOS computer as MQTT and HomeAssistant integration."
 readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "COPYING"}
-keywords = ["iot","mqtt","monitor"]
+keywords = ["iot","mqtt","monitor","homeassistant"]
 authors = [
   {name = "richibrics", email = "riccardo.briccola.dev@gmail.com"},
   {name = "infeeeee", email = "gyetpet@mailbox.org"}
