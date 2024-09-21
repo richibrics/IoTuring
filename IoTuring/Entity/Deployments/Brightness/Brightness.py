@@ -80,6 +80,7 @@ class BrightnessCmds:
 
 
 class Brightness_Macos(BrightnessCmds):
+    # TODO needs to be tested
     def __init__(self) -> None:
         super().__init__(
             scale=1,
@@ -102,6 +103,8 @@ class Brightness_Macos(BrightnessCmds):
 
 
 class Brightness_Win(BrightnessCmds):
+    # TODO needs to be tested
+    # TODO support multiple monitors
     def __init__(self, monitor_id: int = 0) -> None:
         super().__init__()
 
@@ -124,7 +127,7 @@ class Brightness_Win(BrightnessCmds):
     def CheckPlatformSupported(cls) -> None:
         if ["wmi", "pythoncom"] not in sys.modules:
             raise Exception(
-                "Brightness not available, have you installed 'wmi' on pip ?"
+                "Wmi or Pythoncom package missing"
             )
 
 
@@ -253,7 +256,7 @@ class Brightness(Entity):
                     default=gpus[0]
                 )
             else:
-                # Set hidden default value, if only one gpu:
+                # Set default value, if only one gpu, hidden question:
                 preset.AddEntry(
                     name="which GPUs backlight you want to control?",
                     key=CONFIG_KEY_GPU,
