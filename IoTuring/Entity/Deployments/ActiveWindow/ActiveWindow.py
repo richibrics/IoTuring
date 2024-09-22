@@ -4,20 +4,16 @@ from IoTuring.Entity.EntityData import EntitySensor
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.MyApp.SystemConsts import DesktopEnvironmentDetection as De
 
+import sys
 
 # Windows dep
-try:
-    from win32gui import GetWindowText, GetForegroundWindow  # type: ignore
-    windows_support = True
-except BaseException:
-    windows_support = False
+if OsD.IsWindows():
+    from win32gui import GetWindowText, GetForegroundWindow
 
 # macOS dep
-try:
-    from AppKit import NSWorkspace  # type: ignore
-    macos_support = True
-except BaseException:
-    macos_support = False
+if OsD.IsMacos():
+    from AppKit import NSWorkspace
+
 
 KEY = 'active_window'
 
@@ -85,11 +81,12 @@ class ActiveWindow(Entity):
             elif not OsD.CommandExists("xprop"):
                 raise Exception("No xprop command found!")
 
-        elif OsD.IsWindows() or OsD.IsMacos():
+        elif OsD.IsWindows():
+            if 'win32gui' not in sys.modules:
+                raise Exception("Unsatisfied dependencies (win32gui) for this entity")
 
-            if (OsD.IsWindows() and not windows_support) or\
-                    (OsD.IsMacos() and not macos_support):
-                raise Exception("Unsatisfied dependencies for this entity")
-
+        elif OsD.IsMacos():
+            if 'AppKit' not in sys.modules:
+                raise Exception("Unsatisfied dependencies (AppKit) for this entity")
         else:
             raise cls.UnsupportedOsException()

@@ -9,14 +9,12 @@ from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
 from IoTuring.Logger.LogLevel import LogLevel
 from IoTuring.Logger import consts
 
+import sys
 
 # macOS dep (in PyObjC)
-try:
-    from AppKit import *  # type:ignore
-    from Foundation import *  # type:ignore
-    macos_support = True
-except:
-    macos_support = False
+if OsD.IsMacos():
+    from AppKit import *
+    from Foundation import *
 
 
 CONFIG_KEY_CONSOLE_LOG_LEVEL = "console_log_level"
@@ -91,7 +89,7 @@ class LogSettings(Settings):
             "Logger").joinpath(consts.LOGS_FOLDER)
         base_path = None
 
-        if OsD.IsMacos() and macos_support:
+        if OsD.IsMacos() and 'AppKit' in sys.modules and 'Foundation' in sys.modules:
             base_path = \
                 Path(NSSearchPathForDirectoriesInDomains(  # type: ignore
                     NSLibraryDirectory,  # type: ignore
