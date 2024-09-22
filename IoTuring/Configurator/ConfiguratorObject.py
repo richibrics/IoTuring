@@ -48,7 +48,7 @@ class ConfiguratorObject:
         return MenuPreset()
 
     @classmethod
-    def AllowMultiInstance(cls):
+    def AllowMultiInstance(cls) -> bool:
         """ Return True if this Entity can have multiple instances, useful for customizable entities 
             These entities are the ones that must have a tag to be recognized """
         return cls.ALLOW_MULTI_INSTANCE

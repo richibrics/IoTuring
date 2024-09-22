@@ -1,4 +1,4 @@
-class ValueFormatterOptions():  
+class ValueFormatterOptions():
     TYPE_NONE = 0
     TYPE_BYTE = 1
     TYPE_TIME = 2
@@ -10,6 +10,7 @@ class ValueFormatterOptions():
     TYPE_RADIOPOWER = 8
     TYPE_BYTE_PER_SECOND = 9
     TYPE_BIT_PER_SECOND = 10
+    TYPE_BINARY = 11
 
     DO_NOT_TOUCH_DECIMALS = -1
       

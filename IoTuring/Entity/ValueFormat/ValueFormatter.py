@@ -67,8 +67,17 @@ class ValueFormatter():
             return ValueFormatter.BitPerSecondFormatter(value, options, includeUnit)
         elif valueType == ValueFormatterOptions.TYPE_BYTE_PER_SECOND:
             return ValueFormatter.BytePerSecondFormatter(value, options, includeUnit)
+        elif valueType == ValueFormatterOptions.TYPE_BINARY:
+            return ValueFormatter.BinaryFormatter(value)
         else:
             return str(value)
+
+    @staticmethod
+    def BinaryFormatter(value):
+        if int(value) > 0:
+            return 1
+        else:
+            return 0
 
     @staticmethod
     def TimeFormatter(value, options: ValueFormatterOptions, includeUnit: bool):
