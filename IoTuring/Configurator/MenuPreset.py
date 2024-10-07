@@ -173,7 +173,7 @@ class MenuPreset():
                  display_if_key_value={},
                  instruction="",
                  question_type="text",
-                 choices: List[ChoiceDict]=[]) -> None:
+                 choices: list[ChoiceDict]=[]) -> None:
         """ 
         Add an entry to the preset with:
         - key: the key to use in the dict
