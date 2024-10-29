@@ -39,7 +39,6 @@ CONFIG_KEY_USE_TAG_AS_ENTITY_NAME = "use_tag"
 
 CONFIGURATION_SEND_LOOP_SKIP_NUMBER = 10
 
-EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
 
 LWT_TOPIC_SUFFIX = "LWT"
 LWT_PAYLOAD_ONLINE = "ONLINE"
@@ -47,6 +46,12 @@ LWT_PAYLOAD_OFFLINE = "OFFLINE"
 PAYLOAD_ON = consts.STATE_ON
 PAYLOAD_OFF = consts.STATE_OFF
 
+# Entity configuration file for HAWH:
+EXTERNAL_ENTITY_DATA_CONFIGURATION_FILE_FILENAME = "entities.yaml"
+# Set HA entity type, e.g. number, light, switch:
+ENTITY_CONFIG_CUSTOM_TYPE_KEY = "custom_type"
+# Custom topic keys for discovery. Use list for multiple topics:
+ENTITY_CONFIG_CUSTOM_TOPIC_SUFFIX = "_key"
 
 class HomeAssistantEntityBase(LogObject):
     """ Base class for all entities in HomeAssistantWarehouse """
@@ -76,10 +81,7 @@ class HomeAssistantEntityBase(LogObject):
             self.GetEntityDataCustomConfigurations(self.name)
 
         # Get data type:
-        if "custom_type" in self.discovery_payload:
-            self.data_type = self.discovery_payload.pop("custom_type")
-        else:
-            self.data_type = ""
+        self.data_type = self.discovery_payload.pop(ENTITY_CONFIG_CUSTOM_TYPE_KEY, "")
 
         # Set name:
         self.SetDiscoveryPayloadName()
@@ -125,8 +127,16 @@ class HomeAssistantEntityBase(LogObject):
 
         # Add as an attribute:
         setattr(self, topic_name, topic_path)
-        # Add to the discovery payload:
-        self.discovery_payload[topic_name] = topic_path
+
+        # Check for custom topic:
+        discovery_keys = self.discovery_payload.pop(topic_name + ENTITY_CONFIG_CUSTOM_TOPIC_SUFFIX, topic_name)
+        if not isinstance(discovery_keys, list):
+            discovery_keys = [discovery_keys]
+
+        # Add to discovery payload:
+        for discovery_key in discovery_keys:
+            self.discovery_payload[discovery_key] = topic_path
+
 
     def SendTopicData(self, topic, data) -> None:
         self.wh.client.SendTopicData(topic, data)
@@ -181,7 +191,7 @@ class HomeAssistantEntity(HomeAssistantEntityBase):
         self.default_topics = {
             "availability_topic": self.wh.MakeValuesTopic(LWT_TOPIC_SUFFIX),
             "state_topic": self.MakeEntityDataTopic(self.entityData),
-            "json_attributes_topic": self.MakeEntityDataExtraAttributesTopic(self.entityData),
+            "json_attributes_topic": self.MakeEntityDataTopic(self.entityData, TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX),
             "command_topic": self.MakeEntityDataTopic(self.entityData)
         }
 
@@ -214,14 +224,10 @@ class HomeAssistantEntity(HomeAssistantEntityBase):
 
         return super().SetDiscoveryPayloadName()
 
-    def MakeEntityDataTopic(self, entityData: EntityData) -> str:
+    def MakeEntityDataTopic(self, entityData: EntityData, suffix:str = "") -> str:
         """ Uses MakeValuesTopic but receives an EntityData to manage itself its id"""
-        return self.wh.MakeValuesTopic(entityData.GetId())
+        return self.wh.MakeValuesTopic(entityData.GetId() + suffix)
 
-    def MakeEntityDataExtraAttributesTopic(self, entityData: EntityData) -> str:
-        """ Uses MakeValuesTopic but receives an EntityData to manage itself its id, appending a suffix to distinguish
-            the extra attrbiutes from the original value """
-        return self.wh.MakeValuesTopic(entityData.GetId() + TOPIC_DATA_EXTRA_ATTRIBUTES_SUFFIX)
 
 
 class HomeAssistantSensor(HomeAssistantEntity):
@@ -254,11 +260,13 @@ class HomeAssistantSensor(HomeAssistantEntity):
         """
 
         if self.entitySensor.HasValue():
-            if callback_value is not None:
-                sensor_value = callback_value
+            if callback_value is None:
+                value = self.entitySensor.GetValue()
             else:
-                sensor_value = ValueFormatter.FormatValue(
-                self.entitySensor.GetValue(),
+                value = callback_value
+
+            sensor_value = ValueFormatter.FormatValue(
+                value,
                 self.entitySensor.GetValueFormatterOptions(),
                 INCLUDE_UNITS_IN_SENSORS)
 
@@ -283,47 +291,44 @@ class HomeAssistantCommand(HomeAssistantEntity):
 
         self.entityCommand = entityData
 
-        self.AddTopic("availability_topic")
         self.AddTopic("command_topic")
 
-        self.connected_sensor = self.GetConnectedSensor()
+        self.connected_sensors = self.GetConnectedSensors()
 
-        if self.connected_sensor:
+        if self.connected_sensors:
             self.SetDefaultDataType("switch")
-            # Get discovery payload from connected sensor?
-            for payload_key in self.connected_sensor.discovery_payload:
-                if payload_key not in self.discovery_payload:
-                    self.discovery_payload[payload_key] = self.connected_sensor.discovery_payload[payload_key]
+            # Get discovery payload from connected sensors
+            for sensor in self.connected_sensors:
+                for payload_key in sensor.discovery_payload:
+                    if payload_key not in self.discovery_payload:
+                        self.discovery_payload[payload_key] = sensor.discovery_payload[payload_key]
         else:
             # Button as default data type:
             self.SetDefaultDataType("button")
 
         self.command_callback = self.GenerateCommandCallback()
 
-    def GetConnectedSensor(self) -> HomeAssistantSensor | None:
-        """ Get the connected sensor of this command """
-        if self.entityCommand.SupportsState():
-            return HomeAssistantSensor(
-                entityData=self.entityCommand.GetConnectedEntitySensor(),
-                wh=self.wh)
-        else:
-            return None
+
+    def GetConnectedSensors(self) -> list[HomeAssistantSensor]:
+        """ Get the connected sensors of this command """
+        return [HomeAssistantSensor(entityData=sensor, wh=self.wh)
+                for sensor in self.entityCommand.GetConnectedEntitySensors()]
+
 
     def GenerateCommandCallback(self) -> Callable:
         """ Generate the callback function """
         def CommandCallback(message):
             status = self.entityCommand.CallCallback(message)
             if status and self.wh.client.IsConnected():
-                if self.connected_sensor:
+                if self.connected_sensors:
                     # Only set value if it was already set, to exclude optimistic switches
-                    if self.connected_sensor.entitySensor.HasValue():
-                        self.Log(self.LOG_DEBUG, "Switch callback: sending state to " +
-                            self.connected_sensor.state_topic)
-                        self.connected_sensor.SendValues(callback_value = message.payload.decode('utf-8'))
+                    for sensor in self.connected_sensors:
+                        if sensor.entitySensor.HasValue():
+                            sensor.SendValues(callback_value = message.payload.decode('utf-8'))
 
-                    # Optimistic switches with extra attributes:
-                    elif self.connected_sensor.supports_extra_attributes:
-                        self.connected_sensor.SendExtraAttributes()
+                        # Optimistic switches with extra attributes:
+                        elif sensor.supports_extra_attributes:
+                            sensor.SendExtraAttributes()
 
         return CommandCallback
 
@@ -387,7 +392,7 @@ class HomeAssistantWarehouse(Warehouse):
         super().Start()  # Then run other inits (start the Loop method for example)
 
     def CollectEntityData(self) -> None:
-        """ Collect entities and save them ass hass entities """
+        """ Collect entities and save them as hass entities """
 
         # Add the Lwt sensor:
         self.homeAssistantEntities["sensors"].append(LwtSensor(self))
@@ -399,9 +404,8 @@ class HomeAssistantWarehouse(Warehouse):
                 # It's a command:
                 if isinstance(entityData, EntityCommand):
                     hasscommand = HomeAssistantCommand(entityData, self)
-                    if hasscommand.connected_sensor:
-                        self.homeAssistantEntities["connected_sensors"].append(
-                            hasscommand.connected_sensor)
+                    if hasscommand.connected_sensors:
+                        self.homeAssistantEntities["connected_sensors"].extend(hasscommand.connected_sensors)
                     self.homeAssistantEntities["commands"].append(hasscommand)
 
                 # It's a sensor:
