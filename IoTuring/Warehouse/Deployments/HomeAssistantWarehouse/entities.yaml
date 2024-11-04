@@ -126,3 +126,17 @@ TerminalButton:
   name: Terminal Button
   icon: mdi:console
   custom_type: button
+Brightness.*command:
+# command_topic for OFF command only:
+# https://www.home-assistant.io/integrations/light.mqtt/#brightness-without-on-commands
+  command_topic_key:
+    - brightness_command_topic
+    - command_topic
+  name: Display Brightness
+  icon: mdi:brightness-6
+  custom_type: light
+  on_command_type: brightness
+  payload_on: "1"
+  payload_off: "0"
+Brightness.*value:
+  state_topic_key: brightness_state_topic
