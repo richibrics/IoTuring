@@ -30,16 +30,35 @@ class ActiveWindow(Entity):
         UpdateFunction = {
             OsD.LINUX: self.GetActiveWindow_Linux,
             OsD.WINDOWS: self.GetActiveWindow_Windows,
-            OsD.MACOS: self.GetActiveWindow_macOS
+            OsD.MACOS: self.GetActiveWindow_macOS,
+            'hyprland': self.GetActiveWindow_Hyprland,      # each Wayland compositor need its own implementation since they have their own apis
         }
 
         self.UpdateSpecificFunction = UpdateFunction[OsD.GetOs()]
+        if De.GetDesktopEnvironment() == 'hyprland':
+            self.UpdateSpecificFunction = UpdateFunction['hyprland']
+            self.hyprland_regex_patterns = {
+                'workspace': r'workspace:\s*(\d+)',
+                'floating': r'floating:\s*(\d+)',
+                'monitor': r'monitor:\s*(\d+)',
+                'class': r'class:\s*(\S+)',
+                'title': r'title:\s*(.*)',
+                'initialTitle': r'initialTitle:\s*"(.+?)"',
+                'pid': r'pid:\s*(\d+)',
+                'xwayland': r'xwayland:\s*(\d+)',
+                'fullscreen': r'fullscreen:\s*(\d+)',
+                'pinned': r'pinned:\s*(\d+)'
+            } 
+        self.RegisterEntitySensor(EntitySensor(self, KEY, supportsExtraAttributes=True))
 
-        self.RegisterEntitySensor(EntitySensor(self, KEY))
+        self.extraAttributes = {}
 
     def Update(self):
         if self.UpdateSpecificFunction:
             self.SetEntitySensorValue(KEY, str(self.UpdateSpecificFunction()))
+            if self.extraAttributes:
+                for extraAttributeKey, extraAttributeValue in self.extraAttributes.items():
+                    self.SetEntitySensorExtraAttribute(KEY, extraAttributeKey, extraAttributeValue)
 
     def GetActiveWindow_macOS(self):
         try:
@@ -77,11 +96,32 @@ class ActiveWindow(Entity):
 
         return 'Inactive'
 
+    def GetActiveWindow_Hyprland(self):
+        title = None
+        p = self.RunCommand('hyprctl activewindow')
+        # if the command was successful, assign all lines to respective variables
+        if p.stdout:
+            # Use regular expressions to search for each variable in the output
+            for key, pattern in self.hyprland_regex_patterns.items():
+                match = re.search(pattern, p.stdout)
+                if match:
+                    if key == 'title':
+                        title = match.group(1)
+                    self.extraAttributes[key] = match.group(1)
+
+
+            return title
+
+
     @classmethod
     def CheckSystemSupport(cls):
         if OsD.IsLinux():
             if De.IsWayland():
-                raise Exception("Wayland is not supported")
+                if De.GetDesktopEnvironment() == 'hyprland':
+                    if not OsD.CommandExists("hyprctl"):
+                        raise Exception("No hyprctl command found!")
+                else:
+                    raise Exception("Wayland is not supported")
             elif not OsD.CommandExists("xprop"):
                 raise Exception("No xprop command found!")
 
