@@ -1,9 +1,18 @@
 import re
+from contextlib import contextmanager
 
 from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
+
+# Windows dependencies
+try:
+    import comtypes
+    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    windows_support = True
+except BaseException:
+    windows_support = False
 
 KEY_STATE = 'volume_state'
 KEY_CMD = 'volume'
@@ -63,6 +72,8 @@ class Volume(Entity):
             self.SetEntitySensorValue(KEY_STATE, output_volume)
             self.SetEntitySensorExtraAttribute(
                 KEY_STATE, EXTRA_KEY_MUTED_OUTPUT, output_muted)
+        elif OsD.IsWindows():
+            self.UpdateWindows()
 
     def Callback(self, message):
         payloadString = message.payload.decode('utf-8')
@@ -72,14 +83,18 @@ class Volume(Entity):
         if not 0 <= volume <= 100:
             raise Exception('Incorrect payload!')
 
-        cmd = commands[OsD.GetOs()]
+        if OsD.IsLinux() or OsD.IsMacos():
+            cmd = commands[OsD.GetOs()]
 
-        # Unmute on Linux:
-        if 0 < volume and OsD.IsLinux():
-            cmd = UNMUTE_PREFIX_LINUX + " && " + cmd
+            # Unmute on Linux:
+            if 0 < volume and OsD.IsLinux():
+                cmd = UNMUTE_PREFIX_LINUX + " && " + cmd
 
-        self.RunCommand(command=cmd.format(volume),
-                        shell=True)
+            self.RunCommand(command=cmd.format(volume),
+                            shell=True)
+        elif OsD.IsWindows():
+            with Volume.WindowsVolumeControl() as volume_control:
+                volume_control.SetMasterVolumeLevelScalar(volume / 100.0, None)
 
     def UpdateMac(self):
         # result like: output volume:44, input volume:89, alert volume:100, output muted:false
@@ -101,6 +116,35 @@ class Volume(Entity):
             KEY_STATE, EXTRA_KEY_ALERT_VOLUME, alert_volume, valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0)
         self.SetEntitySensorExtraAttribute(
             KEY_STATE, EXTRA_KEY_MUTED_OUTPUT, output_muted)
+        
+    def UpdateWindows(self):
+        with Volume.WindowsVolumeControl() as volume_control:
+            output_volume = int(volume_control.GetMasterVolumeLevelScalar() * 100)
+            output_muted = volume_control.GetMute()
+
+        self.SetEntitySensorValue(KEY_STATE, output_volume)
+        self.SetEntitySensorExtraAttribute(
+            KEY_STATE, EXTRA_KEY_OUTPUT_VOLUME, output_volume, valueFormatterOptions=VALUEFORMATTEROPTIONS_PERCENTAGE_ROUND0)
+        self.SetEntitySensorExtraAttribute(
+            KEY_STATE, EXTRA_KEY_MUTED_OUTPUT, output_muted)
+        
+    @classmethod
+    @contextmanager
+    def WindowsVolumeControl(cls):
+        """
+        Context manager to retrieve the main Windows volume control.  
+
+        Since these methods can be called in a subprocess, we need to wrap 
+        the COM calls in CoInitialize and CoUninitialize calls.
+
+        See https://github.com/AndreMiras/pycaw/issues/34#issuecomment-826107126
+        """
+        comtypes.CoInitialize()
+        devices = AudioUtilities.GetSpeakers()
+        interface = devices.Activate(
+            IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None)
+        yield interface.QueryInterface(IAudioEndpointVolume)
+        comtypes.CoUninitialize()
 
     @classmethod
     def CheckSystemSupport(cls):
@@ -108,5 +152,6 @@ class Volume(Entity):
             if not OsD.CommandExists("pactl"):
                 raise Exception(
                     "Only PulseAudio is supported on Linux! Please open an issue on Github!")
-        elif not OsD.IsMacos():
-            raise cls.UnsupportedOsException()
+        elif OsD.IsWindows():
+            if not windows_support:
+                raise Exception("Unable to load Windows dependencies for this entity")
