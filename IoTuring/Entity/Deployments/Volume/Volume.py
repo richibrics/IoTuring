@@ -5,9 +5,14 @@ from IoTuring.Entity.Entity import Entity
 from IoTuring.Entity.EntityData import EntityCommand, EntitySensor
 from IoTuring.Entity.ValueFormat import ValueFormatterOptions
 from IoTuring.MyApp.SystemConsts import OperatingSystemDetection as OsD
-if OsD.IsWindows():
+
+# Windows dependencies
+try:
     import comtypes
     from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    windows_support = True
+except BaseException:
+    windows_support = False
 
 KEY_STATE = 'volume_state'
 KEY_CMD = 'volume'
@@ -147,3 +152,6 @@ class Volume(Entity):
             if not OsD.CommandExists("pactl"):
                 raise Exception(
                     "Only PulseAudio is supported on Linux! Please open an issue on Github!")
+        elif OsD.IsWindows():
+            if not windows_support:
+                raise Exception("Unable to load Windows dependencies for this entity")
