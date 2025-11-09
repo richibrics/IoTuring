@@ -373,7 +373,12 @@ class Configurator(LogObject):
 
     def EditActiveConfiguration(self, typeClass, single_config: SingleConfiguration) -> None:
         """ UI for changing settings """
-        preset = typeClass.ConfigurationPreset()
+        try:
+            preset = typeClass.ConfigurationPreset()
+        except Exception as e:
+            self.DisplayMessage(
+                f"Error during {typeClass.GetClassKey()} preset loading: {str(e)}")
+            return
 
         if preset.HasQuestions():
 

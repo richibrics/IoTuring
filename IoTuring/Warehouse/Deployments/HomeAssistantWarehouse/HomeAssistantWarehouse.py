@@ -209,15 +209,14 @@ class HomeAssistantEntity(HomeAssistantEntityBase):
 
         else:
             # Add key only if more than one entityData, and it doesn't have a tag:
-            if not self.entity.GetEntityTag() and \
-                    len(self.entity.GetAllUnconnectedEntityData()) > 1:
+            if len(self.entity.GetAllUnconnectedEntityData()) > 1:
 
                 formatted_key = self.entityData.GetKey().capitalize().replace("_", " ")
 
-                payload_name = f"{self.entity.GetEntityName()} - {formatted_key}"
+                payload_name = f"{self.entity.GetEntityNameWithTag()} - {formatted_key}"
 
             else:
-                # Default name:
+                # Default name since just one entity data exists for this entity
                 payload_name = self.entity.GetEntityNameWithTag()
 
             self.SetDefaultDiscoveryPayload("name", payload_name)

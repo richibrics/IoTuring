@@ -35,7 +35,7 @@ class ConfiguratorObject:
             raise UnknownConfigKeyException(key)
 
     def GetTrueOrFalseFromConfigurations(self, key) -> bool:
-        """ Get boolean value from confiugurations with key (if not present raise Exception) """
+        """ Get boolean value from configurations with key (if not present raise Exception) """
         value = self.GetFromConfigurations(key).lower()
         if value in BooleanAnswers.TRUE_ANSWERS:
             return True
