@@ -54,10 +54,13 @@ class ConfiguratorLoader(LogObject):
                 self.Log(
                     self.LOG_ERROR, f"Can't find {entityConfig.GetType()} entity, check your configurations.")
             else:
-                ec = entityClass(entityConfig)
-                self.Log(
-                    self.LOG_DEBUG, f"Full configuration with defaults: {ec.configurations.ToDict()}")
-                entities.append(ec)  # Entity instance
+                try:
+                    ec = entityClass(entityConfig)
+                    self.Log(
+                        self.LOG_DEBUG, f"Full configuration with defaults: {ec.configurations.ToDict()}")
+                    entities.append(ec)  # Entity instance
+                except Exception as e:
+                    self.Log(self.LOG_ERROR, f"Error initializing entity {entityConfig.GetType()}: {e}")
         return entities
 
     # How Warehouse configurations works:
