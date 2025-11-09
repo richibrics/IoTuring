@@ -31,6 +31,8 @@ Username:
   icon: mdi:account-supervisor-circle
 Lock:
   icon: mdi:lock
+Network:
+  icon: mdi:network-outline
 NotifyPayload:
   icon: mdi:forum
   custom_type: text
