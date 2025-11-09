@@ -11,6 +11,7 @@ except Exception as e:
     library_available_netifaces = False
 
 CONFIG_KEY_TITLE = "inet_name"
+CONFIG_KEY_INCLUDE_IPV6 = "include_ipv6"
 
 KEY_IPV4_ADDRESS = "IPv4_address"
 KEY_IPV6_ADDRESS = "IPv6_address"
@@ -28,6 +29,7 @@ class Network(Entity):
 
     def Initialize(self):
         self.configured_inet = self.GetFromConfigurations(CONFIG_KEY_TITLE)
+        self.include_ipv6 = self.GetTrueOrFalseFromConfigurations(CONFIG_KEY_INCLUDE_IPV6)
 
         self.RegisterEntitySensor(
             EntitySensor(
@@ -37,13 +39,14 @@ class Network(Entity):
             )
         )
 
-        self.RegisterEntitySensor(
-            EntitySensor(
-                self,
-                KEY_IPV6_ADDRESS,
-                supportsExtraAttributes=True
+        if self.include_ipv6:
+            self.RegisterEntitySensor(
+                EntitySensor(
+                    self,
+                    KEY_IPV6_ADDRESS,
+                    supportsExtraAttributes=True
+                )
             )
-        )
 
     def Update(self):
         try:
@@ -71,15 +74,16 @@ class Network(Entity):
                     if 'broadcast' in inet_addresses[ni.AF_INET][0]:
                         ipv4['broadcast_address'] = inet_addresses[ni.AF_INET][0]['broadcast']
 
-            if ni.AF_INET6 in inet_addresses:
-                if len(inet_addresses[ni.AF_INET6]) > 0:
-                    # IPv6
-                    if 'addr' in inet_addresses[ni.AF_INET6][0]:
-                        ipv6['ip_address'] = inet_addresses[ni.AF_INET6][0]['addr']
-                    if 'netmask' in inet_addresses[ni.AF_INET6][0]:
-                        ipv6['netmask'] = inet_addresses[ni.AF_INET6][0]['netmask']
-                    if 'broadcast' in inet_addresses[ni.AF_INET6][0]:
-                        ipv6['broadcast_address'] = inet_addresses[ni.AF_INET6][0]['broadcast']
+            if self.include_ipv6:
+                if ni.AF_INET6 in inet_addresses:
+                    if len(inet_addresses[ni.AF_INET6]) > 0:
+                        # IPv6
+                        if 'addr' in inet_addresses[ni.AF_INET6][0]:
+                            ipv6['ip_address'] = inet_addresses[ni.AF_INET6][0]['addr']
+                        if 'netmask' in inet_addresses[ni.AF_INET6][0]:
+                            ipv6['netmask'] = inet_addresses[ni.AF_INET6][0]['netmask']
+                        if 'broadcast' in inet_addresses[ni.AF_INET6][0]:
+                            ipv6['broadcast_address'] = inet_addresses[ni.AF_INET6][0]['broadcast']
 
             if ni.AF_LINK in inet_addresses:
                 if len(inet_addresses[ni.AF_LINK]) > 0:
@@ -90,10 +94,12 @@ class Network(Entity):
                 key = KEY_IPV4_ADDRESS,
                 value = ipv4['ip_address'] if ipv4['ip_address'] is not None else "N/A"
             )
-            self.SetEntitySensorValue(
-                key = KEY_IPV6_ADDRESS,
-                value = ipv6['ip_address']  if ipv4['ip_address'] is not None else "N/A"
-            )
+
+            if self.include_ipv6:
+                self.SetEntitySensorValue(
+                    key = KEY_IPV6_ADDRESS,
+                    value = ipv6['ip_address']  if ipv4['ip_address'] is not None else "N/A"
+                )
 
             for key, value in ipv4.items():
                 if value is not None:
@@ -103,13 +109,14 @@ class Network(Entity):
                         attributeValue = str(value)
                     )
 
-            for key, value in ipv4.items():
-                if value is not None:
-                    self.SetEntitySensorExtraAttribute(
-                        sensorDataKey = KEY_IPV4_ADDRESS,
-                        attributeKey = key,
-                        attributeValue = str(value)
-                    )
+            if self.include_ipv6:
+                for key, value in ipv4.items():
+                    if value is not None:
+                        self.SetEntitySensorExtraAttribute(
+                            sensorDataKey = KEY_IPV4_ADDRESS,
+                            attributeKey = key,
+                            attributeValue = str(value)
+                        )
 
             if mac_address is not None:
                 self.SetEntitySensorExtraAttribute(
@@ -117,13 +124,13 @@ class Network(Entity):
                     attributeKey = "mac_address",
                     attributeValue = str(mac_address)
                 )
-
-            if mac_address is not None:
-                self.SetEntitySensorExtraAttribute(
-                    sensorDataKey = KEY_IPV6_ADDRESS,
-                    attributeKey = "mac_address",
-                    attributeValue = str(mac_address)
-                )
+                
+                if self.include_ipv6:
+                    self.SetEntitySensorExtraAttribute(
+                        sensorDataKey = KEY_IPV6_ADDRESS,
+                        attributeKey = "mac_address",
+                        attributeValue = str(mac_address)
+                    )
 
         except Exception as e:
             raise Exception(f"Error retrieving network information for interface '{self.configured_inet}': {str(e)}")
@@ -140,8 +147,11 @@ class Network(Entity):
 
         preset = MenuPreset()
         preset.AddEntry(name="Network interface",
-                        key=CONFIG_KEY_TITLE, mandatory=False,
+                        key=CONFIG_KEY_TITLE, mandatory=True,
                         question_type="select", choices=INET_AVAILABLE_INTERFACES)
+        preset.AddEntry(name="Include IPv6 information",
+                        key=CONFIG_KEY_INCLUDE_IPV6, mandatory=False,
+                        question_type="yesno")
         return preset
 
     @classmethod
