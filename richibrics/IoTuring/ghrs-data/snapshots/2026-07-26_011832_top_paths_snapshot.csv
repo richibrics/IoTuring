@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/richibrics/IoTuring,8,6
+/richibrics/IoTuring/blob/bfb6d8291036fd2d110c72b71369ce9fd4b5be71/IoTuring/Entity/Deployments/Cpu/Cpu.py,2,2
+/richibrics/IoTuring/issues/8,2,2
+/richibrics/IoTuring/pulls,2,2
+/richibrics/IoTuring/blob/3f92c20220a2cca39c5d0805f77065dc7bf9d3d6/pyproject.toml,1,1
+/richibrics/IoTuring/blob/b2b09b8e097166549fc45d6275a51bc36758f7fa/IoTuring/Entity/Deployments/Temperature/Temperature.py,1,1
+/richibrics/IoTuring/blob/bfb6d8291036fd2d110c72b71369ce9fd4b5be71/IoTuring/Entity/Deployments/Disk/Disk.py,1,1
+/richibrics/IoTuring/blob/d5709debf1b99fae94d964abced6791c5e52604d/IoTuring/Entity/Deployments/DisplayMode/DisplayMode.py,1,1
+/richibrics/IoTuring/blob/d773500bc0808c9119eae725ca26045b3b5e2fc8/IoTuring/Entity/Deployments/Battery/Battery.py,1,1
+/richibrics/IoTuring/blob/d773500bc0808c9119eae725ca26045b3b5e2fc8/IoTuring/Entity/Deployments/Terminal/Terminal.py,1,1
